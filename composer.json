@@ -1,0 +1,16 @@
+{
+    "name": "mohsen/ipay",
+    "description": "A module to connect Iranian Bank",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mohsen Shafiei",
+            "email": "mohsen.sh12@hotmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": { "Mohsen\\IPay": "src/" }
+    },
+    "minimum-stability": "dev",
+    "require": {}
+}
