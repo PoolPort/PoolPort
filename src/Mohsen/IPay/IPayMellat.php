@@ -19,25 +19,11 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     protected $debug = false;
 
     /**
-     * Mode of payment, test or actual
-     *
-     * @var string
-     */
-    protected $mode = 'actual';
-
-    /**
      * Address of main SOAP server
      *
      * @var string
      */
-    public $serverMainUrl = 'https://pgw.bpm.bankmellat.ir/pgwchannel/services/pgw?wsdl';
-
-    /**
-     * Address of test SOAP server
-     *
-     * @var string
-     */
-    public $serverTestUrl = 'https://pgwstest.bpm.bankmellat.ir/pgwchannel/services/pgw?wsdl';
+    public $serverUrl = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
 
     /**
      * Initialize of class
@@ -47,14 +33,12 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      * @param int $termId
      * @return void
      */
-    public function __construct($username, $password, $termId, $mode = 'actual')
+    public function __construct($username, $password, $termId)
     {
         $this->username = (string) $username;
         $this->password = (string) $password;
         $this->termId = (int) $termId;
-        $this->mode = $mode;
 
-        $this->setMode();
         parent::__construct();
     }
 
@@ -102,18 +86,5 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     {
         $this->debug = true;
         $this->debugMessagesLanguage = $messagesLanguage == 'en' ? 'en' : 'fa';
-    }
-
-    /**
-     * Set mode of requests
-     *
-     * @return void
-     */
-    protected function setMode()
-    {
-        if ($this->mode == 'test')
-            $this->serverUrl = $this->serverTestUrl;
-        else
-            $this->serverUrl = $this->serverMainUrl;
     }
 }
