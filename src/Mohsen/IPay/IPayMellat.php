@@ -1,9 +1,10 @@
 <?php namespace Mohsen\IPay;
 
 use SoapClient;
+use DateTime;
 
 /**
- * A class for mellat bank paymets
+ * A class for mellat bank payments
  *
  * @author Mohsen Shafiee
  * @copyright MIT
@@ -22,7 +23,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @var string
      */
-    public $mode = 'actual';
+    protected $mode = 'actual';
 
     /**
      * Address of main SOAP server
@@ -54,6 +55,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $this->mode = $mode;
 
         $this->setMode();
+        parent::__construct();
     }
 
     /**
@@ -61,20 +63,21 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @return bool|IPayMellatException
      */
-    public function sendPayRequest()
+    public function sendPayRequest($amount, $callBackUrl, $additionalData = '', $orderId = null)
     {
         $soap = new SoapClient($this->serverUrl);
+        $dateTime = new DateTime();
 
         $fields = array(
             'terminalId' => $this->termId,
             'userName' => $this->username,
             'userPassword' => $this->password,
-            'orderId' => 1,
-            'amount' => 45800,
-            'localDate' => '20151123',
-            'localTime' => '102003',
-            'additionalData' => '',
-            'callBackUrl' => 'http://google.com',
+            'orderId' => is_null($orderId) ? uniqid(rand(), true) : $orderId,
+            'amount' => $amount,
+            'localDate' => $dateTime->format('Ymd'),
+            'localTime' => $dateTime->format('His'),
+            'additionalData' => $additionalData,
+            'callBackUrl' => $callBackUrl,
             'payerId' => 0,
         );
 
@@ -84,7 +87,9 @@ class IPayMellat extends IPayAbstract implements IPayInterface
             if ($this->debug)
                 throw new IPayMellatException($response->return, $this->debugMessagesLanguage);
             else
-                return false;
+                return $response->return;
+
+        return $response;
     }
 
     /**
@@ -104,7 +109,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @return void
      */
-    public function setMode()
+    protected function setMode()
     {
         if ($this->mode == 'test')
             $this->serverUrl = $this->serverTestUrl;
