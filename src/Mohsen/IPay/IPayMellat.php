@@ -19,6 +19,20 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     protected $debug = false;
 
     /**
+     * Determine request passes
+     *
+     * @var bool
+     */
+    protected $requestPass = false;
+
+    /**
+     * Refer id
+     *
+     * @var string
+     */
+    protected $refId;
+
+    /**
      * Address of main SOAP server
      *
      * @var string
@@ -45,7 +59,11 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     /**
      * Send pay request to server
      *
-     * @return bool|IPayMellatException
+     * @param int $amount
+     * @param string $callBackUrl
+     * @param string $additionalData
+     * @param int|null $orderId
+     * @return mixed
      */
     public function sendPayRequest($amount, $callBackUrl, $additionalData = '', $orderId = null)
     {
@@ -73,7 +91,36 @@ class IPayMellat extends IPayAbstract implements IPayInterface
             else
                 return $response->return;
 
-        return $response;
+        $this->refId = $response->return;
+        $this->requestPass = true;
+    }
+
+    /**
+     * Redirect to bank for deposit money
+     *
+     * @return void
+     */
+    public function redirectToBank()
+    {
+        if ($this->requestPass)
+        {
+            $refId = explode(',', $this->refId);
+            $refId = $refId[0];
+            echo file_get_contents('IPayMellatRedirector.php');
+        }
+    }
+
+    /**
+     * Check request passes
+     *
+     * @return bool
+     */
+    public function passRequest()
+    {
+        if ($this->requestPass)
+            return true;
+        else
+            return false;
     }
 
     /**
