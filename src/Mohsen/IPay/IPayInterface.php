@@ -13,4 +13,7 @@ interface IPayInterface
 
     //Method for set debug mode to true
     public function setDebugMode($messagesLanguage = 'en');
+
+    //Method for redirect to bank for perform payment
+    public function redirectToBank();
 }

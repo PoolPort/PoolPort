@@ -33,6 +33,27 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     protected $refId;
 
     /**
+     * Keep ResCode of bpPayRequest response
+     *
+     * @var int
+     */
+    protected $payRequestResCode;
+
+    /**
+     * Keep saleOrderId
+     *
+     * @var int
+     */
+    protected $saleOrderId;
+
+    /**
+     * Sale refrence id
+     *
+     * @var int
+     */
+    protected $saleReferenceId;
+
+    /**
      * Address of main SOAP server
      *
      * @var string
@@ -96,6 +117,35 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     }
 
     /**
+     * Check user payment
+     *
+     * @return bool
+     */
+    public function userPayment()
+    {
+        $this->refId = $_POST['RefId'];
+        $this->payRequestResCode = (int) $_POST['ResCode'];
+        $this->saleOrderId = $_POST['SaleOrderId'];
+        $this->saleReferenceId = $_POST['SaleReferenceId'];
+
+        if ($this->payRequestResCode != 0)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Get ResCode of payRequest method
+     *
+     * @return int
+     */
+    public function getPayRequestResCode()
+    {
+        return $this->payRequestResCode;
+    }
+
+    /**
      * Redirect to bank for deposit money
      *
      * @return void
@@ -105,8 +155,8 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         if ($this->requestPass)
         {
             $refId = explode(',', $this->refId);
-            $refId = $refId[0];
-            echo file_get_contents('IPayMellatRedirector.php');
+            $refId = $refId[1];
+            require 'IPayMellatRedirector.php';
         }
     }
 
@@ -115,7 +165,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @return bool
      */
-    public function passRequest()
+    public function passPayRequest()
     {
         if ($this->requestPass)
             return true;
