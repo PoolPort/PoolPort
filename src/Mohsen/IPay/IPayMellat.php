@@ -2,6 +2,7 @@
 
 use SoapClient;
 use DateTime;
+use PDO;
 
 /**
  * A class for mellat bank payments
@@ -54,6 +55,13 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     protected $saleReferenceId;
 
     /**
+     * Keep DB conection
+     *
+     * @var PDO
+     */
+    protected $dbh;
+
+    /**
      * Address of main SOAP server
      *
      * @var string
@@ -86,16 +94,18 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      * @param int|null $orderId
      * @return mixed
      */
-    public function sendPayRequest($amount, $callBackUrl, $additionalData = '', $orderId = null)
+    public function sendPayRequest($amount, $callBackUrl, $additionalData = '')
     {
         $soap = new SoapClient($this->serverUrl);
         $dateTime = new DateTime();
+
+        $orderId = $this->newLog();
 
         $fields = array(
             'terminalId' => $this->termId,
             'userName' => $this->username,
             'userPassword' => $this->password,
-            'orderId' => is_null($orderId) ? uniqid(rand(), true) : $orderId,
+            'orderId' => $orderId,
             'amount' => $amount,
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
@@ -112,8 +122,12 @@ class IPayMellat extends IPayAbstract implements IPayInterface
             else
                 return $response->return;
 
-        $this->refId = $response->return;
+        $response = explode(',', $response->return);
+        $this->refId = $response[1];
+
+        $this->editLog($orderId, $this->refId, '', '', $additionalData, 'Start connection to bank.');
         $this->requestPass = true;
+        return true;
     }
 
     /**
@@ -123,16 +137,38 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      */
     public function userPayment()
     {
-        $this->refId = $_POST['RefId'];
-        $this->payRequestResCode = (int) $_POST['ResCode'];
-        $this->saleOrderId = $_POST['SaleOrderId'];
-        $this->saleReferenceId = $_POST['SaleReferenceId'];
+        $this->refId = @$_POST['RefId'];
+        $this->payRequestResCode = (int) @$_POST['ResCode'];
+        $this->saleOrderId = @$_POST['SaleOrderId'];
+        $this->saleReferenceId = @$_POST['SaleReferenceId'];
+
 
         if ($this->payRequestResCode != 0)
         {
+            $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User not payment.');
             return false;
         }
+        $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User payment done.');
         return true;
+    }
+
+    public function verifyPayment()
+    {
+        $soap = new SoapClient($this->serverUrl);
+        $orderId = $this->newLog();
+
+        $fields = array(
+            'terminalId' => $this->termId,
+            'userName' => $this->username,
+            'userPassword' => $this->password,
+            'orderId' => $orderId,
+            'saleOrderId' => $this->saleOrderId,
+            'saleReferenceId' => $this->saleReferenceId
+        );
+
+        $response = $soap->bpVerifyRequest($fields);
+
+        dd($response);
     }
 
     /**
@@ -154,8 +190,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     {
         if ($this->requestPass)
         {
-            $refId = explode(',', $this->refId);
-            $refId = $refId[1];
+            $refId = $this->refId;
             require 'IPayMellatRedirector.php';
         }
     }
@@ -171,6 +206,72 @@ class IPayMellat extends IPayAbstract implements IPayInterface
             return true;
         else
             return false;
+    }
+
+    /**
+     * Initialize database connection
+     *
+     * @param string $host
+     * @param string $dbName
+     * @param string $usermae
+     * @param string $password
+     * @return void
+     */
+    public function setDB($host, $dbName, $username, $password)
+    {
+        $this->dbh = new PDO("mysql:host=$host;dbname=$dbName;", $username, $password);
+    }
+
+    /**
+     * Insert new log to table
+     *
+     * @param string $refId
+     * @param string $saleOrderId
+     * @param string $saleRefrencesId
+     * @param string $AdditionalData
+     * @param string $message
+     * @return int last inserted id
+     */
+    public function newLog($refId = '', $saleOrderId = '', $saleRefrencesId = '', $AdditionalData = '', $message = '')
+    {
+        $date = new DateTime;
+        $date = $date->format('Y/m/d H:i:s');
+
+        $stmt = $this->dbh->prepare("INSERT INTO mellat_orders_log (ref_id, sale_order_id, sale_refrences_id, additional_data, message, timestamp) VALUES (:ref_id, :sale_order_id, :sale_refrences_id, :additional_data, :message, :timestamp)");
+        $stmt->bindParam(':ref_id', $refId);
+        $stmt->bindParam(':sale_order_id', $saleOrderId);
+        $stmt->bindParam(':sale_refrences_id', $saleRefrencesId);
+        $stmt->bindParam(':additional_data', $AdditionalData);
+        $stmt->bindParam(':message', $message);
+        $stmt->bindParam(':timestamp', $date);
+        $stmt->execute();
+
+        return $this->dbh->lastInsertId();
+    }
+
+    /**
+     * Update log in table
+     *
+     * @param int $id
+     * @param string $refId
+     * @param string $saleOrderId
+     * @param string $saleRefrencesId
+     * @param string $AdditionalData
+     * @param string $message
+     * @return void
+     */
+    public function editLog($id, $refId = '', $saleOrderId = '', $saleRefrencesId = '', $AdditionalData = '', $message = '')
+    {
+        $stmt = $this->dbh->prepare("UPDATE mellat_orders_log SET ref_id = :ref_id, sale_order_id = :sale_order_id, sale_refrences_id = :sale_refrences_id, additional_data = :additional_data, message = :message WHERE id = :id");
+        $stmt->bindParam(':ref_id', $refId);
+        $stmt->bindParam(':sale_order_id', $saleOrderId);
+        $stmt->bindParam(':sale_refrences_id', $saleRefrencesId);
+        $stmt->bindParam(':additional_data', $AdditionalData);
+        $stmt->bindParam(':message', $message);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+
+        return $this->dbh->lastInsertId();
     }
 
     /**
