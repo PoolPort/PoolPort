@@ -131,6 +131,16 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     }
 
     /**
+     * Get refId
+     *
+     * @return null|string
+     */
+    public function getRefId()
+    {
+        return $this->refId;
+    }
+
+    /**
      * Check user payment
      *
      * @return bool
