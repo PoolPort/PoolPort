@@ -143,15 +143,18 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $this->saleReferenceId = @$_POST['SaleReferenceId'];
 
 
-        if ($this->payRequestResCode != 0)
+        if ($this->payRequestResCode == 0)
         {
-            $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User not payment.');
-            return false;
+            return true;
         }
-        $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User payment done.');
-        return true;
+        return false;
     }
 
+    /**
+     * Verify user payment from bank server
+     *
+     * @return bool
+     */
     public function verifyPayment()
     {
         $soap = new SoapClient($this->serverUrl);
@@ -168,7 +171,43 @@ class IPayMellat extends IPayAbstract implements IPayInterface
 
         $response = $soap->bpVerifyRequest($fields);
 
-        dd($response);
+        if ($response->return == '0')
+        {
+            $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User payment done.');
+            return true;
+        }
+        $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User not payment.');
+        return false;
+    }
+
+    /**
+     * Send settle request
+     *
+     * @return bool
+     */
+    public function settleRequest()
+    {
+        $soap = new SoapClient($this->serverUrl);
+        $orderId = $this->newLog();
+
+        $fields = array(
+            'terminalId' => $this->termId,
+            'userName' => $this->username,
+            'userPassword' => $this->password,
+            'orderId' => $orderId,
+            'saleOrderId' => $this->saleOrderId,
+            'saleReferenceId' => $this->saleReferenceId
+        );
+
+        $response = $soap->bpSettleRequest($fields);
+
+        if ($response->return == '0' || $response->return == '45')
+        {
+            $this->editLog($orderId, $this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'Settle request done, code = '.$response->return);
+            return true;
+        }
+        $this->editLog($orderId, $this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'Settle request faile, code = '.$response->return);
+        return false;
     }
 
     /**
