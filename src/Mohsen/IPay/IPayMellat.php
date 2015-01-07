@@ -116,13 +116,14 @@ class IPayMellat extends IPayAbstract implements IPayInterface
 
         $response = $soap->bpPayRequest($fields);
 
-        if ($response->return != 0)
+        $response = explode(',', $response->return);
+
+        if ($response[0] != '0')
             if ($this->debug)
                 throw new IPayMellatException($response->return, $this->debugMessagesLanguage);
             else
                 return $response->return;
 
-        $response = explode(',', $response->return);
         $this->refId = $response[1];
 
         $this->editLog($orderId, $this->refId, '', '', $additionalData, 'Start connection to bank.');
