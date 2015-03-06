@@ -1,5 +1,7 @@
-<?php namespace Mohsen\IPay;
+<?php namespace Mohsen\IPay\Mellat;
 
+use Mohsen\IPay\IPayInterface;
+use Mohsen\IPay\IPayAbstract;
 use SoapClient;
 use DateTime;
 use PDO;
@@ -91,10 +93,9 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      * @param int $amount
      * @param string $callBackUrl
      * @param string $additionalData
-     * @param int|null $orderId
      * @return mixed
      */
-    public function sendPayRequest($amount, $callBackUrl, $additionalData = '')
+    public function sendPayRequest($amount, $callBackUrl, $additionalData = null)
     {
         $soap = new SoapClient($this->serverUrl);
         $dateTime = new DateTime();
@@ -122,7 +123,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
             if ($this->debug)
                 throw new IPayMellatException($response->return, $this->debugMessagesLanguage);
             else
-                return $response->return;
+                return $response;
 
         $this->refId = $response[1];
 

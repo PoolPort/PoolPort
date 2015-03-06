@@ -1,4 +1,4 @@
-<?php namespace Mohsen\IPay;
+<?php namespace Mohsen\IPay\Mellat;
 
 class IPayMellatException extends \Exception
 {
@@ -102,6 +102,6 @@ class IPayMellatException extends \Exception
     {
         $this->errorId = $errorId;
 
-        parent::__construct($this->errors[$language][$errorId].' #'.$errorId, $errorId);
+        parent::__construct(@$this->errors[$language][$errorId].' #'.$errorId, $errorId);
     }
 }
