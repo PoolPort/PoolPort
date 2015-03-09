@@ -9,7 +9,7 @@
         }
     ],
     "autoload": {
-        "psr-0": { "Mohsen\\IPay": "src/" }
+        "psr-4": { "IPay\\": "src/" }
     },
     "minimum-stability": "dev",
     "require": {}

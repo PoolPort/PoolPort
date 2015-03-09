@@ -1,4 +1,4 @@
-<?php namespace Mohsen\IPay\Zarinpal;
+<?php namespace IPay\Zarinpal;
 
 class IPayZarinpalException extends \Exception
 {

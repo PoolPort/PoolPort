@@ -1,7 +1,7 @@
-<?php namespace Mohsen\IPay\Mellat;
+<?php namespace IPay\Mellat;
 
-use Mohsen\IPay\IPayInterface;
-use Mohsen\IPay\IPayAbstract;
+use IPay\IPayInterface;
+use IPay\IPayAbstract;
 use SoapClient;
 use DateTime;
 use PDO;

@@ -1,4 +1,4 @@
-<?php namespace Mohsen\IPay;
+<?php namespace IPay;
 
 abstract class IPayAbstract
 {

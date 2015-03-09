@@ -1,7 +1,7 @@
-<?php namespace Mohsen\IPay\Zarinpal;
+<?php namespace IPay\Zarinpal;
 
-use Mohsen\IPay\IPayInterface;
-use Mohsen\IPay\IPayAbstract;
+use IPay\IPayInterface;
+use IPay\IPayAbstract;
 use SoapClient;
 use PDO;
 

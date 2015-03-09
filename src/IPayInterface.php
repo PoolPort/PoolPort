@@ -1,4 +1,4 @@
-<?php namespace Mohsen\IPay;
+<?php namespace IPay;
 
 /**
  * Interface of pay classes

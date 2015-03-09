@@ -1,4 +1,4 @@
-<?php namespace Mohsen\IPay\Mellat;
+<?php namespace IPay\Mellat;
 
 class IPayMellatException extends \Exception
 {
