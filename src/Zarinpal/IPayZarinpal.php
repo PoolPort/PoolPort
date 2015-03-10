@@ -219,6 +219,16 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 	}
 
 	/**
+	 * Get authority code
+	 *
+	 * @return string
+	 */
+	public function getAuthority()
+	{
+		return $this->authority;
+	}
+
+	/**
 	 * Set iran server for soap transfers data
 	 *
 	 * @return void
