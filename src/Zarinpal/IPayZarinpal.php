@@ -7,7 +7,6 @@ use PDO;
 
 /**
  * A class for zarinpal payments
- * //TODO: add method for select iran or germany server
  * //TODO: support for mobile gate
  * //TODO: support for communal settlement
  *
@@ -44,7 +43,7 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
      *
      * @var string
      */
-    protected $serverUrl = 'https://ir.zarinpal.com/pg/services/WebGate/wsdl';
+    protected $serverUrl = 'https://de.zarinpal.com/pg/services/WebGate/wsdl';
 
 	/**
 	 * Address of gate for redirect
@@ -220,6 +219,16 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 	}
 
 	/**
+	 * Set iran server for soap transfers data
+	 *
+	 * @return void
+	 */
+	public function setIranServer()
+	{
+		$this->serverUrl = 'https://ir.zarinpal.com/pg/services/WebGate/wsdl';
+	}
+
+	/**
 	* Initialize database connection
 	*
 	* @param string $host
@@ -260,6 +269,11 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 		return $this->dbh->lastInsertId();
 	}
 
+	/**
+	 * Get amount of authority from db
+	 *
+	 * @return int
+	 */
 	public function getAmount()
 	{
 		$sql = "SELECT additional_data FROM mellat_orders_log WHERE ref_id=$this->authority LIMIT 1";
