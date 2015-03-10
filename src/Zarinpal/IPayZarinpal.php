@@ -8,7 +8,6 @@ use PDO;
 /**
  * A class for zarinpal payments
  * //TODO: add method for select iran or germany server
- * //TODO: add all errors descriptions and code
  * //TODO: support for mobile gate
  * //TODO: support for communal settlement
  *
