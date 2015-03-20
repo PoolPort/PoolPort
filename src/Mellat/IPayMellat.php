@@ -1,10 +1,9 @@
 <?php namespace IPay\Mellat;
 
-use IPay\IPayInterface;
 use IPay\IPayAbstract;
+use IPay\Config;
 use SoapClient;
 use DateTime;
-use PDO;
 
 /**
  * A class for mellat bank payments
@@ -12,15 +11,8 @@ use PDO;
  * @author Mohsen Shafiee
  * @copyright MIT
  */
-class IPayMellat extends IPayAbstract implements IPayInterface
+class IPayMellat extends IPayAbstract
 {
-    /**
-     * If true Exceptions executed
-     *
-     * @var bool
-     */
-    protected $debug = false;
-
     /**
      * Determine request passes
      *
@@ -57,13 +49,6 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     protected $saleReferenceId;
 
     /**
-     * Keep DB conection
-     *
-     * @var PDO
-     */
-    protected $dbh;
-
-    /**
      * Address of main SOAP server
      *
      * @var string
@@ -73,16 +58,19 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     /**
      * Initialize of class
      *
-     * @param string $username
-     * @param string $password
-     * @param int $termId
+     * @param string $configFile
      * @return void
      */
-    public function __construct($username, $password, $termId)
+    public function __construct($configFile = null)
     {
-        $this->username = (string) $username;
-        $this->password = (string) $password;
-        $this->termId = (int) $termId;
+        $this->config = new Config($configFile);
+
+        $this->username = $this->config->get('mellat.username');
+        $this->password = $this->config->get('mellat.password');
+        $this->termId = $this->config->get('mellat.terminalId');
+
+        $this->setDB();
+        $this->setMode();
 
         parent::__construct();
     }
@@ -95,8 +83,11 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      * @param string $additionalData
      * @return mixed
      */
-    public function sendPayRequest($amount, $callBackUrl, $additionalData = null)
+    public function sendPayRequest($amount, $additionalData = null, $callBackUrl = null)
     {
+        if (is_null($callBackUrl))
+			$callBackUrl = $this->config->get('mellat.callback-url');
+
         $soap = new SoapClient($this->serverUrl);
         $dateTime = new DateTime();
 
@@ -260,20 +251,6 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     }
 
     /**
-     * Initialize database connection
-     *
-     * @param string $host
-     * @param string $dbName
-     * @param string $usermae
-     * @param string $password
-     * @return void
-     */
-    public function setDB($host, $dbName, $username, $password)
-    {
-        $this->dbh = new PDO("mysql:host=$host;dbname=$dbName;", $username, $password);
-    }
-
-    /**
      * Insert new log to table
      *
      * @param string $refId
@@ -323,17 +300,5 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $stmt->execute();
 
         return $this->dbh->lastInsertId();
-    }
-
-    /**
-     * Set debug mode for class
-     *
-     * @param string $messagesLanguage in en and fa
-     * @return void
-     */
-    public function setDebugMode($messagesLanguage = 'en')
-    {
-        $this->debug = true;
-        $this->debugMessagesLanguage = $messagesLanguage == 'en' ? 'en' : 'fa';
     }
 }

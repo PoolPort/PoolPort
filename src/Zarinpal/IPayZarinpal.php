@@ -1,9 +1,8 @@
 <?php namespace IPay\Zarinpal;
 
-use IPay\IPayInterface;
 use IPay\IPayAbstract;
+use IPay\Config;
 use SoapClient;
-use PDO;
 
 /**
  * A class for zarinpal payments
@@ -13,7 +12,7 @@ use PDO;
  * @author Mohsen Shafiee
  * @copyright MIT
  */
-class IPayZarinpal extends IPayAbstract implements IPayInterface
+class IPayZarinpal extends IPayAbstract
 {
 	/**
 	 * Merchant id
@@ -39,11 +38,25 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 	protected $authority;
 
 	/**
+     * Address of germany SOAP server
+     *
+     * @var string
+     */
+    protected $germanyServer = 'https://de.zarinpal.com/pg/services/WebGate/wsdl';
+
+	/**
+     * Address of iran SOAP server
+     *
+     * @var string
+     */
+    protected $iranServer = 'https://ir.zarinpal.com/pg/services/WebGate/wsdl';
+
+	/**
      * Address of main SOAP server
      *
      * @var string
      */
-    protected $serverUrl = 'https://de.zarinpal.com/pg/services/WebGate/wsdl';
+    protected $serverUrl;
 
 	/**
 	 * Address of gate for redirect
@@ -60,28 +73,20 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
     protected $requestPass = false;
 
 	/**
-     * Keep DB conection
-     *
-     * @var PDO
-     */
-    protected $dbh;
-
-	/**
-     * If true Exceptions executed
-     *
-     * @var bool
-     */
-    protected $debug = false;
-
-	/**
      * Initialize of class
      *
-     * @param string $merchantId
+     * @param string $configFile
      * @return void
      */
-	public function __construct($merchantId)
+	public function __construct($configFile = null)
 	{
-		$this->merchantId = $merchantId;
+		$this->config = new Config($configFile);
+
+		$this->merchantId = $this->config->get('zarinpal.merchant-id');
+
+		$this->setDB();
+		$this->setMode();
+		$this->setServer();
 
 		parent::__construct();
 	}
@@ -94,10 +99,10 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
      * @param string $additionalData
      * @return mixed
      */
-    public function sendPayRequest($amount, $callBackUrl, $additionalData = null)
+    public function sendPayRequest($amount, $callBackUrl = null)
     {
-		if (!is_array($additionalData))
-			return -1;
+		if (is_null($callBackUrl))
+			$callBackUrl = $this->config->get('zarinpal.callback-url');
 
         $soap = new SoapClient($this->serverUrl);
 
@@ -105,9 +110,9 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
             'MerchantID' => $this->merchantId,
             'Amount' => $amount,
             'CallbackURL' => $callBackUrl,
-			'Description' 	=> @$additionalData['description'],
-			'Email' 	=> @$additionalData['email'],
-			'Mobile' 	=> @$additionalData['mobile'],
+			'Description' 	=> $this->config->get('zarinpal.description', ''),
+			'Email' 	=> $this->config->get('zarinpal.email', ''),
+			'Mobile' 	=> $this->config->get('zarinpal.mobile', ''),
         );
 
         $response = $soap->PaymentRequest($fields);
@@ -229,27 +234,24 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 	}
 
 	/**
-	 * Set iran server for soap transfers data
+	 * Set server for soap transfers data
 	 *
 	 * @return void
 	 */
-	public function setIranServer()
+	public function setServer()
 	{
-		$this->serverUrl = 'https://ir.zarinpal.com/pg/services/WebGate/wsdl';
-	}
+		$server = $this->config->get('zarinpal.server', 'germany');
+		switch ($server)
+		{
+			case 'iran':
+				$this->serverUrl = $this->iranServer;
+			break;
 
-	/**
-	* Initialize database connection
-	*
-	* @param string $host
-	* @param string $dbName
-	* @param string $usermae
-	* @param string $password
-	* @return void
-	*/
-	public function setDB($host, $dbName, $username, $password)
-	{
-		$this->dbh = new PDO("mysql:host=$host;dbname=$dbName;", $username, $password);
+			case 'germany':
+			default:
+				$this->serverUrl = $this->germanyServer;
+			break;
+		}
 	}
 
 	/**
@@ -292,16 +294,4 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 		$row = $stmt->fetch();
 		return $row['additional_data'];
 	}
-
-	/**
-     * Set debug mode for class
-     *
-     * @param string $messagesLanguage in en and fa
-     * @return void
-     */
-    public function setDebugMode($messagesLanguage = 'en')
-    {
-        $this->debug = true;
-        $this->debugMessagesLanguage = $messagesLanguage == 'en' ? 'en' : 'fa';
-    }
 }

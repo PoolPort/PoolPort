@@ -83,7 +83,7 @@ class Config
 	{
 		if (is_file($this->filePath))
 		{
-			$this->config = require $this->defaultFilePath;
+			$this->config = require $this->filePath;
 			return true;
 		}
 		else if(is_file($this->defaultFilePath))
