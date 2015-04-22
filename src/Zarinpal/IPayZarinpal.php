@@ -67,6 +67,13 @@ class IPayZarinpal extends IPayAbstract
 	protected $gateUrl = 'https://www.zarinpal.com/pg/StartPay/';
 
 	/**
+	 * Address of zarin gate for redirect
+	 *
+	 * @var string
+	 */
+	protected $zarinGateUrl = '‫‪https://www.zarinpal.com/pg/StartPay/$Authority/ZarinGate‬‬';
+
+	/**
      * Determine request passes
      *
      * @var bool
@@ -138,11 +145,18 @@ class IPayZarinpal extends IPayAbstract
      *
      * @return void
      */
-    public function redirectToBank()
+    public function redirectToBank($zarinGate = false)
     {
         if ($this->requestPass)
         {
-            Header('Location: '.$this->gateUrl.$this->authority);
+			if ($zarinGate)
+			{
+				Header('Location: '.$this->zarinGateUrl.str_replace('‫‪$Authority‬‬', $this->authority, $this->zarinGateUrl));
+			}
+			else
+        	{
+				Header('Location: '.$this->gateUrl.$this->authority);
+			}
         }
     }
 
