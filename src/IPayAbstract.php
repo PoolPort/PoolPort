@@ -1,5 +1,6 @@
 <?php namespace IPay;
 
+use IPay\DB;
 use PDO;
 
 abstract class IPayAbstract
@@ -35,6 +36,12 @@ abstract class IPayAbstract
     public function __construct()
     {
         date_default_timezone_set('Asia/Tehran');
+
+        if ($this->config->get('database.create', false))
+        {
+            $db = new DB($this->config);
+            $db->createTables();
+        }
     }
 
 	/**
