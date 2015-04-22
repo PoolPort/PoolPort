@@ -3,4 +3,4 @@ IPay
 
 > A module to connect Iranian Bank
 
-See Documentation in [aparnet.ir](http://aparnet.ir/2633-ipay-package-document)
+See Documentation in [http://mohsen-shafiee.github.io/ipay](http://mohsen-shafiee.github.io/ipay)
