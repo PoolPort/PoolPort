@@ -217,7 +217,7 @@ class IPayMellat implements IPayInterface
 
         $this->refId = $response[1];
 
-        $this->editLog($orderId, $this->refId, '', '', $additionalData, 'Start connection to bank.');
+        $this->editLog($orderId, $this->refId, '', '', $this->additionalData, 'Start connection to bank.');
     }
 
     /**
