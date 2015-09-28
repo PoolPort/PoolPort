@@ -112,7 +112,7 @@ class IPayMellat extends IPayAbstract
 
         if ($response[0] != '0')
             if ($this->debug)
-                throw new IPayMellatException($response->return, $this->debugMessagesLanguage);
+                throw new IPayMellatException($response[0], $this->debugMessagesLanguage);
             else
                 return $response;
 
