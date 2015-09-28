@@ -3,54 +3,6 @@
 class IPayMellatException extends \Exception
 {
     protected $errors = array(
-        'en' => array(
-            11 => 'Invalid Card Number',
-            12 => 'No Sufficient Funds',
-            13 => 'Incorrect Pin',
-            14 => 'Allowable Number Of Pin Tries Exceeded',
-            15 => 'Card Not Effective',
-            16 => 'Exceeds Withdrawal Frequency Limit',
-            17 => 'Customer Cancellation',
-            18 => 'Expired Card',
-            19 => 'Exceeds Withdrawal Amount Limit',
-            111 => 'No Such Issuer',
-            112 => 'Card Switch Internal Error',
-            113 => 'Issuer Or Switch Is Inoperative',
-            114 => 'Transaction Not Permitted To Card Holder',
-            21 => 'Invalid Merchant',
-            23 => 'Security Violation',
-            24 => 'Invalid User Or Password',
-            25 => 'Invalid Amount',
-            31 => 'Invalid Response',
-            32 => 'Format Error',
-            33 => 'No Investment Account',
-            34 => 'System Internal Error',
-            35 => 'Invalid Business Date',
-            41 => 'Duplicate Order Id',
-            42 => 'Sale Transaction Not Found',
-            43 => 'Duplicate Verify',
-            44 => 'Verify Transaction Not Found',
-            45 => 'Transaction Has Been Settled',
-            46 => 'Transaction Has Not Been Settled',
-            47 => 'Settle Transaction Not Found',
-            48 => 'Transaction Has Been Reversed',
-            49 => 'Refund Transaction Not Found',
-            412 => 'Bill Digit Incorrect',
-            413 => 'Payment Digit Incorrect',
-            414=> 'Bill Organization Not Valid',
-            415 => 'Session Timeout',
-            416 => 'Data Access Exception',
-            417 => 'Payer Id Is Invalid',
-            418 => 'Customer Not Found',
-            419 => 'Try Count Exceeded',
-            421 => 'Invalid IP',
-            51 => 'Duplicate Transmission',
-            54 => 'Original Transaction Not Found',
-            55 => 'Invalid Transaction',
-            61 => 'Error In Settle'
-        ),
-
-        'fa' => array(
             11 => 'شماره کارت نامعتبر است',
             12 => 'موجودی کافی نیست',
             13 => 'رمز نادرست است',
@@ -95,13 +47,12 @@ class IPayMellatException extends \Exception
             54 => 'تراکنش مرجع موجود نیست',
             55 => 'تراکنش نامعتبر است',
             61 => 'خطا در واریز'
-        )
     );
 
-    public function __construct($errorId, $language = 'en')
+    public function __construct($errorId)
     {
         $this->errorId = $errorId;
 
-        parent::__construct(@$this->errors[$language][$errorId].' #'.$errorId, $errorId);
+        parent::__construct(@$this->errors[$errorId].' #'.$errorId, $errorId);
     }
 }

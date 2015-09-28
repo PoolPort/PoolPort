@@ -1,17 +1,14 @@
-<?php namespace IPay\Mellat;
+<?php
 
-use IPay\IPayAbstract;
-use IPay\Config;
-use SoapClient;
+namespace IPay\Mellat;
+
 use DateTime;
+use SoapClient;
+use IPay\Config;
+use IPay\IPayInterface;
+use IPay\DataBaseManager;
 
-/**
- * A class for mellat bank payments
- *
- * @author Mohsen Shafiee
- * @copyright MIT
- */
-class IPayMellat extends IPayAbstract
+class IPayMellat implements IPayInterface
 {
     /**
      * Determine request passes
@@ -53,7 +50,31 @@ class IPayMellat extends IPayAbstract
      *
      * @var string
      */
-    public $serverUrl = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
+    protected $serverUrl = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
+
+    /**
+     * Amount in Rial
+     *
+     * @var int
+     */
+    protected $amount;
+
+    /**
+     * Additional data for send to port
+     *
+     * @var string
+     */
+    protected $additionalData;
+
+    /**
+     * @var IPay\Config
+     */
+    protected $config;
+
+    /**
+     * @var IPay/DataBaseManager
+     */
+    protected $db;
 
     /**
      * Initialize of class
@@ -61,33 +82,113 @@ class IPayMellat extends IPayAbstract
      * @param string $configFile
      * @return void
      */
-    public function __construct($configFile = null)
+    public function __construct(Config $config, DataBaseManager $db)
     {
-        $this->config = new Config($configFile);
+        $this->config = $config;
+        $this->db = $db;
 
         $this->username = $this->config->get('mellat.username');
         $this->password = $this->config->get('mellat.password');
         $this->termId = $this->config->get('mellat.terminalId');
+    }
 
-        $this->setDB();
-        $this->setMode();
+    /**
+     * This method use for set price in Rial.
+     *
+     * @param int $amount in Rial
+     *
+     * @return void
+     */
+    public function set($amount)
+    {
+        $this->amount = $amount;
 
-        parent::__construct();
+        return $this;
+    }
+
+    /**
+     * Some of the ports can be send additional data to port server.
+     * This method for set this additional data.
+     *
+     * @param array $data
+     *
+     * @return $this
+     */
+    public function with(array $data = array())
+    {
+        if (isset($data['additionalData']))
+            $this->additionalData = $data['additionalData'];
+
+        return $this;
+    }
+
+    /**
+     * This method use for done everything that necessary before redirect to port.
+     *
+     * @return $this
+     */
+    public function ready()
+    {
+        $this->sendPayRequest();
+
+        return $this;
+    }
+
+    /**
+     * Get refId
+     *
+     * @return int|string
+     */
+    public function getRefId()
+    {
+        return $this->refId;
+    }
+
+    /**
+     * This method use for redirect to port
+     *
+     * @return mixed
+     */
+    public function redirect()
+    {
+        $refId = $this->refId;
+        require 'IPayMellatRedirector.php';
+    }
+
+    /**
+     * Return result of payment
+     * If result is done, return $this, otherwise throws an related exception
+     *
+     * @return $this
+     */
+    public function verify()
+    {
+        $this->userPayment();
+        $this->verifyPayment();
+        $this->settleRequest();
+
+        return $this;
+    }
+
+    /**
+     * Return tracking code
+     *
+     * @return int|string
+     */
+    public function trackingCode()
+    {
+        return $this->refId;
     }
 
     /**
      * Send pay request to server
      *
-     * @param int $amount
-     * @param string $callBackUrl
-     * @param string $additionalData
-     * @return mixed
+     * @return void
+     *
+     * @throws IPayMellatException
      */
-    public function sendPayRequest($amount, $additionalData = null, $callBackUrl = null)
+    public function sendPayRequest()
     {
-        if (is_null($callBackUrl))
-			$callBackUrl = $this->config->get('mellat.callback-url');
-
         $soap = new SoapClient($this->serverUrl);
         $dateTime = new DateTime();
 
@@ -98,11 +199,11 @@ class IPayMellat extends IPayAbstract
             'userName' => $this->username,
             'userPassword' => $this->password,
             'orderId' => $orderId,
-            'amount' => $amount,
+            'amount' => $this->amount,
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
-            'additionalData' => $additionalData,
-            'callBackUrl' => $callBackUrl,
+            'additionalData' => $this->additionalData,
+            'callBackUrl' => $this->config->get('mellat.callback-url'),
             'payerId' => 0,
         );
 
@@ -111,32 +212,19 @@ class IPayMellat extends IPayAbstract
         $response = explode(',', $response->return);
 
         if ($response[0] != '0')
-            if ($this->debug)
-                throw new IPayMellatException($response->return, $this->debugMessagesLanguage);
-            else
-                return $response;
+            throw new IPayMellatException($response[0]);
 
         $this->refId = $response[1];
 
         $this->editLog($orderId, $this->refId, '', '', $additionalData, 'Start connection to bank.');
-        $this->requestPass = true;
-        return true;
-    }
-
-    /**
-     * Get refId
-     *
-     * @return null|string
-     */
-    public function getRefId()
-    {
-        return $this->refId;
     }
 
     /**
      * Check user payment
      *
      * @return bool
+     *
+     * @throws IPayMellatException
      */
     public function userPayment()
     {
@@ -145,18 +233,20 @@ class IPayMellat extends IPayAbstract
         $this->saleOrderId = @$_POST['SaleOrderId'];
         $this->saleReferenceId = @$_POST['SaleReferenceId'];
 
-
-        if ($this->payRequestResCode == 0)
-        {
-            return true;
+        if ($this->payRequestResCode != 0) {
+            throw new IPayMellatException($this->payRequestResCode);
         }
-        return false;
+
+        return true;
     }
 
     /**
      * Verify user payment from bank server
      *
      * @return bool
+     *
+     * @throws IPayMellatException
+     * @throws SoapFault
      */
     public function verifyPayment()
     {
@@ -174,19 +264,22 @@ class IPayMellat extends IPayAbstract
 
         $response = $soap->bpVerifyRequest($fields);
 
-        if ($response->return == '0')
-        {
-            $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User payment done.');
-            return true;
+        if ($response->return != '0') {
+            $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User not payment.');
+            throw new IPayMellatException(17);
         }
-        $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User not payment.');
-        return false;
+
+        $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User payment done.');
+        return true;
     }
 
     /**
      * Send settle request
      *
      * @return bool
+     *
+     * @throws IPayMellatException
+     * @throws SoapFault
      */
     public function settleRequest()
     {
@@ -204,13 +297,13 @@ class IPayMellat extends IPayAbstract
 
         $response = $soap->bpSettleRequest($fields);
 
-        if ($response->return == '0' || $response->return == '45')
-        {
+        if ($response->return == '0' || $response->return == '45') {
             $this->editLog($orderId, $this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'Settle request done, code = '.$response->return);
             return true;
         }
+
         $this->editLog($orderId, $this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'Settle request faile, code = '.$response->return);
-        return false;
+        throw new IPayMellatException($response->return);
     }
 
     /**
@@ -221,33 +314,6 @@ class IPayMellat extends IPayAbstract
     public function getPayRequestResCode()
     {
         return $this->payRequestResCode;
-    }
-
-    /**
-     * Redirect to bank for deposit money
-     *
-     * @return void
-     */
-    public function redirectToBank()
-    {
-        if ($this->requestPass)
-        {
-            $refId = $this->refId;
-            require 'IPayMellatRedirector.php';
-        }
-    }
-
-    /**
-     * Check request passes
-     *
-     * @return bool
-     */
-    public function passPayRequest()
-    {
-        if ($this->requestPass)
-            return true;
-        else
-            return false;
     }
 
     /**
@@ -262,10 +328,12 @@ class IPayMellat extends IPayAbstract
      */
     public function newLog($refId = '', $saleOrderId = '', $saleRefrencesId = '', $AdditionalData = '', $message = '')
     {
+        $dbh = $this->db->getDBH();
+
         $date = new DateTime;
         $date = $date->format('Y/m/d H:i:s');
 
-        $stmt = $this->dbh->prepare("INSERT INTO mellat_orders_log (ref_id, sale_order_id, sale_refrences_id, additional_data, message, timestamp) VALUES (:ref_id, :sale_order_id, :sale_refrences_id, :additional_data, :message, :timestamp)");
+        $stmt = $dbh->prepare("INSERT INTO mellat_orders_log (ref_id, sale_order_id, sale_refrences_id, additional_data, message, timestamp) VALUES (:ref_id, :sale_order_id, :sale_refrences_id, :additional_data, :message, :timestamp)");
         $stmt->bindParam(':ref_id', $refId);
         $stmt->bindParam(':sale_order_id', $saleOrderId);
         $stmt->bindParam(':sale_refrences_id', $saleRefrencesId);
@@ -274,7 +342,7 @@ class IPayMellat extends IPayAbstract
         $stmt->bindParam(':timestamp', $date);
         $stmt->execute();
 
-        return $this->dbh->lastInsertId();
+        return $dbh->lastInsertId();
     }
 
     /**
@@ -290,7 +358,9 @@ class IPayMellat extends IPayAbstract
      */
     public function editLog($id, $refId = '', $saleOrderId = '', $saleRefrencesId = '', $AdditionalData = '', $message = '')
     {
-        $stmt = $this->dbh->prepare("UPDATE mellat_orders_log SET ref_id = :ref_id, sale_order_id = :sale_order_id, sale_refrences_id = :sale_refrences_id, additional_data = :additional_data, message = :message WHERE id = :id");
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("UPDATE mellat_orders_log SET ref_id = :ref_id, sale_order_id = :sale_order_id, sale_refrences_id = :sale_refrences_id, additional_data = :additional_data, message = :message WHERE id = :id");
         $stmt->bindParam(':ref_id', $refId);
         $stmt->bindParam(':sale_order_id', $saleOrderId);
         $stmt->bindParam(':sale_refrences_id', $saleRefrencesId);
@@ -299,6 +369,6 @@ class IPayMellat extends IPayAbstract
         $stmt->bindParam(':id', $id);
         $stmt->execute();
 
-        return $this->dbh->lastInsertId();
+        return $dbh->lastInsertId();
     }
 }

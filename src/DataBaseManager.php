@@ -1,23 +1,15 @@
-<?php namespace IPay;
+<?php
 
-use IPay\Config;
+namespace IPay;
+
 use PDO;
+use IPay\Config;
 
-/**
- * A class for interact with database
- *
- * This class for now just create tables
- *
- * @author Mohsen Shafiee
- * @copyright MIT
- */
-class DB
+class DataBaseManager
 {
 	/**
-	* Config class
-	*
-	* @var IPay\Config
-	*/
+     * @var IPay\Config
+     */
 	protected $config;
 
 	/**
@@ -38,7 +30,21 @@ class DB
 	{
 		$this->config = $config;
 
-		$this->setDB();
+		$this->connect();
+
+		if ($this->config->get('database.create', false)) {
+			$this->createTables();
+		}
+	}
+
+	/**
+	 * Return handler database connection
+	 *
+	 * @return PDO
+	 */
+	public function getDBH()
+	{
+		return $this->dbh;
 	}
 
 	/**
@@ -46,7 +52,7 @@ class DB
 	 *
 	 * @return void
 	 */
-	public function createTables()
+	protected function createTables()
 	{
 		$this->createMellatOrdersLog();
 	}
@@ -56,7 +62,7 @@ class DB
 	 *
 	 * @return void
 	 */
-	protected function setDB()
+	protected function connect()
 	{
 		$host = $this->config->get('database.host');
 		$dbname = $this->config->get('database.dbname');
