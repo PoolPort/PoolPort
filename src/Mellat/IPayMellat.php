@@ -211,8 +211,9 @@ class IPayMellat implements IPayInterface
 
         $response = explode(',', $response->return);
 
-        if ($response[0] != '0')
+        if ($response[0] != '0') {
             throw new IPayMellatException($response[0]);
+        }
 
         $this->refId = $response[1];
 
