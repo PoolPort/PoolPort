@@ -47,14 +47,49 @@ class DataBaseManager
 		return $this->dbh;
 	}
 
+
 	/**
-	 * Create necessary tables for ipay
+	 * Create transactions and status log tables
 	 *
 	 * @return void
 	 */
+	
 	protected function createTables()
 	{
-		$this->createMellatOrdersLog();
+		$query = "CREATE TABLE IF NOT EXISTS `ipay_transactions` (
+					`id` int(11) NOT NULL,
+					`order_id` int(11) NOT NULL,
+					`bank_id` tinyint(2) NOT NULL,
+					`price` decimal(15,2) NOT NULL,
+					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
+					`tracking_code` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
+					`status` tinyint(1) NOT NULL DEFAULT '0',
+					`payment_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+					`last_change_date` timestamp NULL DEFAULT NULL
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
+
+				ALTER TABLE `ipay_transactions`
+				ADD PRIMARY KEY (`id`), ADD KEY `order_id` (`order_id`), ADD KEY `bank_id` (`bank_id`);
+
+				ALTER TABLE `ipay_transactions`
+				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+
+				CREATE TABLE IF NOT EXISTS `ipay_status_log` (
+					`id` int(11) NOT NULL,
+					`transaction_id` int(11) NOT NULL,
+					`result_code` varchar(10) COLLATE utf8_persian_ci NOT NULL,
+					`result_message` varchar(255) COLLATE utf8_persian_ci NOT NULL,
+				    `log_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
+
+				ALTER TABLE `ipay_status_log`
+				ADD PRIMARY KEY (`id`), ADD KEY `transaction_id` (`transaction_id`);
+
+				ALTER TABLE `ipay_status_log`
+				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;";
+
+		$this->dbh->exec($query);
 	}
 
 	/**
@@ -71,24 +106,4 @@ class DataBaseManager
 		$this->dbh = new PDO("mysql:host=$host;dbname=$dbname;", $username, $password);
 	}
 
-	/**
-	 * Create mellat_orders_log table
-	 *
-	 * @return void
-	 */
-	protected function createMellatOrdersLog()
-	{
-		$query = "CREATE TABLE IF NOT EXISTS `mellat_orders_log` (
-					`id` int(11) NOT NULL AUTO_INCREMENT,
-					`ref_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-					`sale_order_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-					`sale_refrences_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-					`additional_data` varchar(1000) COLLATE utf8_unicode_ci NOT NULL,
-					`message` varchar(250) COLLATE utf8_unicode_ci NOT NULL,
-					`timestamp` datetime NOT NULL,
-					PRIMARY KEY (`id`)
-				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;";
-
-		$this->dbh->exec($query);
-	}
 }
