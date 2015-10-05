@@ -12,11 +12,11 @@ use IPay\Exceptions\PortNotFoundException;
 
 class IPay
 {
-    const P_MELLAT = 'mellat';
+    const P_MELLAT = '1';
 
-    const P_SADAD = 'sadad';
+    const P_SADAD = '2';
 
-    const P_ZARINPAL = 'zarinpal';
+    const P_ZARINPAL = '3';
 
     /**
      * @var IPay\Config
