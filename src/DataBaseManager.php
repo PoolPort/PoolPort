@@ -53,7 +53,7 @@ class DataBaseManager
 	 *
 	 * @return void
 	 */
-	
+
 	protected function createTables()
 	{
 		$query = "CREATE TABLE IF NOT EXISTS `ipay_transactions` (
@@ -68,7 +68,7 @@ class DataBaseManager
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
 
 				ALTER TABLE `ipay_transactions`
-				ADD PRIMARY KEY (`id`), ADD KEY `order_id` (`order_id`), ADD KEY `bank_id` (`bank_id`);
+				ADD PRIMARY KEY (`id`), ADD KEY `bank_id` (`bank_id`);
 
 				ALTER TABLE `ipay_transactions`
 				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
@@ -79,7 +79,7 @@ class DataBaseManager
 					`transaction_id` int(11) NOT NULL,
 					`result_code` varchar(10) COLLATE utf8_persian_ci NOT NULL,
 					`result_message` varchar(255) COLLATE utf8_persian_ci NOT NULL,
-				    `log_date` int NOT NULL DEFAULT 
+				    `log_date` int NOT NULL
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
 
 				ALTER TABLE `ipay_status_log`
