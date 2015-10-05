@@ -58,14 +58,13 @@ class DataBaseManager
 	{
 		$query = "CREATE TABLE IF NOT EXISTS `ipay_transactions` (
 					`id` int(11) NOT NULL,
-					`order_id` int(11) NOT NULL,
 					`bank_id` tinyint(2) NOT NULL,
 					`price` decimal(15,2) NOT NULL,
 					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
 					`tracking_code` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
 					`status` tinyint(1) NOT NULL DEFAULT '0',
-					`payment_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-					`last_change_date` timestamp NULL DEFAULT NULL
+					`payment_date` int NOT NULL ,
+					`last_change_date` int NULL DEFAULT NULL
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
 
 				ALTER TABLE `ipay_transactions`
@@ -80,7 +79,7 @@ class DataBaseManager
 					`transaction_id` int(11) NOT NULL,
 					`result_code` varchar(10) COLLATE utf8_persian_ci NOT NULL,
 					`result_message` varchar(255) COLLATE utf8_persian_ci NOT NULL,
-				    `log_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+				    `log_date` int NOT NULL DEFAULT 
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
 
 				ALTER TABLE `ipay_status_log`
