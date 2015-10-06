@@ -46,7 +46,7 @@ interface IPayInterface
      *
      * @return int|string
      */
-    public function getRefId();
+    public function refId();
 
     /**
      * This method use for redirect to port
