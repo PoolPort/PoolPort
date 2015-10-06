@@ -19,12 +19,12 @@ class IPay
     const P_ZARINPAL = '3';
 
     /**
-     * @var IPay\Config
+     * @var Config
      */
     public $config;
 
     /**
-     * @var IPay\DataBaseManager
+     * @var DataBaseManager
      */
     protected $db;
 
@@ -39,11 +39,11 @@ class IPay
      * @param string $port
      * @param string $configFile
      *
-     * @return void
+     * @throws PortNotFoundException
      */
     public function __construct($port, $configFile = null)
     {
-        if (!in_array($port, $this->getSuportedPorts()))
+        if (!in_array($port, $this->getSupportedPorts()))
             throw new PortNotFoundException;
 
         $this->config = new Config($configFile);
@@ -55,22 +55,22 @@ class IPay
                 break;
 
             case self::P_SADAD:
-                $this->portCLass = new IPaySadad($this->config, $this->db, self::P_SADAD);
+                $this->portClass = new IPaySadad($this->config, $this->db, self::P_SADAD);
                 break;
 
             case self::P_ZARINPAL:
-                $this->portCLass = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
+                $this->portClass = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
                 break;
         }
 
     }
 
     /**
-     * Get suported ports
+     * Get supported ports
      *
      * @return array
      */
-    public function getSuportedPorts()
+    public function getSupportedPorts()
     {
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL);
     }
