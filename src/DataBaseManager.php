@@ -65,7 +65,7 @@ class DataBaseManager
 					`status` tinyint(1) NOT NULL DEFAULT '0',
 					`payment_date` int NULL DEFAULT NULL,
 					`last_change_date` int NULL DEFAULT NULL
-				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 				ALTER TABLE `ipay_transactions`
 				ADD PRIMARY KEY (`id`), ADD KEY `port_id` (`port_id`);
@@ -80,7 +80,7 @@ class DataBaseManager
 					`result_code` varchar(10) COLLATE utf8_persian_ci NOT NULL,
 					`result_message` varchar(255) COLLATE utf8_persian_ci NOT NULL,
 				    `log_date` int NOT NULL
-				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 				ALTER TABLE `ipay_status_log`
 				ADD PRIMARY KEY (`id`), ADD KEY `transaction_id` (`transaction_id`);
@@ -102,7 +102,7 @@ class DataBaseManager
 		$dbname = $this->config->get('database.dbname');
 		$username = $this->config->get('database.username');
 		$password = $this->config->get('database.password');
-		$this->dbh = new PDO("mysql:host=$host;dbname=$dbname;", $username, $password);
+		$this->dbh = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
 	}
 
 }
