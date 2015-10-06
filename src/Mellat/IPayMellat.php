@@ -5,10 +5,11 @@ namespace IPay\Mellat;
 use DateTime;
 use SoapClient;
 use IPay\Config;
+use IPay\IPayAbstract;
 use IPay\IPayInterface;
 use IPay\DataBaseManager;
 
-class IPayMellat implements IPayInterface
+class IPayMellat extends IPayAbstract implements IPayInterface
 {
     /**
      * Determine request passes
@@ -23,6 +24,13 @@ class IPayMellat implements IPayInterface
      * @var string
      */
     protected $refId;
+
+    /**
+     * Tracking code
+     *
+     * @var int
+     */
+    protected $trackingCode;
 
     /**
      * Keep ResCode of bpPayRequest response
@@ -77,14 +85,30 @@ class IPayMellat implements IPayInterface
     protected $db;
 
     /**
+     * @var int
+     */
+    protected $portId;
+
+    /**
+     * @var int
+     */
+    protected $orderId;
+
+    /**
+     * @var string
+     */
+    protected $cardNumber;
+
+    /**
      * Initialize of class
      *
      * @param string $configFile
      * @return void
      */
-    public function __construct(Config $config, DataBaseManager $db)
+    public function __construct(Config $config, DataBaseManager $db, $portId)
     {
         $this->config = $config;
+        $this->portId = $portId;
         $this->db = $db;
 
         $this->username = $this->config->get('mellat.username');
@@ -139,7 +163,7 @@ class IPayMellat implements IPayInterface
      *
      * @return int|string
      */
-    public function getRefId()
+    public function refId()
     {
         return $this->refId;
     }
@@ -177,7 +201,17 @@ class IPayMellat implements IPayInterface
      */
     public function trackingCode()
     {
-        return $this->refId;
+        return $this->trackingCode;
+    }
+
+    /**
+     * Return card number
+     *
+     * @return string
+     */
+    public function cardNumber()
+    {
+        return $this->cardNumber;
     }
 
     /**
@@ -187,18 +221,18 @@ class IPayMellat implements IPayInterface
      *
      * @throws IPayMellatException
      */
-    public function sendPayRequest()
+    protected function sendPayRequest()
     {
         $soap = new SoapClient($this->serverUrl);
         $dateTime = new DateTime();
 
-        $orderId = $this->newLog();
+        $this->orderId = $this->newTransaction();
 
         $fields = array(
             'terminalId' => $this->termId,
             'userName' => $this->username,
             'userPassword' => $this->password,
-            'orderId' => $orderId,
+            'orderId' => $this->orderId,
             'amount' => $this->amount,
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
@@ -212,12 +246,11 @@ class IPayMellat implements IPayInterface
         $response = explode(',', $response->return);
 
         if ($response[0] != '0') {
+            $this->newLog($this->orderId, $response[0], IPayMellatException::$errors[$response[0]]);
             throw new IPayMellatException($response[0]);
         }
-
         $this->refId = $response[1];
-
-        $this->editLog($orderId, $this->refId, '', '', $this->additionalData, 'Start connection to bank.');
+        $this->updateTransactionRefId($this->orderId);
     }
 
     /**
@@ -227,15 +260,18 @@ class IPayMellat implements IPayInterface
      *
      * @throws IPayMellatException
      */
-    public function userPayment()
+    protected function userPayment()
     {
         $this->refId = @$_POST['RefId'];
-        $this->payRequestResCode = (int) @$_POST['ResCode'];
-        $this->saleOrderId = @$_POST['SaleOrderId'];
-        $this->saleReferenceId = @$_POST['SaleReferenceId'];
+        $this->orderId = @$_POST['SaleOrderId'];
+        $this->trackingCode = @$_POST['SaleReferenceId'];
+        $this->cardNumber = @$_POST['CardHolderPan'];
+        $payRequestResCode = (int) @$_POST['ResCode'];
 
-        if ($this->payRequestResCode != 0) {
-            throw new IPayMellatException($this->payRequestResCode);
+        if ($payRequestResCode != 0) {
+            $this->newLog($this->orderId, $payRequestResCode, IPayMellatException::$errors[$payRequestResCode]);
+            $this->updateTransactionFailed($this->orderId, self::TRANSACTION_FAILED);
+            throw new IPayMellatException($payRequestResCode);
         }
 
         return true;
@@ -249,28 +285,27 @@ class IPayMellat implements IPayInterface
      * @throws IPayMellatException
      * @throws SoapFault
      */
-    public function verifyPayment()
+    protected function verifyPayment()
     {
         $soap = new SoapClient($this->serverUrl);
-        $orderId = $this->newLog();
 
         $fields = array(
             'terminalId' => $this->termId,
             'userName' => $this->username,
             'userPassword' => $this->password,
-            'orderId' => $orderId,
-            'saleOrderId' => $this->saleOrderId,
-            'saleReferenceId' => $this->saleReferenceId
+            'orderId' => $this->orderId,
+            'saleOrderId' => $this->orderId,
+            'saleReferenceId' => $this->trackingCode
         );
 
         $response = $soap->bpVerifyRequest($fields);
 
         if ($response->return != '0') {
-            $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User not payment.');
-            throw new IPayMellatException(17);
+            $this->newLog($this->orderId, $response->return, IPayMellatException::$errors[$response->return]);
+            $this->updateTransactionFailed($this->orderId, self::TRANSACTION_FAILED);
+            throw new IPayMellatException($response->return);
         }
 
-        $this->newLog($this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'User payment done.');
         return true;
     }
 
@@ -282,94 +317,136 @@ class IPayMellat implements IPayInterface
      * @throws IPayMellatException
      * @throws SoapFault
      */
-    public function settleRequest()
+    protected function settleRequest()
     {
         $soap = new SoapClient($this->serverUrl);
-        $orderId = $this->newLog();
 
         $fields = array(
             'terminalId' => $this->termId,
             'userName' => $this->username,
             'userPassword' => $this->password,
-            'orderId' => $orderId,
-            'saleOrderId' => $this->saleOrderId,
-            'saleReferenceId' => $this->saleReferenceId
+            'orderId' => $this->orderId,
+            'saleOrderId' => $this->orderId,
+            'saleReferenceId' => $this->trackingCode
         );
 
         $response = $soap->bpSettleRequest($fields);
 
         if ($response->return == '0' || $response->return == '45') {
-            $this->editLog($orderId, $this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'Settle request done, code = '.$response->return);
+            $this->newLog($this->orderId, $response->return, self::TRANSACTION_SUCCEED_TEXT);
+            $this->updateTransactionSucceed($this->orderId);
             return true;
         }
 
-        $this->editLog($orderId, $this->refId, $this->saleOrderId, $this->saleReferenceId, '', 'Settle request faile, code = '.$response->return);
+        $this->newLog($this->orderId, $response->return, IPayMellatException::$errors[$response->return]);
+        $this->updateTransactionFailed($this->orderId, self::TRANSACTION_FAILED);
         throw new IPayMellatException($response->return);
     }
 
     /**
-     * Get ResCode of payRequest method
+     * Insert new transaction to ipay_transactions table
      *
-     * @return int
-     */
-    public function getPayRequestResCode()
-    {
-        return $this->payRequestResCode;
-    }
-
-    /**
-     * Insert new log to table
-     *
-     * @param string $refId
-     * @param string $saleOrderId
-     * @param string $saleRefrencesId
-     * @param string $AdditionalData
-     * @param string $message
      * @return int last inserted id
      */
-    public function newLog($refId = '', $saleOrderId = '', $saleRefrencesId = '', $AdditionalData = '', $message = '')
+    protected function newTransaction()
     {
         $dbh = $this->db->getDBH();
 
         $date = new DateTime;
-        $date = $date->format('Y/m/d H:i:s');
+        $status = self::TRANSACTION_INIT;
 
-        $stmt = $dbh->prepare("INSERT INTO mellat_orders_log (ref_id, sale_order_id, sale_refrences_id, additional_data, message, timestamp) VALUES (:ref_id, :sale_order_id, :sale_refrences_id, :additional_data, :message, :timestamp)");
-        $stmt->bindParam(':ref_id', $refId);
-        $stmt->bindParam(':sale_order_id', $saleOrderId);
-        $stmt->bindParam(':sale_refrences_id', $saleRefrencesId);
-        $stmt->bindParam(':additional_data', $AdditionalData);
-        $stmt->bindParam(':message', $message);
-        $stmt->bindParam(':timestamp', $date);
+        $stmt = $dbh->prepare("INSERT INTO ipay_transactions (port_id, price, status, last_change_date) VALUES (:port_id, :price, :status, :last_change_date)");
+        $stmt->bindParam(':port_id', $this->portId);
+        $stmt->bindParam(':price', $this->amount);
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':last_change_date', $date->getTimestamp());
         $stmt->execute();
 
         return $dbh->lastInsertId();
     }
 
     /**
-     * Update log in table
+     * Update transaction refId
      *
-     * @param int $id
-     * @param string $refId
-     * @param string $saleOrderId
-     * @param string $saleRefrencesId
-     * @param string $AdditionalData
-     * @param string $message
+     * @param int $id id of row in ipay_transactions table
+     *
      * @return void
      */
-    public function editLog($id, $refId = '', $saleOrderId = '', $saleRefrencesId = '', $AdditionalData = '', $message = '')
+    protected function updateTransactionRefId($id)
     {
         $dbh = $this->db->getDBH();
 
-        $stmt = $dbh->prepare("UPDATE mellat_orders_log SET ref_id = :ref_id, sale_order_id = :sale_order_id, sale_refrences_id = :sale_refrences_id, additional_data = :additional_data, message = :message WHERE id = :id");
-        $stmt->bindParam(':ref_id', $refId);
-        $stmt->bindParam(':sale_order_id', $saleOrderId);
-        $stmt->bindParam(':sale_refrences_id', $saleRefrencesId);
-        $stmt->bindParam(':additional_data', $AdditionalData);
-        $stmt->bindParam(':message', $message);
+        $stmt = $dbh->prepare("UPDATE ipay_transactions SET ref_id = :ref_id WHERE id = :id");
         $stmt->bindParam(':id', $id);
-        $stmt->execute();
+        $stmt->bindParam(':ref_id', $this->refId);
 
-        return $dbh->lastInsertId();
+        $stmt->execute();
+    }
+
+    /**
+     * Update transaction when failed
+     *
+     * @param int $id id of row in ipay_transactions table
+     *
+     * @return void
+     */
+    protected function updateTransactionFailed($id)
+    {
+        $dbh = $this->db->getDBH();
+
+        $status = self::TRANSACTION_FAILED;
+
+        $stmt = $dbh->prepare("UPDATE ipay_transactions SET status = :status WHERE id = :id");
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':status', $status);
+
+        $stmt->execute();
+    }
+
+    /**
+     * Update transaction when succeed
+     *
+     * @param int $id id of row in ipay_transactions table
+     *
+     * @return void
+     */
+    protected function updateTransactionSucceed($id)
+    {
+        $dbh = $this->db->getDBH();
+
+        $date = new DateTime;
+        $status = self::TRANSACTION_SUCCEED;
+
+        $stmt = $dbh->prepare("UPDATE ipay_transactions SET status = :status, tracking_code = :tracking_code, payment_date = :payment_date, last_change_date = :last_change_date WHERE id = :id");
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':tracking_code', $this->trackingCode);
+        $stmt->bindParam(':payment_date', $date->getTimestamp());
+        $stmt->bindParam(':last_change_date', $date->getTimestamp());
+
+        $stmt->execute();
+    }
+
+    /**
+     * New log in ipay_status_log table
+     *
+     * @param int $transactionId
+     * @param string $resultCode
+     * @param string $resultMessage
+     *
+     * @return void
+     */
+    protected function newLog($transactionId, $resultCode, $resultMessage)
+    {
+        $dbh = $this->db->getDBH();
+
+        $date = new DateTime;
+
+        $stmt = $dbh->prepare("INSERT INTO ipay_status_log (transaction_id, result_code, result_message, log_date) VALUES (:transaction_id, :result_code, :result_message, :log_date)");
+        $stmt->bindParam(':transaction_id', $transactionId);
+        $stmt->bindParam(':result_code', $resultCode);
+        $stmt->bindParam(':result_message', $resultMessage);
+        $stmt->bindParam(':log_date', $date->getTimestamp());
+        $stmt->execute();
     }
 }

@@ -2,7 +2,7 @@
 
 class IPayMellatException extends \Exception
 {
-    protected $errors = array(
+    public static $errors = array(
             11 => 'شماره کارت نامعتبر است',
             12 => 'موجودی کافی نیست',
             13 => 'رمز نادرست است',
@@ -53,6 +53,6 @@ class IPayMellatException extends \Exception
     {
         $this->errorId = $errorId;
 
-        parent::__construct(@$this->errors[$errorId].' #'.$errorId, $errorId);
+        parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
     }
 }

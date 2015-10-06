@@ -24,7 +24,7 @@ class IPay
     public $config;
 
     /**
-     * @var IPay/DataBaseManager
+     * @var IPay\DataBaseManager
      */
     protected $db;
 
@@ -51,15 +51,15 @@ class IPay
 
         switch ($port) {
             case self::P_MELLAT:
-                $this->portClass = new IPayMellat($this->config, $this->db);
+                $this->portClass = new IPayMellat($this->config, $this->db, self::P_MELLAT);
                 break;
 
             case self::P_SADAD:
-                $this->portDriver = new IPaySadad($this->config, $this->db);
+                $this->portDriver = new IPaySadad($this->config, $this->db, self::P_SADAD);
                 break;
 
             case self::P_ZARINPAL:
-                $this->portDriver = new IPayZarinpal($this->config, $this->db);
+                $this->portDriver = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
                 break;
         }
 
