@@ -47,6 +47,21 @@ class DataBaseManager
 		return $this->dbh;
 	}
 
+	/**
+	 * Return a row object from ipay_transactions table
+	 *
+	 * @param int $transactionId
+	 *
+	 * @return Object|false
+	 */
+	public function find($transactionId)
+	{
+		$stmt = $this->dbh->prepare("SELECT * FROM ipay_transactions WHERE id = :id LIMIT 1");
+		$stmt->bindParam(':id', intval($transactionId));
+		$stmt->execute();
+
+		return $stmt->fetch(PDO::FETCH_OBJ);
+	}
 
 	/**
 	 * Create transactions and status log tables

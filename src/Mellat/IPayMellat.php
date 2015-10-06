@@ -8,6 +8,7 @@ use IPay\Config;
 use IPay\IPayAbstract;
 use IPay\IPayInterface;
 use IPay\DataBaseManager;
+use IPay\Exceptions\RetryException;
 
 class IPayMellat extends IPayAbstract implements IPayInterface
 {
@@ -267,6 +268,12 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $this->trackingCode = @$_POST['SaleReferenceId'];
         $this->cardNumber = @$_POST['CardHolderPan'];
         $payRequestResCode = (int) @$_POST['ResCode'];
+
+        // Check before not submitted
+        $transaction = $this->db->find($this->orderId);
+        if ($transaction->status == self::TRANSACTION_SUCCEED) {
+            throw new RetryException;
+        }
 
         if ($payRequestResCode != 0) {
             $this->newLog($this->orderId, $payRequestResCode, IPayMellatException::$errors[$payRequestResCode]);
