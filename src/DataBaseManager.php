@@ -58,7 +58,7 @@ class DataBaseManager
 	{
 		$query = "CREATE TABLE IF NOT EXISTS `ipay_transactions` (
 					`id` int(11) NOT NULL,
-					`bank_id` tinyint(2) NOT NULL,
+					`port_id` tinyint(2) NOT NULL,
 					`price` decimal(15,2) NOT NULL,
 					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
 					`tracking_code` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
@@ -68,7 +68,7 @@ class DataBaseManager
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_persian_ci;
 
 				ALTER TABLE `ipay_transactions`
-				ADD PRIMARY KEY (`id`), ADD KEY `bank_id` (`bank_id`);
+				ADD PRIMARY KEY (`id`), ADD KEY `port_id` (`port_id`);
 
 				ALTER TABLE `ipay_transactions`
 				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
