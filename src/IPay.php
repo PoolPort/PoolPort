@@ -55,11 +55,11 @@ class IPay
                 break;
 
             case self::P_SADAD:
-                $this->portDriver = new IPaySadad($this->config, $this->db, self::P_SADAD);
+                $this->portCLass = new IPaySadad($this->config, $this->db, self::P_SADAD);
                 break;
 
             case self::P_ZARINPAL:
-                $this->portDriver = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
+                $this->portCLass = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
                 break;
         }
 
