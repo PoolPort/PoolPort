@@ -5,6 +5,17 @@ namespace IPay;
 interface IPayInterface
 {
     /**
+     * Initialize class
+     *
+     * @param IPay\Config $config
+     * @param IPay\DatabaseManager $db
+     * @param int $portId
+     *
+     * @return void
+     */
+    public function __construct(Config $config, DatabaseManager $db, $portId);
+
+    /**
      * This method use for set price in Rial.
      *
      * @param int $amount in Rial
@@ -58,4 +69,11 @@ interface IPayInterface
      * @return int|string
      */
     public function trackingCode();
+
+    /**
+     * Get port id, $this->portId
+     *
+     * @return int
+     */
+    public function portId();
 }
