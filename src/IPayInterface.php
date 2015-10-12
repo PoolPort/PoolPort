@@ -7,11 +7,10 @@ interface IPayInterface
     /**
      * Initialize class
      *
-     * @param IPay\Config $config
-     * @param IPay\DatabaseManager $db
+     * @param Config $config
+     * @param DataBaseManager $db
      * @param int $portId
      *
-     * @return void
      */
     public function __construct(Config $config, DatabaseManager $db, $portId);
 
@@ -57,23 +56,9 @@ interface IPayInterface
 
     /**
      * Return result of payment
-     * If result is done, return $this, otherwise throws an related exception
+     * If result is done, return true, otherwise throws an related exception
      *
-     * @return $this
+     * @return boolean
      */
     public function verify();
-
-    /**
-     * Return tracking code
-     *
-     * @return int|string
-     */
-    public function trackingCode();
-
-    /**
-     * Get port id, $this->portId
-     *
-     * @return int
-     */
-    public function portId();
 }

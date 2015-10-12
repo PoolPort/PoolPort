@@ -77,6 +77,7 @@ class DataBaseManager
 					`price` decimal(15,2) NOT NULL,
 					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
 					`tracking_code` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
+					`cardNumber` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
 					`status` tinyint(1) NOT NULL DEFAULT '0',
 					`payment_date` int NULL DEFAULT NULL,
 					`last_change_date` int NULL DEFAULT NULL

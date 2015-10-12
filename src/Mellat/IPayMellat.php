@@ -27,13 +27,6 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     protected $refId;
 
     /**
-     * Tracking code
-     *
-     * @var int
-     */
-    protected $trackingCode;
-
-    /**
      * Keep ResCode of bpPayRequest response
      *
      * @var int
@@ -61,12 +54,6 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      */
     protected $serverUrl = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
 
-    /**
-     * Amount in Rial
-     *
-     * @var int
-     */
-    protected $amount;
 
     /**
      * Additional data for send to port
@@ -76,41 +63,16 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     protected $additionalData;
 
     /**
-     * @var IPay\Config
-     */
-    protected $config;
-
-    /**
-     * @var IPay/DataBaseManager
-     */
-    protected $db;
-
-    /**
-     * @var int
-     */
-    protected $portId;
-
-    /**
      * @var int
      */
     protected $orderId;
 
     /**
-     * @var string
+     * @inheritdoc
      */
-    protected $cardNumber;
+    public function __construct(Config $config, DataBaseManager $db, $portId) {
+        parent::__construct($config,$db,$portId);
 
-    /**
-     * Initialize of class
-     *
-     * @param string $configFile
-     * @return void
-     */
-    public function __construct(Config $config, DataBaseManager $db, $portId)
-    {
-        $this->config = $config;
-        $this->portId = $portId;
-        $this->db = $db;
 
         $this->username = $this->config->get('mellat.username');
         $this->password = $this->config->get('mellat.password');
@@ -122,7 +84,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @param int $amount in Rial
      *
-     * @return void
+     * @return $this
      */
     public function set($amount)
     {
@@ -160,16 +122,6 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     }
 
     /**
-     * Get refId
-     *
-     * @return int|string
-     */
-    public function refId()
-    {
-        return $this->refId;
-    }
-
-    /**
      * This method use for redirect to port
      *
      * @return mixed
@@ -193,26 +145,6 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $this->settleRequest();
 
         return $this;
-    }
-
-    /**
-     * Return tracking code
-     *
-     * @return int|string
-     */
-    public function trackingCode()
-    {
-        return $this->trackingCode;
-    }
-
-    /**
-     * Return card number
-     *
-     * @return string
-     */
-    public function cardNumber()
-    {
-        return $this->cardNumber;
     }
 
     /**
@@ -350,27 +282,6 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         throw new IPayMellatException($response->return);
     }
 
-    /**
-     * Insert new transaction to ipay_transactions table
-     *
-     * @return int last inserted id
-     */
-    protected function newTransaction()
-    {
-        $dbh = $this->db->getDBH();
-
-        $date = new DateTime;
-        $status = self::TRANSACTION_INIT;
-
-        $stmt = $dbh->prepare("INSERT INTO ipay_transactions (port_id, price, status, last_change_date) VALUES (:port_id, :price, :status, :last_change_date)");
-        $stmt->bindParam(':port_id', $this->portId);
-        $stmt->bindParam(':price', $this->amount);
-        $stmt->bindParam(':status', $status);
-        $stmt->bindParam(':last_change_date', $date->getTimestamp());
-        $stmt->execute();
-
-        return $dbh->lastInsertId();
-    }
 
     /**
      * Update transaction refId
