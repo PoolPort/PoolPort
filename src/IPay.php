@@ -5,19 +5,18 @@ namespace IPay;
 use IPay\Sadad\IPaySadad;
 use IPay\Mellat\IPayMellat;
 use IPay\Zarinpal\IPayZarinpal;
-use IPay\Exceptions\PortNotFoundException;
-use IPay\Exceptions\NotFoundTransactionException;
-use IPay\Exceptions\InvalidRequestException;
 use IPay\Exceptions\RetryException;
-
+use IPay\Exceptions\PortNotFoundException;
+use IPay\Exceptions\InvalidRequestException;
+use IPay\Exceptions\NotFoundTransactionException;
 
 class IPay
 {
-    const P_MELLAT = '1';
+    const P_MELLAT = 1;
 
-    const P_SADAD = '2';
+    const P_SADAD = 2;
 
-    const P_ZARINPAL = '3';
+    const P_ZARINPAL = 3;
 
     /**
      * @var Config
@@ -37,7 +36,7 @@ class IPay
     protected $portClass;
 
     /**
-     * path of config
+     * Path of config file
      *
      * @var null|string
      */
@@ -46,14 +45,9 @@ class IPay
     /**
      * @param string $port
      * @param string $configFile
-     *
-     * @throws PortNotFoundException
      */
     public function __construct($port, $configFile = null)
     {
-        if (!in_array($port, $this->getSupportedPorts()))
-            throw new PortNotFoundException;
-
         $this->configFilePath = $configFile;
 
         $this->buildPort($port);
@@ -80,56 +74,36 @@ class IPay
     }
 
     /**
-     * fetch transaction data
-     *
-     * @param int $transactionId
-     * @return array
-     */
-    private function getTransaction($transactionId)
-    {
-        $dbh = $this->db->getDBH();
-        $stmt = $dbh->prepare("SELECT *
-                               FROM ipay_transactions
-                               WHERE id = :transactionId
-                               LIMIT 1");
-
-        $stmt->execute(array(':transactionId', $transactionId));
-        return $stmt->fetch(\PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * callback
+     * Callback
      *
      * @return boolean
+     *
      * @throws InvalidRequestException
      * @throws NotFoundTransactionException
      * @throws PortNotFoundException
      * @throws RetryException
      */
-    public function callback()
+    public function verify()
     {
         if (!isset($_GET['transaction_id']))
             throw new InvalidRequestException;
 
         $transactionId = intval($_GET['transaction_id']);
-        $transaction = $this->getTransaction($transactionId);
+        $transaction = $this->db->find($transactionId);
 
-        if (!isset($transaction['id']))
+        if (!$transaction)
             throw new NotFoundTransactionException;
 
         if ($transaction['status'] == IPayAbstract::TRANSACTION_SUCCEED)
             throw new RetryException;
 
-        if (!in_array($transaction['bank_id'], $this->getSupportedPorts()))
-            throw new PortNotFoundException;
-
-        $this->buildPort($transaction['bank_id']);
+        $this->buildPort($transaction->bank_id);
 
         return $this->portClass->verify();
     }
 
     /**
-     * create new object from port class
+     * Create new object from port class
      *
      * @param int $port
      * @throws PortNotFoundException
@@ -151,7 +125,7 @@ class IPay
             case self::P_ZARINPAL:
                 $this->portClass = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
                 break;
-            
+
             default:
                 throw new PortNotFoundException;
                 break;
