@@ -57,7 +57,7 @@ class DataBaseManager
 	public function find($transactionId)
 	{
 		$stmt = $this->dbh->prepare("SELECT * FROM ipay_transactions WHERE id = :id LIMIT 1");
-		$stmt->bindParam(':id', intval($transactionId));
+		$stmt->bindParam(':id', $transactionId);
 		$stmt->execute();
 
 		return $stmt->fetch(PDO::FETCH_OBJ);

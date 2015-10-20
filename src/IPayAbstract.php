@@ -25,11 +25,16 @@ abstract class IPayAbstract
     const TRANSACTION_FAILED = 2;
 
     /**
-     * transaction id
+     * Transaction id
      *
      * @var null|int
      */
     protected $transactionId = null;
+
+    /**
+     * Transaction row in database
+     */
+    protected $transaction = null;
 
     /**
      * Customer card number
@@ -39,12 +44,12 @@ abstract class IPayAbstract
     protected $cardNumber = '';
 
     /**
-     * @var Config
+     * @var IPay\Config
      */
     protected $config;
 
     /**
-     * @var DataBaseManager
+     * @var IPay\DataBaseManager
      */
     protected $db;
 
@@ -101,25 +106,6 @@ abstract class IPayAbstract
     }
 
     /**
-     * Add query string to a url
-     *
-     * @param string $url
-     * @param array $query
-     * @return string
-     */
-    protected function buildQuery($url, array $query)
-    {
-        $query = http_build_query($query);
-
-        $questionMark = strpos($url, '?');
-        if (!$questionMark)
-            return "$url?$query";
-        else {
-            return substr($url, 0, $questionMark + 1).$query."&".substr($url, $questionMark + 1);
-        }
-    }
-
-    /**
      * Return card number
      *
      * @return string
@@ -129,13 +115,16 @@ abstract class IPayAbstract
         return $this->cardNumber;
     }
 
+    /**
+     * Return tracking code
+     */
     public function trackingCode()
     {
         return $this->trackingCode;
     }
 
     /**
-     * get transaction id
+     * Get transaction id
      *
      * @return int|null
      */
@@ -144,6 +133,9 @@ abstract class IPayAbstract
         return $this->transactionId;
     }
 
+    /**
+     * Return reference id
+     */
     public function refId()
     {
         return $this->refId;
@@ -159,6 +151,8 @@ abstract class IPayAbstract
         $dbh = $this->db->getDBH();
 
         $date = new \DateTime;
+        $date = $date->getTimestamp();
+
         $status = self::TRANSACTION_INIT;
 
         $stmt = $dbh->prepare("INSERT INTO ipay_transactions (port_id, price, status, last_change_date)
@@ -166,21 +160,19 @@ abstract class IPayAbstract
         $stmt->bindParam(':port_id', $this->portId);
         $stmt->bindParam(':price', $this->amount);
         $stmt->bindParam(':status', $status);
-        $stmt->bindParam(':last_change_date', $date->getTimestamp());
+        $stmt->bindParam(':last_change_date', $date);
         $stmt->execute();
 
         $this->transactionId = $dbh->lastInsertId();
-
-        return $this->transactionId;
     }
 
     /**
-     * commit transaction
-     * set status field to success status
+     * Commit transaction
+     * Set status field to success status
      *
      * @return bool
      */
-    protected function commitTransaction()
+    protected function transactionSucceed()
     {
         $dbh = $this->db->getDBH();
 
@@ -203,12 +195,12 @@ abstract class IPayAbstract
     }
 
     /**
-     * failed transaction
-     * set status field to error status
+     * Failed transaction
+     * Set status field to error status
      *
      * @return bool
      */
-    protected function failedTransaction()
+    protected function transactionFailed()
     {
         $dbh = $this->db->getDBH();
 
@@ -227,15 +219,62 @@ abstract class IPayAbstract
     }
 
     /**
-     * set log
+     * Update transaction refId
+     *
+     * @return void
+     */
+    protected function transactionSetRefId()
+    {
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("UPDATE ipay_transactions
+                               SET ref_id = :ref_id
+                               WHERE id = :id");
+
+        $stmt->execute([
+            ':ref_id' => $this->refId,
+            ':id'     => $this->transactionId
+        ]);
+    }
+
+    /**
+     * New log
      *
      * @param string|int $statusCode
      * @param string $statusMessage
      */
-    protected function setLog($statusCode,$statusMessage)
+    protected function newLog($statusCode, $statusMessage)
     {
+        $dbh = $this->db->getDBH();
 
+        $date = new \DateTime;
+        $date = $date->getTimestamp();
+
+        $stmt = $dbh->prepare("INSERT INTO ipay_status_log (transaction_id, result_code, result_message, log_date)
+                               VALUES (:transaction_id, :result_code, :result_message, :log_date)");
+        $stmt->bindParam(':transaction_id', $this->transactionId);
+        $stmt->bindParam(':result_code', $statusCode);
+        $stmt->bindParam(':result_message', $statusMessage);
+        $stmt->bindParam(':log_date', $date);
+        $stmt->execute();
     }
 
+    /**
+     * Add query string to a url
+     *
+     * @param string $url
+     * @param array $query
+     * @return string
+     */
+    protected function buildQuery($url, array $query)
+    {
+        $query = http_build_query($query);
 
+        $questionMark = strpos($url, '?');
+        if (!$questionMark)
+            return "$url?$query";
+        else {
+            return substr($url, 0, $questionMark + 1).$query."&".substr($url, $questionMark + 1);
+        }
+    }
 }

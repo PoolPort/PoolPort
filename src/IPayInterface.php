@@ -58,7 +58,9 @@ interface IPayInterface
      * Return result of payment
      * If result is done, return true, otherwise throws an related exception
      *
+     * @param object $transaction row of transaction in database
+     *
      * @return boolean
      */
-    public function verify();
+    public function verify($transaction);
 }

@@ -43,14 +43,20 @@ class IPay
     private $configFilePath = null;
 
     /**
-     * @param string $port
-     * @param string $configFile
+     * @param null|string $port
+     * @param null|string $configFile
      */
-    public function __construct($port, $configFile = null)
+    public function __construct($port = null, $configFile = null)
     {
         $this->configFilePath = $configFile;
 
-        $this->buildPort($port);
+        $this->config = new Config($this->configFilePath);
+        $this->db = new DataBaseManager($this->config);
+
+        if (!is_null($this->config->get('timezone')))
+            date_default_timezone_set($this->config->get('timezone'));
+
+        if (!is_null($port)) $this->buildPort($port);
     }
 
     /**
@@ -76,7 +82,7 @@ class IPay
     /**
      * Callback
      *
-     * @return boolean
+     * @return $this->portClass
      *
      * @throws InvalidRequestException
      * @throws NotFoundTransactionException
@@ -94,12 +100,12 @@ class IPay
         if (!$transaction)
             throw new NotFoundTransactionException;
 
-        if ($transaction['status'] == IPayAbstract::TRANSACTION_SUCCEED)
+        if ($transaction->status == IPayAbstract::TRANSACTION_SUCCEED)
             throw new RetryException;
 
-        $this->buildPort($transaction->bank_id);
+        $this->buildPort($transaction->port_id);
 
-        return $this->portClass->verify();
+        return $this->portClass->verify($transaction);
     }
 
     /**
@@ -110,9 +116,6 @@ class IPay
      */
     private function buildPort($port)
     {
-        $this->config = new Config($this->configFilePath);
-        $this->db = new DataBaseManager($this->config);
-
         switch ($port) {
             case self::P_MELLAT:
                 $this->portClass = new IPayMellat($this->config, $this->db, self::P_MELLAT);
