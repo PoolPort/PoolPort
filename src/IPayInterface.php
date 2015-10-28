@@ -48,6 +48,34 @@ interface IPayInterface
     public function refId();
 
     /**
+     * Return tracking code
+     *
+     * @return int|string
+     */
+    public function trackingCode();
+
+    /**
+     * Get port id, $this->portId
+     *
+     * @return int
+     */
+    public function portId();
+
+    /**
+     * Get transaction id
+     *
+     * @return int|null
+     */
+    public function transactionId();
+
+    /**
+     * Return card number
+     *
+     * @return string
+     */
+    public function cardNumber();
+
+    /**
      * This method use for redirect to port
      *
      * @return mixed
