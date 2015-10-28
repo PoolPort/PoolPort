@@ -44,12 +44,12 @@ abstract class IPayAbstract
     protected $cardNumber = '';
 
     /**
-     * @var IPay\Config
+     * @var Config
      */
     protected $config;
 
     /**
-     * @var IPay\DataBaseManager
+     * @var DataBaseManager
      */
     protected $db;
 
@@ -164,6 +164,8 @@ abstract class IPayAbstract
         $stmt->execute();
 
         $this->transactionId = $dbh->lastInsertId();
+
+        return $this->transactionId;
     }
 
     /**
