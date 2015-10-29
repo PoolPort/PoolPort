@@ -183,7 +183,7 @@ abstract class IPayAbstract
                                         `cardNumber` = :cardNumber,
                                         `last_change_date` = :last_change_date,
                                         `payment_date` = :payment_date,
-                                        `tracking_code` = :tracking_code`
+                                        `tracking_code` = :tracking_code
                                     WHERE id = :transactionId');
 
         $time = new \DateTime();
