@@ -40,5 +40,13 @@ return array(
         'password'     => '',
         'terminalId'   => 0000000,
         'callback-url' => 'http://www.example.org/result'
+    ),
+
+    //--------------------------------
+    // Payline gateway
+    //--------------------------------
+    'payline' => array(
+        'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'callback-url' => 'http://www.example.org/result'
     )
 );

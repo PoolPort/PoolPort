@@ -4,6 +4,7 @@ namespace IPay;
 
 use IPay\Sadad\IPaySadad;
 use IPay\Mellat\IPayMellat;
+use IPay\Payline\IPayPayline;
 use IPay\Zarinpal\IPayZarinpal;
 use IPay\Exceptions\RetryException;
 use IPay\Exceptions\PortNotFoundException;
@@ -17,6 +18,8 @@ class IPay
     const P_SADAD = 2;
 
     const P_ZARINPAL = 3;
+
+    const P_PAYLINE = 4;
 
     /**
      * @var Config
@@ -66,7 +69,7 @@ class IPay
      */
     public function getSupportedPorts()
     {
-        return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL);
+        return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL, self::P_PAYLINE);
     }
 
     /**
@@ -127,6 +130,10 @@ class IPay
 
             case self::P_ZARINPAL:
                 $this->portClass = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
+                break;
+
+            case self::P_PAYLINE:
+                $this->portClass = new IPayPayline($this->config, $this->db, self::P_PAYLINE);
                 break;
 
             default:
