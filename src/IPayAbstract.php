@@ -181,8 +181,9 @@ abstract class IPayAbstract
         $statement = $dbh->prepare('UPDATE ipay_transactions
                                     SET `status` = :status,
                                         `cardNumber` = :cardNumber,
-                                        `last_change_date` = :change_date,
-                                        `tracking_code` = :tracking_code
+                                        `last_change_date` = :last_change_date,
+                                        `payment_date` = :payment_date,
+                                        `tracking_code` = :tracking_code`
                                     WHERE id = :transactionId');
 
         $time = new \DateTime();
@@ -190,7 +191,8 @@ abstract class IPayAbstract
         return $statement->execute([
             ':transactionId'    => $this->transactionId,
             ':status'           => self::TRANSACTION_SUCCEED,
-            ':change_date'      => $time->getTimestamp(),
+            ':last_change_date' => $time->getTimestamp(),
+            ':payment_date'     => $time->getTimestamp(),
             ':tracking_code'    => $this->trackingCode,
             ':cardNumber'       => $this->cardNumber
         ]);
