@@ -37,7 +37,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      * @inheritdoc
      */
     public function __construct(Config $config, DataBaseManager $db, $portId) {
-        parent::__construct($config,$db,$portId);
+        parent::__construct($config, $db, $portId);
 
 
         $this->username = $this->config->get('mellat.username');
