@@ -100,7 +100,7 @@ class IPay
         if (!$transaction)
             throw new NotFoundTransactionException;
 
-        if ($transaction->status == IPayAbstract::TRANSACTION_SUCCEED)
+        if ($transaction->status == IPayAbstract::TRANSACTION_SUCCEED || $transaction->status == IPayAbstract::TRANSACTION_FAILED)
             throw new RetryException;
 
         $this->buildPort($transaction->port_id);
