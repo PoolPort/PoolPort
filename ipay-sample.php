@@ -11,7 +11,7 @@ return array(
     //--------------------------------
     // Database configuration
     //--------------------------------
-    'database-poolticket' => array(
+    'database' => array(
         'host'     => '127.0.0.1',
         'dbname'   => '',
         'username' => '',
