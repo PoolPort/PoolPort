@@ -8,7 +8,6 @@ use IPay\Config;
 use IPay\IPayAbstract;
 use IPay\IPayInterface;
 use IPay\DataBaseManager;
-use IPay\Zarinpal\IPayZarinpalException;
 
 class IPayZarinpal extends IPayAbstract implements IPayInterface
 {
@@ -166,6 +165,7 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
         $response = $soap->PaymentRequest($fields);
 
         if ($response->Status != 100) {
+            $this->transactionFailed();
 			$this->newLog($response->Status, IPayZarinpalException::$errors[$response->Status]);
             throw new IPayZarinpalException($response->Status);
 		}

@@ -148,6 +148,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $response = explode(',', $response->return);
 
         if ($response[0] != '0') {
+            $this->transactionFailed();
             $this->newLog($response[0], IPayMellatException::$errors[$response[0]]);
             throw new IPayMellatException($response[0]);
         }
