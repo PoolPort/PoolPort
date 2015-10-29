@@ -1,43 +1,17 @@
-<?php namespace IPay\Zarinpal;
+<?php
 
-use IPay\IPayAbstract;
-use IPay\Config;
-use SoapClient;
+namespace IPay\Zarinpal;
+
 use DateTime;
+use SoapClient;
+use IPay\Config;
+use IPay\IPayAbstract;
+use IPay\IPayInterface;
+use IPay\DataBaseManager;
+use IPay\Zarinpal\IPayZarinpalException;
 
-/**
- * A class for zarinpal payments
- * //TODO: support for mobile gate
- * //TODO: support for communal settlement
- *
- * @author Mohsen Shafiee
- * @copyright MIT
- */
-class IPayZarinpal extends IPayAbstract
+class IPayZarinpal extends IPayAbstract implements IPayInterface
 {
-	/**
-	 * Merchant id
-	 * Unique 36 character string for every payment gate
-	 *
-	 * @var string
-	 */
-	protected $merchantId;
-
-	/**
-	* Refer id for follow up
-	*
-	* @var string
-	*/
-	protected $refId;
-
-	/**
-	 * Authority
-	 * Unique 36 character string for every payment request
-	 *
-	 * @var string
-	 */
-	protected $authority;
-
 	/**
      * Address of germany SOAP server
      *
@@ -71,181 +45,185 @@ class IPayZarinpal extends IPayAbstract
 	 *
 	 * @var string
 	 */
-	protected $zarinGateUrl = '‫‪https://www.zarinpal.com/pg/StartPay/$Authority/ZarinGate‬‬';
+	protected $zarinGateUrl = 'https://www.zarinpal.com/pg/StartPay/$Authority/ZarinGate';
 
 	/**
-     * Determine request passes
-     *
-     * @var bool
-     */
-    protected $requestPass = false;
-
-	/**
-     * Initialize of class
-     *
-     * @param string $configFile
-     * @return void
-     */
-	public function __construct($configFile = null)
+	 * Initialize class
+	 *
+	 * @param Config $config
+	 * @param DataBaseManager $db
+	 * @param int $portId
+	 *
+	 */
+	public function __construct(Config $config, DatabaseManager $db, $portId)
 	{
-		$this->config = new Config($configFile);
+		parent::__construct($config, $db, $portId);
 
-		$this->merchantId = $this->config->get('zarinpal.merchant-id');
-
-		$this->setDB();
-		$this->setMode();
 		$this->setServer();
+	}
 
-		parent::__construct();
+	/**
+     * This method use for set price in Rial.
+     *
+     * @param int $amount in Rial
+     *
+     * @return $this
+     */
+    public function set($amount)
+	{
+		$this->amount = ($amount / 10);
+
+		return $this;
+	}
+
+	/**
+     * Some of the ports can be send additional data to port server.
+     * This method for set this additional data.
+     *
+     * @param array $data
+     *
+     * @return $this
+     */
+    public function with(array $data)
+	{
+		return $this;
+	}
+
+	/**
+     * This method use for done everything that necessary before redirect to port.
+     *
+     * @return $this
+     */
+    public function ready()
+	{
+		$this->sendPayRequest();
+
+		return $this;
+	}
+
+	/**
+     * This method use for redirect to port
+     *
+     * @return mixed
+     */
+    public function redirect()
+	{
+		switch ($this->config->get('zarinpal.type')) {
+			case 'zarin-gate':
+				Header('Location: '.str_replace('$Authority', $this->refId, $this->zarinGateUrl));
+				break;
+
+			case 'normal':
+			default:
+				Header('Location: '.$this->gateUrl.$this->refId);
+				break;
+		}
+	}
+
+	/**
+	 * Return result of payment
+	 * If result is done, return true, otherwise throws an related exception
+	 *
+	 * @param object $transaction row of transaction in database
+	 *
+	 * @return boolean
+	 */
+	public function verify($transaction)
+	{
+		$this->transaction = $transaction;
+        $this->transactionId = $transaction->id;
+        $this->amount = $transaction->price;
+        $this->refId = $transaction->ref_id;
+
+		$this->userPayment();
+		$this->verifyPayment();
+
+		return $this;
 	}
 
 	/**
      * Send pay request to server
      *
-     * @param int $amount
-     * @param string $callBackUrl
-     * @param string $additionalData
-     * @return mixed
+     * @return void
+	 *
+	 * @throws IPayZarinpalException
      */
-    public function sendPayRequest($amount, $callBackUrl = null)
+    public function sendPayRequest()
     {
-		if (is_null($callBackUrl))
-			$callBackUrl = $this->config->get('zarinpal.callback-url');
-
         $soap = new SoapClient($this->serverUrl);
 
+		$this->newTransaction();
+
         $fields = array(
-            'MerchantID' => $this->merchantId,
-            'Amount' => $amount,
-            'CallbackURL' => $callBackUrl,
+            'MerchantID' => $this->config->get('zarinpal.merchant-id'),
+            'Amount' => $this->amount,
+            'CallbackURL' => $this->buildQuery($this->config->get('zarinpal.callback-url'), array('transaction_id' => $this->transactionId)),
 			'Description' 	=> $this->config->get('zarinpal.description', ''),
 			'Email' 	=> $this->config->get('zarinpal.email', ''),
 			'Mobile' 	=> $this->config->get('zarinpal.mobile', ''),
         );
 
         $response = $soap->PaymentRequest($fields);
-		$this->status = $response->Status;
 
-        if ($this->status != 100)
-            if ($this->debug)
-                throw new IPayZarinpalException($response->Status, $this->debugMessagesLanguage);
-            else
-                return $response;
+        if ($response->Status != 100) {
+			$this->newLog($response->Status, IPayZarinpalException::$errors[$response->Status]);
+            throw new IPayZarinpalException($response->Status);
+		}
 
-        $this->authority = $response->Authority;
-
-		$this->newLog($this->authority, '', '', $amount);
-
-        $this->requestPass = true;
-        return true;
-    }
-
-	/**
-     * Redirect to bank for deposit money
-     *
-     * @return void
-     */
-    public function redirectToBank($zarinGate = false)
-    {
-        if ($this->requestPass)
-        {
-			if ($zarinGate)
-			{
-				Header('Location: '.$this->zarinGateUrl.str_replace('‫‪$Authority‬‬', $this->authority, $this->zarinGateUrl));
-			}
-			else
-        	{
-				Header('Location: '.$this->gateUrl.$this->authority);
-			}
-        }
-    }
-
-	/**
-     * Check request passes
-     *
-     * @return bool
-     */
-    public function passPayRequest()
-    {
-        if ($this->requestPass)
-            return true;
-        else
-            return false;
+        $this->refId = $response->Authority;
+		$this->transactionSetRefId($this->transactionId);
     }
 
 	/**
      * Check user payment with GET data
      *
      * @return bool
+	 *
+	 * @throws IPayZarinpalException
      */
     public function userPayment()
     {
         $this->authority = @$_GET['Authority'];
         $status = @$_GET['Status'];
 
-        if ($status == 'OK')
-        {
-            return true;
+        if ($status == 'OK') {
+			return true;
         }
-        return false;
+
+		$this->newLog(-22, IPayZarinpalException::$errors[-22]);
+	    $this->transactionFailed();
+	    throw new IPayZarinpalException(-22);
     }
 
 	/**
 	* Verify user payment from zarinpal server
 	*
 	* @return bool
+	*
+	* @throws IPayZarinpalException
 	*/
 	public function verifyPayment()
 	{
 		$soap = new SoapClient($this->serverUrl);
 
-		$amount = $this->getAmount();
-
 		$fields = array(
-			'MerchantID' => $this->merchantId,
-			'Authority' => $this->authority,
-			'Amount' => $amount,
+			'MerchantID' => $this->config->get('zarinpal.merchant-id'),
+			'Authority' => $this->refId,
+			'Amount' => $this->amount,
 		);
 
 		$response = $soap->PaymentVerification($fields);
-		$this->status = $response->Status;
 
-		if ($this->status == 100)
-		{
-			$this->refId = $response->RefID;
-			return true;
+		if ($response->Status != 100) {
+			$this->newLog($response->Status, IPayZarinpalException::$errors[$response->Status]);
+            $this->transactionFailed();
+            throw new IPayZarinpalException($response->Status);
 		}
-		return false;
-	}
 
-	/**
-     * Get refId for used after verifyPayment method (if succeed)
-     *
-     * @return null|string
-     */
-    public function getRefId()
-    {
-        return $this->refId;
-    }
-
-	/**
-	 * Get status of actions for used after verifyPayment or sendPayRequest methods
-	 *
-	 * @return null|string
-	 */
-	public function getStatusCode()
-	{
-		return $this->status;
-	}
-
-	/**
-	 * Get authority code
-	 *
-	 * @return string
-	 */
-	public function getAuthority()
-	{
-		return $this->authority;
+		$this->trackingCode = $response->RefID;
+		$this->newLog($response->Status, self::TRANSACTION_SUCCEED_TEXT);
+		$this->transactionSucceed();
+		return true;
 	}
 
 	/**
@@ -267,46 +245,5 @@ class IPayZarinpal extends IPayAbstract
 				$this->serverUrl = $this->germanyServer;
 			break;
 		}
-	}
-
-	/**
-	* Insert new log to table
-	*
-	* @param string $refId
-	* @param string $saleOrderId
-	* @param string $saleRefrencesId
-	* @param string $AdditionalData
-	* @param string $message
-	* @return int last inserted id
-	*/
-	public function newLog($refId = '', $saleOrderId = '', $saleRefrencesId = '', $AdditionalData = '', $message = '')
-	{
-		$date = new DateTime;
-		$date = $date->format('Y/m/d H:i:s');
-
-		$stmt = $this->dbh->prepare("INSERT INTO mellat_orders_log (ref_id, sale_order_id, sale_refrences_id, additional_data, message, timestamp) VALUES (:ref_id, :sale_order_id, :sale_refrences_id, :additional_data, :message, :timestamp)");
-		$stmt->bindParam(':ref_id', $refId);
-		$stmt->bindParam(':sale_order_id', $saleOrderId);
-		$stmt->bindParam(':sale_refrences_id', $saleRefrencesId);
-		$stmt->bindParam(':additional_data', $AdditionalData);
-		$stmt->bindParam(':message', $message);
-		$stmt->bindParam(':timestamp', $date);
-		$stmt->execute();
-
-		return $this->dbh->lastInsertId();
-	}
-
-	/**
-	 * Get amount of authority from db
-	 *
-	 * @return int
-	 */
-	public function getAmount()
-	{
-		$sql = "SELECT additional_data FROM mellat_orders_log WHERE ref_id=$this->authority LIMIT 1";
-		$stmt = $this->dbh->prepare($sql);
-		$stmt->execute();
-		$row = $stmt->fetch();
-		return $row['additional_data'];
 	}
 }
