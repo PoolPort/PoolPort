@@ -88,7 +88,7 @@ interface IPayInterface
      *
      * @param object $transaction row of transaction in database
      *
-     * @return boolean
+     * @return $this
      */
     public function verify($transaction);
 }

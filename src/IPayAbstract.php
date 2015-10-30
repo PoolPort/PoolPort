@@ -63,7 +63,7 @@ abstract class IPayAbstract
     /**
      * Reference id
      *
-     * @var int
+     * @var string
      */
     protected $refId;
 
