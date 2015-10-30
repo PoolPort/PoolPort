@@ -1,10 +1,10 @@
 {
-    "name": "mohsen/ipay",
-    "description": "A module to connect Iranian Bank",
+    "name": "poolport/poolport",
+    "description": "A PHP library to connect all Iraninan payments gateways",
     "license": "MIT",
     "authors": [
         {
-            "name": "Mohsen Shafiei",
+            "name": "mohsen shafiei",
             "email": "mohsen.sh12@hotmail.com"
         },
         {
