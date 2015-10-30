@@ -4,7 +4,7 @@ return array(
 
     //-------------------------------
     // Timezone for insert dates in database
-    // If you want IPay not set timezone, just leave it empty
+    // If you want PoolPort not set timezone, just leave it empty
     //--------------------------------
     'timezone' => 'Asia/Tehran',
 

@@ -1,8 +1,6 @@
 <?php
 
-namespace IPay\Sadad;
+namespace PoolPort\Sadad;
 
 
-class SadadException extends \Exception
-{
-}
+class SadadException extends \Exception {}

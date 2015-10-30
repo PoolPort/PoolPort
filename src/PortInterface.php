@@ -1,8 +1,8 @@
 <?php
 
-namespace IPay;
+namespace PoolPort;
 
-interface IPayInterface
+interface PortInterface
 {
     /**
      * Initialize class

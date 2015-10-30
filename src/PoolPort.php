@@ -1,17 +1,17 @@
 <?php
 
-namespace IPay;
+namespace PoolPort;
 
-use IPay\Sadad\IPaySadad;
-use IPay\Mellat\IPayMellat;
-use IPay\Payline\IPayPayline;
-use IPay\Zarinpal\IPayZarinpal;
-use IPay\Exceptions\RetryException;
-use IPay\Exceptions\PortNotFoundException;
-use IPay\Exceptions\InvalidRequestException;
-use IPay\Exceptions\NotFoundTransactionException;
+use PoolPort\Sadad\Sadad;
+use PoolPort\Mellat\Mellat;
+use PoolPort\Payline\Payline;
+use PoolPort\Zarinpal\Zarinpal;
+use PoolPort\Exceptions\RetryException;
+use PoolPort\Exceptions\PortNotFoundException;
+use PoolPort\Exceptions\InvalidRequestException;
+use PoolPort\Exceptions\NotFoundTransactionException;
 
-class IPay
+class PoolPort
 {
     const P_MELLAT = 1;
 
@@ -34,7 +34,7 @@ class IPay
     /**
      * Keep current port driver
      *
-     * @var IPayMellat|IPaySadad|IPayZarinpal
+     * @var Mellat|Sadad|Zarinpal|Payline
      */
     protected $portClass;
 
@@ -103,7 +103,7 @@ class IPay
         if (!$transaction)
             throw new NotFoundTransactionException;
 
-        if ($transaction->status == IPayAbstract::TRANSACTION_SUCCEED || $transaction->status == IPayAbstract::TRANSACTION_FAILED)
+        if ($transaction->status == PortAbstract::TRANSACTION_SUCCEED || $transaction->status == PortAbstract::TRANSACTION_FAILED)
             throw new RetryException;
 
         $this->buildPort($transaction->port_id);
@@ -121,19 +121,19 @@ class IPay
     {
         switch ($port) {
             case self::P_MELLAT:
-                $this->portClass = new IPayMellat($this->config, $this->db, self::P_MELLAT);
+                $this->portClass = new Mellat($this->config, $this->db, self::P_MELLAT);
                 break;
 
             case self::P_SADAD:
-                $this->portClass = new IPaySadad($this->config, $this->db, self::P_SADAD);
+                $this->portClass = new Sadad($this->config, $this->db, self::P_SADAD);
                 break;
 
             case self::P_ZARINPAL:
-                $this->portClass = new IPayZarinpal($this->config, $this->db, self::P_ZARINPAL);
+                $this->portClass = new Zarinpal($this->config, $this->db, self::P_ZARINPAL);
                 break;
 
             case self::P_PAYLINE:
-                $this->portClass = new IPayPayline($this->config, $this->db, self::P_PAYLINE);
+                $this->portClass = new Payline($this->config, $this->db, self::P_PAYLINE);
                 break;
 
             default:

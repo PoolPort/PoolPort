@@ -1,15 +1,15 @@
 <?php
 
-namespace IPay\Zarinpal;
+namespace PoolPort\Zarinpal;
 
 use DateTime;
 use SoapClient;
-use IPay\Config;
-use IPay\IPayAbstract;
-use IPay\IPayInterface;
-use IPay\DataBaseManager;
+use PoolPort\Config;
+use PoolPort\PortAbstract;
+use PoolPort\PortInterface;
+use PoolPort\DataBaseManager;
 
-class IPayZarinpal extends IPayAbstract implements IPayInterface
+class Zarinpal extends PortAbstract implements PortInterface
 {
 	/**
      * Address of germany SOAP server
@@ -145,7 +145,7 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
      *
      * @return void
 	 *
-	 * @throws IPayZarinpalException
+	 * @throws ZarinpalException
      */
     public function sendPayRequest()
     {
@@ -166,8 +166,8 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 
         if ($response->Status != 100) {
             $this->transactionFailed();
-			$this->newLog($response->Status, IPayZarinpalException::$errors[$response->Status]);
-            throw new IPayZarinpalException($response->Status);
+			$this->newLog($response->Status, ZarinpalException::$errors[$response->Status]);
+            throw new ZarinpalException($response->Status);
 		}
 
         $this->refId = $response->Authority;
@@ -179,7 +179,7 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
      *
      * @return bool
 	 *
-	 * @throws IPayZarinpalException
+	 * @throws ZarinpalException
      */
     public function userPayment()
     {
@@ -190,9 +190,9 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 			return true;
         }
 
-		$this->newLog(-22, IPayZarinpalException::$errors[-22]);
+		$this->newLog(-22, ZarinpalException::$errors[-22]);
 	    $this->transactionFailed();
-	    throw new IPayZarinpalException(-22);
+	    throw new ZarinpalException(-22);
     }
 
 	/**
@@ -200,7 +200,7 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 	*
 	* @return bool
 	*
-	* @throws IPayZarinpalException
+	* @throws ZarinpalException
 	*/
 	public function verifyPayment()
 	{
@@ -215,9 +215,9 @@ class IPayZarinpal extends IPayAbstract implements IPayInterface
 		$response = $soap->PaymentVerification($fields);
 
 		if ($response->Status != 100) {
-			$this->newLog($response->Status, IPayZarinpalException::$errors[$response->Status]);
+			$this->newLog($response->Status, ZarinpalException::$errors[$response->Status]);
             $this->transactionFailed();
-            throw new IPayZarinpalException($response->Status);
+            throw new ZarinpalException($response->Status);
 		}
 
 		$this->trackingCode = $response->RefID;

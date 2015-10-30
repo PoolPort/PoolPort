@@ -1,13 +1,13 @@
 <?php
 
-namespace IPay\Payline;
+namespace PoolPort\Payline;
 
-use IPay\Config;
-use IPay\IPayAbstract;
-use IPay\IPayInterface;
-use IPay\DataBaseManager;
+use PoolPort\Config;
+use PoolPort\PortAbstract;
+use PoolPort\PortInterface;
+use PoolPort\DataBaseManager;
 
-class IPayPayline extends IPayAbstract implements IPayInterface
+class Payline extends PortAbstract implements PortInterface
 {
     /**
      * Address of main CURL server
@@ -118,7 +118,7 @@ class IPayPayline extends IPayAbstract implements IPayInterface
      *
      * @return void
      *
-     * @throws IPayPaylineSendException
+     * @throws PaylineSendException
      */
     public function sendPayRequest()
     {
@@ -148,8 +148,8 @@ class IPayPayline extends IPayAbstract implements IPayInterface
         }
 
         $this->transactionFailed();
-        $this->newLog($response, IPayPaylineSendException::$errors[$response]);
-        throw new IPayPaylineSendException($response);
+        $this->newLog($response, PaylineSendException::$errors[$response]);
+        throw new PaylineSendException($response);
     }
 
     /**
@@ -157,7 +157,7 @@ class IPayPayline extends IPayAbstract implements IPayInterface
      *
      * @return bool
 	 *
-	 * @throws IPayPaylineReceiveException
+	 * @throws PaylineReceiveException
      */
     protected function userPayment()
     {
@@ -168,9 +168,9 @@ class IPayPayline extends IPayAbstract implements IPayInterface
             return true;
         }
 
-        $this->newLog(-4, IPayPaylineReceiveException::$errors[-4]);
+        $this->newLog(-4, PaylineReceiveException::$errors[-4]);
 	    $this->transactionFailed();
-	    throw new IPayPaylineReceiveException(-4);
+	    throw new PaylineReceiveException(-4);
     }
 
     /**
@@ -178,7 +178,7 @@ class IPayPayline extends IPayAbstract implements IPayInterface
 	*
 	* @return bool
 	*
-	* @throws IPayPaylineReceiveException
+	* @throws PaylineReceiveException
 	*/
 	protected function verifyPayment()
     {
@@ -205,8 +205,8 @@ class IPayPayline extends IPayAbstract implements IPayInterface
             return true;
         }
 
-        $this->newLog($response, IPayPaylineReceiveException::$errors[$response]);
+        $this->newLog($response, PaylineReceiveException::$errors[$response]);
         $this->transactionFailed();
-        throw new IPayPaylineReceiveException($response);
+        throw new PaylineReceiveException($response);
     }
 }

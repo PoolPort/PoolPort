@@ -1,15 +1,15 @@
 <?php
 
-namespace IPay\Mellat;
+namespace PoolPort\Mellat;
 
 use DateTime;
 use SoapClient;
-use IPay\Config;
-use IPay\IPayAbstract;
-use IPay\IPayInterface;
-use IPay\DataBaseManager;
+use PoolPort\Config;
+use PoolPort\PortAbstract;
+use PoolPort\PortInterface;
+use PoolPort\DataBaseManager;
 
-class IPayMellat extends IPayAbstract implements IPayInterface
+class Mellat extends PortAbstract implements PortInterface
 {
     /**
      * Determine request passes
@@ -95,7 +95,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
     public function redirect()
     {
         $refId = $this->refId;
-        require 'IPayMellatRedirector.php';
+        require 'MellatRedirector.php';
     }
 
     /**
@@ -121,7 +121,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @return void
      *
-     * @throws IPayMellatException
+     * @throws MellatException
      */
     protected function sendPayRequest()
     {
@@ -149,8 +149,8 @@ class IPayMellat extends IPayAbstract implements IPayInterface
 
         if ($response[0] != '0') {
             $this->transactionFailed();
-            $this->newLog($response[0], IPayMellatException::$errors[$response[0]]);
-            throw new IPayMellatException($response[0]);
+            $this->newLog($response[0], MellatException::$errors[$response[0]]);
+            throw new MellatException($response[0]);
         }
         $this->refId = $response[1];
         $this->transactionSetRefId($this->transactionId);
@@ -161,7 +161,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @return bool
      *
-     * @throws IPayMellatException
+     * @throws MellatException
      */
     protected function userPayment()
     {
@@ -172,9 +172,9 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $payRequestResCode = (int) @$_POST['ResCode'];
 
         if ($payRequestResCode != 0) {
-            $this->newLog($payRequestResCode, IPayMellatException::$errors[$payRequestResCode]);
+            $this->newLog($payRequestResCode, MellatException::$errors[$payRequestResCode]);
             $this->transactionFailed();
-            throw new IPayMellatException($payRequestResCode);
+            throw new MellatException($payRequestResCode);
         }
 
         return true;
@@ -185,7 +185,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @return bool
      *
-     * @throws IPayMellatException
+     * @throws MellatException
      * @throws SoapFault
      */
     protected function verifyPayment()
@@ -204,9 +204,9 @@ class IPayMellat extends IPayAbstract implements IPayInterface
         $response = $soap->bpVerifyRequest($fields);
 
         if ($response->return != '0') {
-            $this->newLog($response->return, IPayMellatException::$errors[$response->return]);
+            $this->newLog($response->return, MellatException::$errors[$response->return]);
             $this->transactionFailed();
-            throw new IPayMellatException($response->return);
+            throw new MellatException($response->return);
         }
 
         return true;
@@ -217,7 +217,7 @@ class IPayMellat extends IPayAbstract implements IPayInterface
      *
      * @return bool
      *
-     * @throws IPayMellatException
+     * @throws MellatException
      * @throws SoapFault
      */
     protected function settleRequest()
@@ -241,8 +241,8 @@ class IPayMellat extends IPayAbstract implements IPayInterface
             return true;
         }
 
-        $this->newLog($response->return, IPayMellatException::$errors[$response->return]);
+        $this->newLog($response->return, MellatException::$errors[$response->return]);
         $this->transactionFailed();
-        throw new IPayMellatException($response->return);
+        throw new MellatException($response->return);
     }
 }

@@ -1,16 +1,16 @@
 <?php
 
-namespace IPay;
+namespace PoolPort;
 
-abstract class IPayAbstract
+abstract class PortAbstract
 {
     /**
-     * Status code for status field in ipay_transactions table
+     * Status code for status field in poolport_transactions table
      */
     const TRANSACTION_INIT = 0;
 
     /**
-     * Status code for status field in ipay_transactions table
+     * Status code for status field in poolport_transactions table
      */
     const TRANSACTION_SUCCEED = 1;
 
@@ -20,7 +20,7 @@ abstract class IPayAbstract
     const TRANSACTION_SUCCEED_TEXT = 'پرداخت با موفقیت انجام شد.';
 
     /**
-     * Status code for status field in ipay_transactions table
+     * Status code for status field in poolport_transactions table
      */
     const TRANSACTION_FAILED = 2;
 
@@ -142,7 +142,7 @@ abstract class IPayAbstract
     }
 
     /**
-     * Insert new transaction to ipay_transactions table
+     * Insert new transaction to poolport_transactions table
      *
      * @return int last inserted id
      */
@@ -155,7 +155,7 @@ abstract class IPayAbstract
 
         $status = self::TRANSACTION_INIT;
 
-        $stmt = $dbh->prepare("INSERT INTO ipay_transactions (port_id, price, status, last_change_date)
+        $stmt = $dbh->prepare("INSERT INTO poolport_transactions (port_id, price, status, last_change_date)
                                VALUES (:port_id, :price, :status, :last_change_date)");
         $stmt->bindParam(':port_id', $this->portId);
         $stmt->bindParam(':price', $this->amount);
@@ -178,7 +178,7 @@ abstract class IPayAbstract
     {
         $dbh = $this->db->getDBH();
 
-        $statement = $dbh->prepare('UPDATE ipay_transactions
+        $statement = $dbh->prepare('UPDATE poolport_transactions
                                     SET `status` = :status,
                                         `cardNumber` = :cardNumber,
                                         `last_change_date` = :last_change_date,
@@ -208,7 +208,7 @@ abstract class IPayAbstract
     {
         $dbh = $this->db->getDBH();
 
-        $statement = $dbh->prepare('UPDATE ipay_transactions
+        $statement = $dbh->prepare('UPDATE poolport_transactions
                                     SET `status` = :status,
                                         `last_change_date` = :change_date
                                     WHERE id = :transactionId');
@@ -231,7 +231,7 @@ abstract class IPayAbstract
     {
         $dbh = $this->db->getDBH();
 
-        $stmt = $dbh->prepare("UPDATE ipay_transactions
+        $stmt = $dbh->prepare("UPDATE poolport_transactions
                                SET ref_id = :ref_id
                                WHERE id = :id");
 
@@ -254,7 +254,7 @@ abstract class IPayAbstract
         $date = new \DateTime;
         $date = $date->getTimestamp();
 
-        $stmt = $dbh->prepare("INSERT INTO ipay_status_log (transaction_id, result_code, result_message, log_date)
+        $stmt = $dbh->prepare("INSERT INTO poolport_status_log (transaction_id, result_code, result_message, log_date)
                                VALUES (:transaction_id, :result_code, :result_message, :log_date)");
         $stmt->bindParam(':transaction_id', $this->transactionId);
         $stmt->bindParam(':result_code', $statusCode);

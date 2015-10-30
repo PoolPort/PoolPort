@@ -1,8 +1,8 @@
 <?php
 
-namespace IPay\Zarinpal;
+namespace PoolPort\Zarinpal;
 
-class IPayZarinpalException extends \Exception
+class ZarinpalException extends \Exception
 {
     public static $errors = array(
         -1 => 'اطلاعات ارسال شده ناقص است.',

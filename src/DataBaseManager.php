@@ -1,14 +1,14 @@
 <?php
 
-namespace IPay;
+namespace PoolPort;
 
 use PDO;
-use IPay\Config;
+use PoolPort\Config;
 
 class DataBaseManager
 {
 	/**
-     * @var IPay\Config
+     * @var PoolPort\Config
      */
 	protected $config;
 
@@ -22,7 +22,7 @@ class DataBaseManager
 	/**
 	 * Initialize class
 	 *
-	 * @param IPay\Config $config
+	 * @param PoolPort\Config $config
 	 *
 	 * @return void
 	 */
@@ -48,7 +48,7 @@ class DataBaseManager
 	}
 
 	/**
-	 * Return a row object from ipay_transactions table
+	 * Return a row object from poolport_transactions table
 	 *
 	 * @param int $transactionId
 	 *
@@ -56,7 +56,7 @@ class DataBaseManager
 	 */
 	public function find($transactionId)
 	{
-		$stmt = $this->dbh->prepare("SELECT * FROM ipay_transactions WHERE id = :id LIMIT 1");
+		$stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE id = :id LIMIT 1");
 		$stmt->bindParam(':id', $transactionId);
 		$stmt->execute();
 
@@ -71,7 +71,7 @@ class DataBaseManager
 
 	protected function createTables()
 	{
-		$query = "CREATE TABLE IF NOT EXISTS `ipay_transactions` (
+		$query = "CREATE TABLE IF NOT EXISTS `poolport_transactions` (
 					`id` int(11) NOT NULL,
 					`port_id` tinyint(2) NOT NULL,
 					`price` decimal(15,2) NOT NULL,
@@ -83,14 +83,14 @@ class DataBaseManager
 					`last_change_date` int NULL DEFAULT NULL
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-				ALTER TABLE `ipay_transactions`
+				ALTER TABLE `poolport_transactions`
 				ADD PRIMARY KEY (`id`), ADD KEY `port_id` (`port_id`);
 
-				ALTER TABLE `ipay_transactions`
+				ALTER TABLE `poolport_transactions`
 				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 
-				CREATE TABLE IF NOT EXISTS `ipay_status_log` (
+				CREATE TABLE IF NOT EXISTS `poolport_status_log` (
 					`id` int(11) NOT NULL,
 					`transaction_id` int(11) NOT NULL,
 					`result_code` varchar(10) COLLATE utf8_persian_ci NOT NULL,
@@ -98,10 +98,10 @@ class DataBaseManager
 				    `log_date` int NOT NULL
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-				ALTER TABLE `ipay_status_log`
+				ALTER TABLE `poolport_status_log`
 				ADD PRIMARY KEY (`id`), ADD KEY `transaction_id` (`transaction_id`);
 
-				ALTER TABLE `ipay_status_log`
+				ALTER TABLE `poolport_status_log`
 				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;";
 
 		$this->dbh->exec($query);

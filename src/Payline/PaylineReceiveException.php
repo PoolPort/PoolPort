@@ -1,8 +1,8 @@
 <?php
 
-namespace IPay\Payline;
+namespace PoolPort\Payline;
 
-class IPayPaylineReceiveException extends \Exception
+class PaylineReceiveException extends \Exception
 {
     public static $errors = array(
         -1 => 'api ارسالی با نوع api تعریف شده در payline سازگار نیست.',

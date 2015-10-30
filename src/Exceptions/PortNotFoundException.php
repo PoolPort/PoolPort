@@ -1,5 +1,5 @@
 <?php
 
-namespace IPay\Exceptions;
+namespace PoolPort\Exceptions;
 
 class PortNotFoundException extends \Exception {}

@@ -1,20 +1,14 @@
 <?php
 
-namespace IPay\Sadad;
+namespace PoolPort\Sadad;
 
-
-use IPay\Config;
-use IPay\DataBaseManager;
-use IPay\IPayAbstract;
-use IPay\IPayInterface;
 use SoapClient;
+use PoolPort\Config;
+use PoolPort\PortAbstract;
+use PoolPort\PortInterface;
+use PoolPort\DataBaseManager;
 
-/**
- * class for sadad gateway (bank melli)
- *
- * @package IPay\Sadad
- */
-class IPaySadad extends IPayAbstract implements IPayInterface
+class Sadad extends PortAbstract implements PortInterface
 {
     /**
      * private transaction key

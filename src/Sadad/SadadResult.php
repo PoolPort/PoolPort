@@ -1,5 +1,5 @@
 <?php
-namespace IPay\Sadad;
+namespace PoolPort\Sadad;
 
 class SadadResult
 {

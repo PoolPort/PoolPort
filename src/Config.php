@@ -1,11 +1,9 @@
-<?php namespace IPay;
+<?php
+
+namespace PoolPort;
 
 use Exception;
 
-/**
- * Config class for access to IPay config
- *
- */
 class Config
 {
 	/**
@@ -19,7 +17,7 @@ class Config
 	 * Default path of config file
 	 *
 	 *   Default path in the project root
-	 *   vendor/../ipay.php
+	 *   vendor/../poolport.php
 	 *
 	 * @var string
 	 */
@@ -41,7 +39,7 @@ class Config
 	public function __construct($filePath = null)
 	{
 		$this->filePath = $filePath;
-		$this->defaultFilePath = realpath(__DIR__.'/../../../..').'/ipay.php';
+		$this->defaultFilePath = realpath(__DIR__.'/../../../..').'/poolport.php';
 
 		$this->load();
 	}
@@ -65,7 +63,7 @@ class Config
 		{
 			if ( ! is_array($array) || ! array_key_exists($segment, $array))
 			{
-				return value($default);
+				return $default;
 			}
 
 			$array = $array[$segment];
@@ -92,6 +90,6 @@ class Config
 			return true;
 		}
 
-		throw new Exception('IPay: config file not found.');
+		throw new Exception('PoolPort: config file not found.');
 	}
 }
