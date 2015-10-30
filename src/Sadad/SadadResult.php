@@ -9,6 +9,8 @@ namespace IPay\Sadad;
 
 class SadadResult
 {
+    const ERROR_CONNECT = -2542;
+    const ERROR_CONNECT_MESSAGE = 'unable_to_connect';
 
     const INVALID_RESPONSE_CODE = -2541;
     const INVALID_RESPONSE_MESSAGE = 'invalid_response';
@@ -17,6 +19,13 @@ class SadadResult
     const UNKNOWN_MESSAGE = 'unknown';
 
     private static $results = [
+        [
+            'code' => SadadResult::ERROR_CONNECT,
+            'message'=>SadadResult::ERROR_CONNECT_MESSAGE,
+            'fa' => 'خطا در اتصال به درگاه سداد',
+            'en' => 'Error in connect to sadad',
+            'retry' => false
+        ],
         [
             'code' => SadadResult::INVALID_RESPONSE_CODE,
             'message'=>SadadResult::INVALID_RESPONSE_MESSAGE,

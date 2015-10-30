@@ -48,5 +48,15 @@ return array(
     'payline' => array(
         'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result'
-    )
+    ),
+
+    //--------------------------------
+    // Sadad gateway
+    //--------------------------------
+    'sadad' => array(
+    'merchant'      => '',
+    'transactionKey'=> '',
+    'terminalId'    => 000000000,
+    'callback-url'  => 'http://example.org/result'
+),
 );
