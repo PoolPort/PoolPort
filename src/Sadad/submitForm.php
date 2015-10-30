@@ -2,7 +2,9 @@
     <body>
         <?php echo $form ?>
         <br />
-        <input type="submit" value="ادامه پرداخت" />
+        <script type="text/javascript">
+            document.getElementById('paymentUTLfrm').submit();
+        </script>
         </form>
     </body>
 </html>
