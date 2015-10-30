@@ -1,9 +1,4 @@
 <?php
-/**
- * User: ReZa ZaRe <Rz.ZaRe@Gmail.com>
- * Date: 5/1/15
- * Time: 3:17 PM
- */
 
 namespace IPay\Sadad;
 
