@@ -2,8 +2,6 @@
 
 namespace PoolPort;
 
-use Exception;
-
 class Config
 {
 	/**
@@ -34,6 +32,7 @@ class Config
 	 * Initialize class
 	 *
 	 * @param string|null $filePath user path of config file
+	 *
 	 * @return void
 	 */
 	public function __construct($filePath = null)
@@ -49,6 +48,7 @@ class Config
 	 *
 	 * @param string $key recursive keys can seperate with '.'
 	 * @param mixed $default
+	 *
 	 * @return mixed
 	 */
 	public function get($key, $default = null)
@@ -61,7 +61,7 @@ class Config
 
 		foreach (explode('.', $key) as $segment)
 		{
-			if ( ! is_array($array) || ! array_key_exists($segment, $array))
+			if (!is_array($array) || !array_key_exists($segment, $array))
 			{
 				return $default;
 			}
@@ -70,6 +70,33 @@ class Config
 		}
 
 		return $array;
+	}
+
+	/**
+	 * Reset a config per request in poolport.php configuration file
+	 *
+	 * @param string $key
+	 * @param mixed $value
+	 *
+	 * @return void
+	 */
+	public function set($key, $value)
+	{
+		$array = &$this->config;
+
+		if (isset($array[$key])) {
+			$array[$key] = $value;
+		}
+
+		$keys = explode('.', $key);
+
+		while (count($keys) > 1) {
+			$key = array_shift($keys);
+
+			$array = &$array[$key];
+		}
+
+		$array[array_shift($keys)] = $value;
 	}
 
 	/**
@@ -90,6 +117,6 @@ class Config
 			return true;
 		}
 
-		throw new Exception('PoolPort: config file not found.');
+		throw new \Exception('PoolPort: config file not found.');
 	}
 }

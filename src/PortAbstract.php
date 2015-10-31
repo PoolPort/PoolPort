@@ -264,6 +264,21 @@ abstract class PortAbstract
     }
 
     /**
+     * Reset a config per request in poolport.php configuration file
+     *
+     * @param string $key
+     * @param mixed $value
+     *
+     * @return $this
+     */
+    public function setConfig($key, $value)
+    {
+        $this->config->set($key, $value);
+
+        return $this;
+    }
+
+    /**
      * Add query string to a url
      *
      * @param string $url
