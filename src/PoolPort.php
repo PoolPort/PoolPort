@@ -56,7 +56,7 @@ class PoolPort
         $this->config = new Config($this->configFilePath);
         $this->db = new DataBaseManager($this->config);
 
-        if (!is_null($this->config->get('timezone')))
+        if (!empty($this->config->get('timezone')))
             date_default_timezone_set($this->config->get('timezone'));
 
         if (!is_null($port)) $this->buildPort($port);
