@@ -75,7 +75,7 @@ class Sadad extends PortAbstract implements PortInterface
      */
     public function verify($transaction)
     {
-        $this->verifyPayment();
+        $this->verifyPayment($transaction);
 
         return $this;
     }
@@ -124,11 +124,10 @@ class Sadad extends PortAbstract implements PortInterface
     /**
      * Verify user payment from bank server
      *
-     * @return void
-     *
+     * @param object $transaction
      * @throws SadadException
      */
-    protected function verifyPayment()
+    protected function verifyPayment($transaction)
     {
         $this->transactionId = $transaction->id;
 
