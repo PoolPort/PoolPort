@@ -12,13 +12,6 @@ use PoolPort\DataBaseManager;
 class Mellat extends PortAbstract implements PortInterface
 {
     /**
-     * Determine request passes
-     *
-     * @var bool
-     */
-    protected $requestPass = false;
-
-    /**
      * Address of main SOAP server
      *
      * @var string
@@ -34,23 +27,15 @@ class Mellat extends PortAbstract implements PortInterface
     protected $additionalData;
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    public function __construct(Config $config, DataBaseManager $db, $portId) {
+    public function __construct(Config $config, DataBaseManager $db, $portId)
+    {
         parent::__construct($config, $db, $portId);
-
-
-        $this->username = $this->config->get('mellat.username');
-        $this->password = $this->config->get('mellat.password');
-        $this->termId = $this->config->get('mellat.terminalId');
     }
 
     /**
-     * This method use for set price in Rial.
-     *
-     * @param int $amount in Rial
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function set($amount)
     {
@@ -60,25 +45,17 @@ class Mellat extends PortAbstract implements PortInterface
     }
 
     /**
-     * Some of the ports can be send additional data to port server.
-     * This method for set this additional data.
-     *
-     * @param array $data
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function with(array $data = array())
     {
-        if (isset($data['additionalData']))
-            $this->additionalData = $data['additionalData'];
+        $this->additionalData = $data;
 
         return $this;
     }
 
     /**
-     * This method use for done everything that necessary before redirect to port.
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function ready()
     {
@@ -88,21 +65,17 @@ class Mellat extends PortAbstract implements PortInterface
     }
 
     /**
-     * This method use for redirect to port
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function redirect()
     {
         $refId = $this->refId;
+
         require 'MellatRedirector.php';
     }
 
     /**
-     * Return result of payment
-     * If result is done, return $this, otherwise throws an related exception
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function verify($transaction)
     {
@@ -125,17 +98,16 @@ class Mellat extends PortAbstract implements PortInterface
      */
     protected function sendPayRequest()
     {
-        $soap = new SoapClient($this->serverUrl);
         $dateTime = new DateTime();
 
         $this->newTransaction();
 
         $fields = array(
-            'terminalId' => $this->termId,
-            'userName' => $this->username,
-            'userPassword' => $this->password,
-            'orderId' => $this->transactionId,
-            'amount' => $this->amount,
+            'terminalId' => $this->config->get('mellat.terminalId'),
+            'userName' => $this->config->get('mellat.username'),
+            'userPassword' => $this->config->get('mellat.password'),
+            'orderId' => $this->transactionId(),
+            'amount' => $this->amount(),
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
             'additionalData' => $this->additionalData,
@@ -143,7 +115,15 @@ class Mellat extends PortAbstract implements PortInterface
             'payerId' => 0,
         );
 
-        $response = $soap->bpPayRequest($fields);
+        try {
+            $soap = new SoapClient($this->serverUrl);
+            $response = $soap->bpPayRequest($fields);
+
+        } catch(\SoapFault $e) {
+            $this->transactionFailed();
+            $this->newLog('SoapFault', $e->getMessage());
+            throw new MellatException('SoapFault', $e->getMessage());
+        }
 
         $response = explode(',', $response->return);
 
@@ -166,7 +146,6 @@ class Mellat extends PortAbstract implements PortInterface
     protected function userPayment()
     {
         $this->refId = @$_POST['RefId'];
-        $this->orderId = @$_POST['SaleOrderId'];
         $this->trackingCode = @$_POST['SaleReferenceId'];
         $this->cardNumber = @$_POST['CardHolderPan'];
         $payRequestResCode = (int) @$_POST['ResCode'];
@@ -190,18 +169,24 @@ class Mellat extends PortAbstract implements PortInterface
      */
     protected function verifyPayment()
     {
-        $soap = new SoapClient($this->serverUrl);
-
         $fields = array(
-            'terminalId' => $this->termId,
-            'userName' => $this->username,
-            'userPassword' => $this->password,
-            'orderId' => $this->transactionId,
-            'saleOrderId' => $this->transactionId,
-            'saleReferenceId' => 45//$this->trackingCode
+            'terminalId' => $this->config->get('mellat.terminalId'),
+            'userName' => $this->config->get('mellat.username'),
+            'userPassword' => $this->config->get('mellat.password'),
+            'orderId' => $this->transactionId(),
+            'saleOrderId' => $this->transactionId(),
+            'saleReferenceId' => $this->trackingCode
         );
 
-        $response = $soap->bpVerifyRequest($fields);
+        try {
+            $soap = new SoapClient($this->serverUrl);
+            $response = $soap->bpVerifyRequest($fields);
+
+        } catch(\SoapFault $e) {
+            $this->newLog('SoapFault', $e->getMessage());
+            $this->transactionFailed();
+            throw new MellatException('SoapFault', $e->getMessage());
+        }
 
         if ($response->return != '0') {
             $this->newLog($response->return, MellatException::$errors[$response->return]);
@@ -222,18 +207,24 @@ class Mellat extends PortAbstract implements PortInterface
      */
     protected function settleRequest()
     {
-        $soap = new SoapClient($this->serverUrl);
-
         $fields = array(
-            'terminalId' => $this->termId,
-            'userName' => $this->username,
-            'userPassword' => $this->password,
-            'orderId' => $this->orderId,
-            'saleOrderId' => $this->orderId,
+            'terminalId' => $this->config->get('mellat.terminalId'),
+            'userName' => $this->config->get('mellat.username'),
+            'userPassword' => $this->config->get('mellat.password'),
+            'orderId' => $this->transactionId(),
+            'saleOrderId' => $this->transactionId(),
             'saleReferenceId' => $this->trackingCode
         );
 
-        $response = $soap->bpSettleRequest($fields);
+        try {
+            $soap = new SoapClient($this->serverUrl);
+            $response = $soap->bpSettleRequest($fields);
+
+        } catch(\SoapFault $e) {
+            $this->newLog('SoapFault', $e->getMessage());
+            $this->transactionFailed();
+            throw new MellatException('SoapFault', $e->getMessage());
+        }
 
         if ($response->return == '0' || $response->return == '45') {
             $this->newLog($response->return, self::TRANSACTION_SUCCEED_TEXT);
