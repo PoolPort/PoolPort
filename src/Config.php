@@ -2,6 +2,8 @@
 
 namespace PoolPort;
 
+use PoolPort\Exceptions\ConfigFileNotFoundException;
+
 class Config
 {
 	/**
@@ -59,10 +61,8 @@ class Config
 
 		if (isset($array[$key])) return $array[$key];
 
-		foreach (explode('.', $key) as $segment)
-		{
-			if (!is_array($array) || !array_key_exists($segment, $array))
-			{
+		foreach (explode('.', $key) as $segment) {
+			if (!is_array($array) || !array_key_exists($segment, $array)) {
 				return $default;
 			}
 
@@ -106,17 +106,15 @@ class Config
 	 */
 	protected function load()
 	{
-		if (is_file($this->filePath))
-		{
+		if (is_file($this->filePath)) {
 			$this->config = require $this->filePath;
 			return true;
 		}
-		else if(is_file($this->defaultFilePath))
-		{
+		else if(is_file($this->defaultFilePath)) {
 			$this->config = require $this->defaultFilePath;
 			return true;
 		}
 
-		throw new \Exception('PoolPort: config file not found.');
+		throw new ConfigFileNotFoundException;
 	}
 }
