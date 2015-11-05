@@ -79,7 +79,7 @@ class Mellat extends PortAbstract implements PortInterface
      */
     public function verify($transaction)
     {
-        parent::verify();
+        parent::verify($transaction);
 
         $this->userPayment();
         $this->verifyPayment();
