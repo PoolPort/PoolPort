@@ -75,7 +75,9 @@ class Sadad extends PortAbstract implements PortInterface
      */
     public function verify($transaction)
     {
-        $this->verifyPayment($transaction);
+        parent::verify($transaction);
+
+        $this->verifyPayment();
 
         return $this;
     }
@@ -129,17 +131,15 @@ class Sadad extends PortAbstract implements PortInterface
      */
     protected function verifyPayment($transaction)
     {
-        $this->transactionId = $transaction->id;
-
         $soap = new SoapClient($this->serverUrl);
 
         $result = $soap->CheckRequestStatusResult(
-            intval($this->transactionId),
+            $this->transactionId(),
             $this->config->get('sadad.merchant'),
             $this->config->get('sadad.terminalId'),
             $this->config->get('sadad.transactionKey'),
-            $transaction->ref_id,
-            intval($transaction->price)
+            $this->refId(),
+            $this->amount
         );
 
         if(empty($result) || !isset($result->AppStatusCode))
