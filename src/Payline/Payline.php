@@ -31,12 +31,7 @@ class Payline extends PortAbstract implements PortInterface
     protected $gateUrl = 'http://payline.ir/payment/gateway-';
 
     /**
-     * Initialize class
-     *
-     * @param Config $config
-     * @param DataBaseManager $db
-     * @param int $portId
-     *
+     * {@inheritdoc}
      */
     public function __construct(Config $config, DatabaseManager $db, $portId)
     {
@@ -44,11 +39,7 @@ class Payline extends PortAbstract implements PortInterface
     }
 
     /**
-     * This method use for set price in Rial.
-     *
-     * @param int $amount in Rial
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function set($amount)
     {
@@ -58,12 +49,7 @@ class Payline extends PortAbstract implements PortInterface
     }
 
     /**
-     * Some of the ports can be send additional data to port server.
-     * This method for set this additional data.
-     *
-     * @param array $data
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function with(array $data)
     {
@@ -71,9 +57,7 @@ class Payline extends PortAbstract implements PortInterface
     }
 
     /**
-     * This method use for done everything that necessary before redirect to port.
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function ready()
     {
@@ -83,9 +67,7 @@ class Payline extends PortAbstract implements PortInterface
     }
 
     /**
-     * This method use for redirect to port
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function redirect()
     {
@@ -93,19 +75,11 @@ class Payline extends PortAbstract implements PortInterface
     }
 
     /**
-     * Return result of payment
-     * If result is done, return true, otherwise throws an related exception
-     *
-     * @param object $transaction row of transaction in database
-     *
-     * @return boolean
+     * {@inheritdoc}
      */
     public function verify($transaction)
     {
-        $this->transaction = $transaction;
-        $this->transactionId = $transaction->id;
-        $this->amount = $transaction->price;
-        $this->refId = $transaction->ref_id;
+        parent::verify($transaction);
 
         $this->userPayment();
         $this->verifyPayment();
@@ -120,7 +94,7 @@ class Payline extends PortAbstract implements PortInterface
      *
      * @throws PaylineSendException
      */
-    public function sendPayRequest()
+    protected function sendPayRequest()
     {
         $this->newTransaction();
 
@@ -162,9 +136,10 @@ class Payline extends PortAbstract implements PortInterface
     protected function userPayment()
     {
         $this->refIf = @$_POST['id_get'];
-        $this->trackingCode = @$_POST['trans_id'];
+        $trackingCode = @$_POST['trans_id'];
 
-        if (is_numeric($this->trackingCode) && $this->trackingCode > 0) {
+        if (is_numeric($trackingCode) && $trackingCode > 0) {
+            $this->trackingCode = $trackingCode;
             return true;
         }
 
@@ -184,8 +159,8 @@ class Payline extends PortAbstract implements PortInterface
     {
         $fields = array(
             'api' => $this->config->get('payline.api'),
-            'id_get' => $this->refId,
-            'trans_id' => $this->trackingCode
+            'id_get' => $this->refId(),
+            'trans_id' => $this->trackingCode()
         );
 
         $ch = curl_init();
