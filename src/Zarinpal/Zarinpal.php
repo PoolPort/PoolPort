@@ -46,14 +46,9 @@ class Zarinpal extends PortAbstract implements PortInterface
 	 */
 	protected $zarinGateUrl = 'https://www.zarinpal.com/pg/StartPay/$Authority/ZarinGate';
 
-	/**
-	 * Initialize class
-	 *
-	 * @param Config $config
-	 * @param DataBaseManager $db
-	 * @param int $portId
-	 *
-	 */
+    /**
+     * {@inheritdoc}
+     */
 	public function __construct(Config $config, DatabaseManager $db, $portId)
 	{
 		parent::__construct($config, $db, $portId);
@@ -61,12 +56,8 @@ class Zarinpal extends PortAbstract implements PortInterface
 		$this->setServer();
 	}
 
-	/**
-     * This method use for set price in Rial.
-     *
-     * @param int $amount in Rial
-     *
-     * @return $this
+    /**
+     * {@inheritdoc}
      */
     public function set($amount)
 	{
@@ -75,23 +66,16 @@ class Zarinpal extends PortAbstract implements PortInterface
 		return $this;
 	}
 
-	/**
-     * Some of the ports can be send additional data to port server.
-     * This method for set this additional data.
-     *
-     * @param array $data
-     *
-     * @return $this
+    /**
+     * {@inheritdoc}
      */
     public function with(array $data)
 	{
 		return $this;
 	}
 
-	/**
-     * This method use for done everything that necessary before redirect to port.
-     *
-     * @return $this
+    /**
+     * {@inheritdoc}
      */
     public function ready()
 	{
@@ -100,10 +84,8 @@ class Zarinpal extends PortAbstract implements PortInterface
 		return $this;
 	}
 
-	/**
-     * This method use for redirect to port
-     *
-     * @return mixed
+    /**
+     * {@inheritdoc}
      */
     public function redirect()
 	{
@@ -119,20 +101,12 @@ class Zarinpal extends PortAbstract implements PortInterface
 		}
 	}
 
-	/**
-	 * Return result of payment
-	 * If result is done, return true, otherwise throws an related exception
-	 *
-	 * @param object $transaction row of transaction in database
-	 *
-	 * @return boolean
-	 */
+    /**
+     * {@inheritdoc}
+     */
 	public function verify($transaction)
 	{
-		$this->transaction = $transaction;
-        $this->transactionId = $transaction->id;
-        $this->amount = $transaction->price;
-        $this->refId = $transaction->ref_id;
+		parent::verify();
 
 		$this->userPayment();
 		$this->verifyPayment();
@@ -147,10 +121,8 @@ class Zarinpal extends PortAbstract implements PortInterface
 	 *
 	 * @throws ZarinpalException
      */
-    public function sendPayRequest()
+    protected function sendPayRequest()
     {
-        $soap = new SoapClient($this->serverUrl);
-
 		$this->newTransaction();
 
         $fields = array(
@@ -162,7 +134,15 @@ class Zarinpal extends PortAbstract implements PortInterface
 			'Mobile' 	=> $this->config->get('zarinpal.mobile', ''),
         );
 
-        $response = $soap->PaymentRequest($fields);
+        try {
+            $soap = new SoapClient($this->serverUrl);
+            $response = $soap->PaymentRequest($fields);
+
+        } catch(\SoapFault $e) {
+            $this->transactionFailed();
+			$this->newLog('SoapFault', $e->getMessage());
+            throw new ZarinpalException('SoapFault', $e->getMessage());
+        }
 
         if ($response->Status != 100) {
             $this->transactionFailed();
@@ -181,7 +161,7 @@ class Zarinpal extends PortAbstract implements PortInterface
 	 *
 	 * @throws ZarinpalException
      */
-    public function userPayment()
+    protected function userPayment()
     {
         $this->authority = @$_GET['Authority'];
         $status = @$_GET['Status'];
@@ -202,9 +182,8 @@ class Zarinpal extends PortAbstract implements PortInterface
 	*
 	* @throws ZarinpalException
 	*/
-	public function verifyPayment()
+	protected function verifyPayment()
 	{
-		$soap = new SoapClient($this->serverUrl);
 
 		$fields = array(
 			'MerchantID' => $this->config->get('zarinpal.merchant-id'),
@@ -212,7 +191,15 @@ class Zarinpal extends PortAbstract implements PortInterface
 			'Amount' => $this->amount,
 		);
 
-		$response = $soap->PaymentVerification($fields);
+        try {
+    		$soap = new SoapClient($this->serverUrl);
+    		$response = $soap->PaymentVerification($fields);
+
+        } catch(\SoapFault $e) {
+            $this->transactionFailed();
+            $this->newLog('SoapFault', $e->getMessage());
+            throw new ZarinpalException('SoapFault', $e->getMessage());
+        }
 
 		if ($response->Status != 100) {
 			$this->newLog($response->Status, ZarinpalException::$errors[$response->Status]);
@@ -231,7 +218,7 @@ class Zarinpal extends PortAbstract implements PortInterface
 	 *
 	 * @return void
 	 */
-	public function setServer()
+	protected function setServer()
 	{
 		$server = $this->config->get('zarinpal.server', 'germany');
 		switch ($server)

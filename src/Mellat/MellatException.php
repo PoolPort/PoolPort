@@ -51,10 +51,14 @@ class MellatException extends \Exception
         61 => 'خطا در واریز'
     );
 
-    public function __construct($errorId)
+    public function __construct($errorId, $message)
     {
         $this->errorId = $errorId;
 
-        parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
+        if (isset(self::$errors[$errorId])) {
+            parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
+        } else {
+            parent::__construct($message, $errorId);
+        }
     }
 }

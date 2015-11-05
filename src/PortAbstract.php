@@ -142,6 +142,24 @@ abstract class PortAbstract
     }
 
     /**
+     * Return result of payment
+     * If result is done, return true, otherwise throws an related exception
+     *
+     * This method must be implements in child class
+     *
+     * @param object $transaction row of transaction in database
+     *
+     * @return $this
+     */
+    public function verify($transaction)
+    {
+        $this->transaction = $transaction;
+        $this->transactionId = $transaction->id;
+        $this->amount = $transaction->price;
+        $this->refId = $transaction->ref_id;
+    }
+
+    /**
      * Insert new transaction to poolport_transactions table
      *
      * @return int last inserted id
