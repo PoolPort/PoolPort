@@ -6,6 +6,7 @@ use PoolPort\Sadad\Sadad;
 use PoolPort\Mellat\Mellat;
 use PoolPort\Payline\Payline;
 use PoolPort\Zarinpal\Zarinpal;
+use PoolPort\JahanPay\JahanPay;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\Exceptions\PortNotFoundException;
 use PoolPort\Exceptions\InvalidRequestException;
@@ -21,6 +22,8 @@ class PoolPort
 
     const P_PAYLINE = 4;
 
+    const P_JAHANPAY = 5;
+
     /**
      * @var Config
      */
@@ -34,7 +37,7 @@ class PoolPort
     /**
      * Keep current port driver
      *
-     * @var Mellat|Sadad|Zarinpal|Payline
+     * @var Mellat|Sadad|Zarinpal|Payline|JahanPay
      */
     protected $portClass;
 
@@ -69,7 +72,7 @@ class PoolPort
      */
     public function getSupportedPorts()
     {
-        return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL, self::P_PAYLINE);
+        return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL, self::P_PAYLINE, self::P_JAHANPAY);
     }
 
     /**
@@ -134,6 +137,10 @@ class PoolPort
 
             case self::P_PAYLINE:
                 $this->portClass = new Payline($this->config, $this->db, self::P_PAYLINE);
+                break;
+
+            case self::P_JAHANPAY:
+                $this->portClass = new JahanPay($this->config, $this->db, self::P_JAHANPAY);
                 break;
 
             default:

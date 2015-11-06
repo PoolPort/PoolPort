@@ -58,5 +58,13 @@ return array(
         'transactionKey'=> '',
         'terminalId'    => 000000000,
         'callback-url'  => 'http://example.org/result'
+    ),
+
+    //--------------------------------
+    // JahanPay gateway
+    //--------------------------------
+    'jahanpay' => array(
+        'api' => 'xxxxxxxxxxx',
+        'callback-url' => 'http://example.org/result'
     )
 );
