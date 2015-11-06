@@ -51,7 +51,7 @@ class MellatException extends \Exception
         61 => 'خطا در واریز'
     );
 
-    public function __construct($errorId, $message)
+    public function __construct($errorId, $message = null)
     {
         $this->errorId = $errorId;
 
