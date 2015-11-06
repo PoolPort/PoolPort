@@ -24,16 +24,6 @@ interface PortInterface
     public function set($amount);
 
     /**
-     * Some of the ports can be send additional data to port server.
-     * This method for set this additional data.
-     *
-     * @param array $data
-     *
-     * @return $this
-     */
-    public function with(array $data);
-
-    /**
      * This method use for done everything that necessary before redirect to port.
      *
      * @return $this

@@ -47,16 +47,6 @@ class Mellat extends PortAbstract implements PortInterface
     /**
      * {@inheritdoc}
      */
-    public function with(array $data = array())
-    {
-        $this->additionalData = $data;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function ready()
     {
         $this->sendPayRequest();

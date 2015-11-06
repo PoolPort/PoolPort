@@ -51,14 +51,6 @@ class Payline extends PortAbstract implements PortInterface
     /**
      * {@inheritdoc}
      */
-    public function with(array $data)
-    {
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function ready()
     {
         $this->sendPayRequest();
