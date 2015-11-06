@@ -18,14 +18,6 @@ class Mellat extends PortAbstract implements PortInterface
      */
     protected $serverUrl = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
 
-
-    /**
-     * Additional data for send to port
-     *
-     * @var string
-     */
-    protected $additionalData;
-
     /**
      * {@inheritdoc}
      */
@@ -99,7 +91,7 @@ class Mellat extends PortAbstract implements PortInterface
             'amount' => $this->amount(),
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
-            'additionalData' => $this->additionalData,
+            'additionalData' => '',
             'callBackUrl' => $this->buildQuery($this->config->get('mellat.callback-url'), array('transaction_id' => $this->transactionId)),
             'payerId' => 0,
         );
