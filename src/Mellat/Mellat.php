@@ -88,7 +88,7 @@ class Mellat extends PortAbstract implements PortInterface
             'userName' => $this->config->get('mellat.username'),
             'userPassword' => $this->config->get('mellat.password'),
             'orderId' => $this->transactionId(),
-            'amount' => $this->amount(),
+            'amount' => $this->amount,
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
             'additionalData' => '',
