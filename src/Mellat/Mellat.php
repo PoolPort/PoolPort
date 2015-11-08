@@ -129,15 +129,15 @@ class Mellat extends PortAbstract implements PortInterface
         $this->refId = @$_POST['RefId'];
         $this->trackingCode = @$_POST['SaleReferenceId'];
         $this->cardNumber = @$_POST['CardHolderPan'];
-        $payRequestResCode = (int) @$_POST['ResCode'];
+        $payRequestResCode = @$_POST['ResCode'];
 
-        if ($payRequestResCode != 0) {
-            $this->transactionFailed();
-            $this->newLog($payRequestResCode, MellatException::$errors[$payRequestResCode]);
-            throw new MellatException($payRequestResCode);
+        if ($payRequestResCode == '0') {
+            return true;
         }
 
-        return true;
+        $this->transactionFailed();
+        $this->newLog($payRequestResCode, @MellatException::$errors[$payRequestResCode]);
+        throw new MellatException($payRequestResCode);
     }
 
     /**
@@ -156,7 +156,7 @@ class Mellat extends PortAbstract implements PortInterface
             'userPassword' => $this->config->get('mellat.password'),
             'orderId' => $this->transactionId(),
             'saleOrderId' => $this->transactionId(),
-            'saleReferenceId' => $this->trackingCode
+            'saleReferenceId' => $this->trackingCode()
         );
 
         try {
