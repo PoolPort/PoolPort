@@ -20,14 +20,10 @@ class JahanPayException extends \Exception
         -9 => 'خطاي سیستمی',
     );
 
-    public function __construct($errorId, $message = null)
+    public function __construct($errorId)
     {
-        $this->errorId = $errorId;
+        $this->errorId = intval($errorId);
 
-        if (isset(self::$errors[$errorId])) {
-            parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
-        } else {
-            parent::__construct($message, $errorId);
-        }
+        parent::__construct(@self::$errors[$this->errorId].' #'.$this->errorId, $this->errorId);
     }
 }

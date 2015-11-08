@@ -133,7 +133,7 @@ class Zarinpal extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
 			$this->newLog('SoapFault', $e->getMessage());
-            throw new ZarinpalException('SoapFault', $e->getMessage());
+            throw $e;
         }
 
         if ($response->Status != 100) {
@@ -162,8 +162,8 @@ class Zarinpal extends PortAbstract implements PortInterface
 			return true;
         }
 
-		$this->newLog(-22, ZarinpalException::$errors[-22]);
 	    $this->transactionFailed();
+		$this->newLog(-22, ZarinpalException::$errors[-22]);
 	    throw new ZarinpalException(-22);
     }
 
@@ -190,18 +190,18 @@ class Zarinpal extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw new ZarinpalException('SoapFault', $e->getMessage());
+            throw $e;
         }
 
 		if ($response->Status != 100) {
-			$this->newLog($response->Status, ZarinpalException::$errors[$response->Status]);
             $this->transactionFailed();
+			$this->newLog($response->Status, ZarinpalException::$errors[$response->Status]);
             throw new ZarinpalException($response->Status);
 		}
 
 		$this->trackingCode = $response->RefID;
-		$this->newLog($response->Status, self::TRANSACTION_SUCCEED_TEXT);
 		$this->transactionSucceed();
+		$this->newLog($response->Status, self::TRANSACTION_SUCCEED_TEXT);
 		return true;
 	}
 

@@ -18,14 +18,10 @@ class ZarinpalException extends \Exception
         101 => 'عملیات پرداخت با موفقیت انجام شده ولی قبلا عملیات PaymentVertification بر روی این تراکنش انجام شده است',
     );
 
-    public function __construct($errorId, $message = null)
+    public function __construct($errorId)
     {
-        $this->errorId = $errorId;
+        $this->errorId = intval($errorId);
 
-        if (isset(self::$errors[$errorId])) {
-            parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
-        } else {
-            parent::__construct($message, $errorId);
-        }
+        parent::__construct(@self::$errors[$this->errorId].' #'.$this->errorId, $this->errorId);
     }
 }

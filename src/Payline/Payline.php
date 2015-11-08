@@ -135,8 +135,8 @@ class Payline extends PortAbstract implements PortInterface
             return true;
         }
 
-        $this->newLog(-4, PaylineReceiveException::$errors[-4]);
 	    $this->transactionFailed();
+        $this->newLog(-4, PaylineReceiveException::$errors[-4]);
 	    throw new PaylineReceiveException(-4);
     }
 
@@ -166,14 +166,14 @@ class Payline extends PortAbstract implements PortInterface
         curl_close($ch);
 
         if ($response == 1) {
-    		$this->newLog($response, self::TRANSACTION_SUCCEED_TEXT);
     		$this->transactionSucceed();
+    		$this->newLog($response, self::TRANSACTION_SUCCEED_TEXT);
 
             return true;
         }
 
-        $this->newLog($response, PaylineReceiveException::$errors[$response]);
         $this->transactionFailed();
+        $this->newLog($response, PaylineReceiveException::$errors[$response]);
         throw new PaylineReceiveException($response);
     }
 }

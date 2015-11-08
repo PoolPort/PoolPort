@@ -97,7 +97,7 @@ class JahanPay extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw new JahanPayException('SoapFault', $e->getMessage());
+            throw $e;
         }
 
         if (intval($response) >= 0) {
@@ -123,8 +123,8 @@ class JahanPay extends PortAbstract implements PortInterface
         $refId = @$_GET['au'];
 
         if ($this->refId() != $refId) {
-            $this->newLog(-30, JahanPayException::$errors[-30]);
             $this->transactionFailed();
+            $this->newLog(-30, JahanPayException::$errors[-30]);
             throw new JahanPayException(-30);
         }
 
@@ -151,12 +151,12 @@ class JahanPay extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw new JahanPayException('SoapFault', $e->getMessage());
+            throw $e;
         }
 
         if (intval($response) == 1) {
-            $this->newLog($response, self::TRANSACTION_SUCCEED_TEXT);
             $this->transactionSucceed();
+            $this->newLog($response, self::TRANSACTION_SUCCEED_TEXT);
             return true;
         }
 

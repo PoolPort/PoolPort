@@ -103,7 +103,7 @@ class Mellat extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw new MellatException('SoapFault', $e->getMessage());
+            throw $e;
         }
 
         $response = explode(',', $response->return);
@@ -132,8 +132,8 @@ class Mellat extends PortAbstract implements PortInterface
         $payRequestResCode = (int) @$_POST['ResCode'];
 
         if ($payRequestResCode != 0) {
-            $this->newLog($payRequestResCode, MellatException::$errors[$payRequestResCode]);
             $this->transactionFailed();
+            $this->newLog($payRequestResCode, MellatException::$errors[$payRequestResCode]);
             throw new MellatException($payRequestResCode);
         }
 
@@ -164,14 +164,14 @@ class Mellat extends PortAbstract implements PortInterface
             $response = $soap->bpVerifyRequest($fields);
 
         } catch(\SoapFault $e) {
-            $this->newLog('SoapFault', $e->getMessage());
             $this->transactionFailed();
-            throw new MellatException('SoapFault', $e->getMessage());
+            $this->newLog('SoapFault', $e->getMessage());
+            throw $e;
         }
 
         if ($response->return != '0') {
-            $this->newLog($response->return, MellatException::$errors[$response->return]);
             $this->transactionFailed();
+            $this->newLog($response->return, MellatException::$errors[$response->return]);
             throw new MellatException($response->return);
         }
 
@@ -202,19 +202,19 @@ class Mellat extends PortAbstract implements PortInterface
             $response = $soap->bpSettleRequest($fields);
 
         } catch(\SoapFault $e) {
-            $this->newLog('SoapFault', $e->getMessage());
             $this->transactionFailed();
-            throw new MellatException('SoapFault', $e->getMessage());
+            $this->newLog('SoapFault', $e->getMessage());
+            throw $e;
         }
 
         if ($response->return == '0' || $response->return == '45') {
-            $this->newLog($response->return, self::TRANSACTION_SUCCEED_TEXT);
             $this->transactionSucceed();
+            $this->newLog($response->return, self::TRANSACTION_SUCCEED_TEXT);
             return true;
         }
 
-        $this->newLog($response->return, MellatException::$errors[$response->return]);
         $this->transactionFailed();
+        $this->newLog($response->return, MellatException::$errors[$response->return]);
         throw new MellatException($response->return);
     }
 }
