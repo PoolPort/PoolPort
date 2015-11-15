@@ -2,6 +2,7 @@
 
 namespace PoolPort;
 
+use PoolPort\Parsian\Parsian;
 use PoolPort\Sadad\Sadad;
 use PoolPort\Mellat\Mellat;
 use PoolPort\Payline\Payline;
@@ -23,6 +24,8 @@ class PoolPort
     const P_PAYLINE = 4;
 
     const P_JAHANPAY = 5;
+
+    const P_PARSIAN = 6;
 
     /**
      * @var Config
@@ -141,6 +144,10 @@ class PoolPort
 
             case self::P_JAHANPAY:
                 $this->portClass = new JahanPay($this->config, $this->db, self::P_JAHANPAY);
+                break;
+
+            case self::P_PARSIAN:
+                $this->portClass = new Parsian($this->config, $this->db, self::P_PARSIAN);
                 break;
 
             default:
