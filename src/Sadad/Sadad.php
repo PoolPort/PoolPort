@@ -118,10 +118,9 @@ class Sadad extends PortAbstract implements PortInterface
     /**
      * Verify user payment from bank server
      *
-     * @param object $transaction
      * @throws SadadException
      */
-    protected function verifyPayment($transaction)
+    protected function verifyPayment()
     {
         $soap = new SoapClient($this->serverUrl);
 
@@ -145,8 +144,6 @@ class Sadad extends PortAbstract implements PortInterface
         $this->newLog($statusResult, $message['fa']);
 
         if($statusResult == 0 && $appStatus === 'commit') {
-            $this->refId = $transaction->ref_id;
-
             $this->trackingCode = $result->TraceNo;
             $this->cardNumber = $result->CustomerCardNumber;
             $this->transactionSucceed();
