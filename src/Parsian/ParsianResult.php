@@ -3,7 +3,8 @@
 namespace PoolPort\Parsian;
 
 
-class ParsianResult {
+class ParsianResult
+{
 
 	public static $errors = array(
 		0   =>  'تراکنش با موفقیت انجام شد.',

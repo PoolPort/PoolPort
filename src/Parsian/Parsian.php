@@ -2,11 +2,11 @@
 
 namespace PoolPort\Parsian;
 
+use SoapClient;
 use PoolPort\Config;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
-use SoapClient;
 
 class Parsian extends PortAbstract implements PortInterface
 {
@@ -18,11 +18,11 @@ class Parsian extends PortAbstract implements PortInterface
 	protected $serverUrl = 'https://pec.shaparak.ir/pecpaymentgateway/eshopservice.asmx?wsdl';
 
 	/**
-	 * Url of redirect user to parsian gateway
+	 * Address of gate for redirect
+	 *
 	 * @var string
 	 */
-	private $redirect_to_bank = 'https://pec.shaparak.ir/pecpaymentgateway/default.aspx?au=';
-
+	protected $gateUrl = 'https://pec.shaparak.ir/pecpaymentgateway/default.aspx?au=';
 
 	/**
 	 * {@inheritdoc}
@@ -31,7 +31,6 @@ class Parsian extends PortAbstract implements PortInterface
 	{
 		parent::__construct($config, $db, $portId);
 	}
-
 
 	/**
 	 * {@inheritdoc}
@@ -53,60 +52,12 @@ class Parsian extends PortAbstract implements PortInterface
 	}
 
 	/**
-	 * Send pay request to parsian gateway
-	 *
-	 * @return bool
-	 * @throws ParsianErrorException
-	 */
-	private function sendPayRequest()
-	{
-		$this->newTransaction();
-
-		$params = array(
-			'pin' => $this->config->get('parsian.pin'),
-			'amount'=>intval($this->amount),
-			'orderId'=>intval($this->transactionId),
-			'callbackUrl'=>$this->config->get('parsian.callback-url'),
-			'authority'=>0,
-			'status'=>1
-		);
-
-		try{
-			$soap = new SoapClient($this->serverUrl);
-
-			$response = $soap->PinPaymentRequest($params);
-
-			if ($response !== false) {
-				$authority = $response->authority;
-				$status = $response->status;
-
-				if($authority && $status == 0){
-					$this->refId = $authority;
-					$this->transactionSetRefId();
-					return true;
-				}
-
-				$errorMessage = ParsianResult::errorMessage($status);
-				$this->newLog($status,$errorMessage);
-				throw new ParsianErrorException($errorMessage,$status);
-
-			} else {
-				$this->newLog(-1,'خطا در اتصال به درگاه پارسیان');
-				throw new ParsianErrorException('خطا در اتصال به درگاه پارسیان',-1);
-			}
-
-		} catch (\SoapFault $e) {
-			$this->newLog(-1,$e->getMessage());
-			throw new ParsianErrorException($e->getMessage(),-1);
-		}
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function redirect()
 	{
-		$url = $this->redirect_to_bank . $this->refId();
+		$url = $this->gateUrl . $this->refId();
+
 		include __DIR__.'/submitForm.php';
 	}
 
@@ -123,12 +74,63 @@ class Parsian extends PortAbstract implements PortInterface
 	}
 
 	/**
+	 * Send pay request to parsian gateway
 	 *
+	 * @return bool
+	 *
+	 * @throws ParsianErrorException
+	 */
+	protected function sendPayRequest()
+	{
+		$this->newTransaction();
+
+		$params = array(
+			'pin' => $this->config->get('parsian.pin'),
+			'amount' => $this->amount,
+			'orderId' => $this->transactionId(),
+			'callbackUrl' => $this->buildQuery($this->config->get('parsian.callback-url'), array('transaction_id' => $this->transactionId())),
+			'authority' => 0,
+			'status' => 1
+		);
+
+		try{
+			$soap = new SoapClient($this->serverUrl);
+			$response = $soap->PinPaymentRequest($params);
+
+		} catch (\SoapFault $e) {
+			$this->transactionFailed();
+			$this->newLog('SoapFault', $e->getMessage());
+			throw $e;
+		}
+
+		if ($response !== false) {
+			$authority = $response->authority;
+			$status = $response->status;
+
+			if($authority && $status == 0){
+				$this->refId = $authority;
+				$this->transactionSetRefId();
+				return true;
+			}
+
+			$errorMessage = ParsianResult::errorMessage($status);
+			$this->transactionFailed();
+			$this->newLog($status, $errorMessage);
+			throw new ParsianErrorException($errorMessage, $status);
+
+		} else {
+			$this->transactionFailed();
+			$this->newLog(-1,'خطا در اتصال به درگاه پارسیان');
+			throw new ParsianErrorException('خطا در اتصال به درگاه پارسیان',-1);
+		}
+	}
+
+	/**
 	 * Verify payment
 	 *
 	 * @throws ParsianErrorException
 	 */
-	private function verifyPayment()
+	protected function verifyPayment()
 	{
 		if (!isset($_REQUEST['au']) && !isset($_REQUEST['rs']))
 			throw new ParsianErrorException('درخواست غیر معتبر',-1);
@@ -152,26 +154,24 @@ class Parsian extends PortAbstract implements PortInterface
 		);
 
 		try {
-			$soap = new \SoapClient($this->serverUrl);
+			$soap = new SoapClient($this->serverUrl);
 			$result = $soap->PinPaymentEnquiry($params);
 
-			if ($result === false || !isset($result->status))
-				throw new ParsianErrorException('پاسخ دریافتی از بانک نامعتبر است.',-1);
-
-			if ($result->status != 0) {
-				$errorMessage = ParsianResult::errorMessage($result->status);
-				$this->transactionFailed();
-				$this->newLog($result->status,$errorMessage);
-				throw new ParsianErrorException($errorMessage,$result->status);
-			}
-
-			$this->trackingCode = $authority;
-			$this->transactionSucceed();
-
 		} catch (\SoapFault $e) {
-			throw new ParsianErrorException($e->getMessage(),-1);
+			throw new ParsianErrorException($e->getMessage(), -1);
 		}
+
+		if ($result === false || !isset($result->status))
+			throw new ParsianErrorException('پاسخ دریافتی از بانک نامعتبر است.',-1);
+
+		if ($result->status != 0) {
+			$errorMessage = ParsianResult::errorMessage($result->status);
+			$this->transactionFailed();
+			$this->newLog($result->status,$errorMessage);
+			throw new ParsianErrorException($errorMessage,$result->status);
+		}
+
+		$this->trackingCode = $authority;
+		$this->transactionSucceed();
 	}
-
-
 }
