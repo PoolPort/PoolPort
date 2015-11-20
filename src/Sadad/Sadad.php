@@ -59,6 +59,7 @@ class Sadad extends PortAbstract implements PortInterface
     public function redirect()
     {
         $form = $this->form;
+
         include __DIR__.'/submitForm.php';
     }
 
@@ -99,20 +100,22 @@ class Sadad extends PortAbstract implements PortInterface
                 $this->buildQuery($this->config->get('sadad.callback-url'), array('transaction_id' => $this->transactionId()))
             );
 
-            if(!isset($response['RequestKey']) || !isset($response['PaymentUtilityResult'])) {
-                $this->newLog(SadadResult::INVALID_RESPONSE_CODE, SadadResult::INVALID_RESPONSE_MESSAGE);
-                throw new SadadException(SadadResult::INVALID_RESPONSE_MESSAGE, SadadResult::INVALID_RESPONSE_CODE);
-            }
-
-            $this->form = $response['PaymentUtilityResult'];
-
-            $this->refId = $response['RequestKey'];
-
-            $this->transactionSetRefId();
         } catch (\SoapFault $e) {
-            $this->newLog(SadadResult::ERROR_CONNECT, SadadResult::ERROR_CONNECT_MESSAGE);
-            throw new SadadException(SadadResult::ERROR_CONNECT_MESSAGE, SadadResult::ERROR_CONNECT);
+            $this->transactionFailed();
+            $this->newLog('SoapFault', $e->getMessage());
+            throw $e;
         }
+
+        if(!isset($response['RequestKey']) || !isset($response['PaymentUtilityResult'])) {
+            $this->newLog(SadadResult::INVALID_RESPONSE_CODE, SadadResult::INVALID_RESPONSE_MESSAGE);
+            throw new SadadException(SadadResult::INVALID_RESPONSE_MESSAGE, SadadResult::INVALID_RESPONSE_CODE);
+        }
+
+        $this->form = $response['PaymentUtilityResult'];
+
+        $this->refId = $response['RequestKey'];
+
+        $this->transactionSetRefId();
     }
 
     /**
@@ -122,16 +125,23 @@ class Sadad extends PortAbstract implements PortInterface
      */
     protected function verifyPayment()
     {
-        $soap = new SoapClient($this->serverUrl);
+        try{
+            $soap = new SoapClient($this->serverUrl);
 
-        $result = $soap->CheckRequestStatusResult(
-            $this->transactionId(),
-            $this->config->get('sadad.merchant'),
-            $this->config->get('sadad.terminalId'),
-            $this->config->get('sadad.transactionKey'),
-            $this->refId(),
-            $this->amount
-        );
+            $result = $soap->CheckRequestStatusResult(
+                $this->transactionId(),
+                $this->config->get('sadad.merchant'),
+                $this->config->get('sadad.terminalId'),
+                $this->config->get('sadad.transactionKey'),
+                $this->refId(),
+                $this->amount
+            );
+
+        } catch (\SoapFault $e) {
+            $this->transactionFailed();
+            $this->newLog('SoapFault', $e->getMessage());
+            throw $e;
+        }
 
         if(empty($result) || !isset($result->AppStatusCode))
             throw new SadadException('در دریافت اطلاعات از بانک خطایی رخ داده است.');
