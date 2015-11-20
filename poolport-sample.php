@@ -72,7 +72,7 @@ return array(
     // Parsian gateway
     //--------------------------------
     'parsian' => array(
-        'pin'          => 'G4go0UHnk6WSb6i4gL1n',
+        'pin'          => 'xxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://example.org/result'
     ),
 );
