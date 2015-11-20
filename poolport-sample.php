@@ -73,6 +73,6 @@ return array(
     //--------------------------------
     'parsian' => array(
         'pin'          => 'G4go0UHnk6WSb6i4gL1n',
-        'callback-url' => 'http://localhost/ipay/result.php'
+        'callback-url' => 'http://example.org/result'
     ),
 );
