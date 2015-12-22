@@ -80,7 +80,7 @@ class DataBaseManager
 					`cardNumber` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
 					`status` tinyint(1) NOT NULL DEFAULT '0',
 					`payment_date` int NULL DEFAULT NULL,
-					`last_change_date` int NULL DEFAULT NULL,
+					`last_change_date` int NOT NULL,
 					PRIMARY KEY (`id`)
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -88,11 +88,12 @@ class DataBaseManager
 				CREATE TABLE IF NOT EXISTS `poolport_status_log` (
 					`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
 					`transaction_id` int(11) UNSIGNED NOT NULL,
-					`result_code` varchar(10) COLLATE utf8_persian_ci NOT NULL,
-					`result_message` varchar(255) COLLATE utf8_persian_ci NOT NULL,
+					`result_code` varchar(10) COLLATE utf8_persian_ci NULL DEFAULT NULL,
+					`result_message` varchar(255) COLLATE utf8_persian_ci NULL DEFAULT NULL,
 				    `log_date` int NOT NULL,
 					PRIMARY KEY (`id`),
-					INDEX (`transaction_id`)
+					INDEX (`transaction_id`),
+					CONSTRAINT `fk_transaction_id` FOREIGN KEY (`transaction_id`) REFERENCES `poolport_transactions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
 
 		$this->dbh->exec($query);
