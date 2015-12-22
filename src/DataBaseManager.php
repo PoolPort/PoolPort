@@ -72,37 +72,28 @@ class DataBaseManager
 	protected function createTables()
 	{
 		$query = "CREATE TABLE IF NOT EXISTS `poolport_transactions` (
-					`id` int(11) NOT NULL,
-					`port_id` tinyint(2) NOT NULL,
+					`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+					`port_id` tinyint(2) UNSIGNED NOT NULL,
 					`price` decimal(15,2) NOT NULL,
 					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
 					`tracking_code` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
 					`cardNumber` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
 					`status` tinyint(1) NOT NULL DEFAULT '0',
 					`payment_date` int NULL DEFAULT NULL,
-					`last_change_date` int NULL DEFAULT NULL
+					`last_change_date` int NULL DEFAULT NULL,
+					PRIMARY KEY (`id`)
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-				ALTER TABLE `poolport_transactions`
-				ADD PRIMARY KEY (`id`), ADD KEY `port_id` (`port_id`);
-
-				ALTER TABLE `poolport_transactions`
-				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 
 				CREATE TABLE IF NOT EXISTS `poolport_status_log` (
-					`id` int(11) NOT NULL,
-					`transaction_id` int(11) NOT NULL,
+					`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+					`transaction_id` int(11) UNSIGNED NOT NULL,
 					`result_code` varchar(10) COLLATE utf8_persian_ci NOT NULL,
 					`result_message` varchar(255) COLLATE utf8_persian_ci NOT NULL,
-				    `log_date` int NOT NULL
-				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-				ALTER TABLE `poolport_status_log`
-				ADD PRIMARY KEY (`id`), ADD KEY `transaction_id` (`transaction_id`);
-
-				ALTER TABLE `poolport_status_log`
-				MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;";
+				    `log_date` int NOT NULL,
+					PRIMARY KEY (`id`),
+					INDEX (`transaction_id`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
 
 		$this->dbh->exec($query);
 	}
