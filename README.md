@@ -8,3 +8,5 @@ See documentations in [http://poolport.github.io](http://poolport.github.io)
 ## Contributors
 
 PoolPort really needs for contributors for resume developing. Beacuse all ports not imported and some of them needs to test we need to contributors to test current ports and import new ports.
+
+Please see [documentation](http://poolport.github.io) for details.
