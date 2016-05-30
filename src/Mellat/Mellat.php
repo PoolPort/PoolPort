@@ -128,7 +128,7 @@ class Mellat extends PortAbstract implements PortInterface
     {
         $this->refId = @$_POST['RefId'];
         $this->trackingCode = @$_POST['SaleReferenceId'];
-        $this->cardNumber = @$_POST['CardHolderPan'];
+        $this->cardNumber = (float) @$_POST['CardHolderPan'];
         $payRequestResCode = @$_POST['ResCode'];
 
         if ($payRequestResCode == '0') {
