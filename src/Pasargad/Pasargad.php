@@ -132,6 +132,13 @@ class Pasargad extends PortAbstract implements PortInterface
         $response = curl_exec($ch);
         curl_close($ch);
 
-        dd($response);
+        $response = simplexml_load_string($response);
+        if ($response->result == 'False') {
+            $this->transactionFailed();
+            $this->newLog(0, PasargadException::getError($response->action));
+            throw new PasargadException($response->action);
+        }
+
+        return true;
     }
 }
