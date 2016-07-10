@@ -75,4 +75,13 @@ return array(
         'pin'          => 'xxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://example.org/result'
     ),
+
+    //--------------------------------
+    // Pasargad gateway
+    //--------------------------------
+    'pasargad' => array(
+        'merchant-code' => '9999999',
+        'terminal-code' => '999999',
+        'callback-url' => 'http://example.org/result'
+    ),
 );
