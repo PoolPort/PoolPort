@@ -61,8 +61,8 @@ class Pasargad extends PortAbstract implements PortInterface
         $this->newTransaction();
 
         $fields = array(
-            'terminalCode' => $this->config->get('pasargad.merchant-code'),
-            'merchantCode' => $this->config->get('pasargad.terminal-code'),
+            'terminalCode' => $this->config->get('pasargad.terminal-code'),
+            'merchantCode' => $this->config->get('pasargad.merchant-code'),
             'redirectAddress' => $this->buildQuery($this->config->get('pasargad.callback-url'), array('transaction_id' => $this->transactionId)),
             'timeStamp' => $dateTime->format('Ymd'),
             'invoiceDate' => $dateTime->format('Ymd'),
