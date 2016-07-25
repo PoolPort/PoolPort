@@ -4,6 +4,7 @@ namespace PoolPort;
 
 use PoolPort\Sadad\Sadad;
 use PoolPort\Mellat\Mellat;
+use PoolPort\Saderat\Saderat;
 use PoolPort\Payline\Payline;
 use PoolPort\Parsian\Parsian;
 use PoolPort\Pasargad\Pasargad;
@@ -29,6 +30,8 @@ class PoolPort
     const P_PARSIAN = 6;
 
     const P_PASARGAD = 7;
+
+    const P_SADERAT = 8;
 
     /**
      * @var Config
@@ -79,7 +82,8 @@ class PoolPort
     public function getSupportedPorts()
     {
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
-            self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD);
+            self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
+            self::P_SADERAT);
     }
 
     /**
@@ -156,6 +160,10 @@ class PoolPort
 
             case self::P_PASARGAD:
                 $this->portClass = new Pasargad($this->config, $this->db, self::P_PASARGAD);
+                break;
+
+            case self::P_SADERAT:
+                $this->portClass = new Saderat($this->config, $this->db, self::P_SADERAT);
                 break;
 
             default:

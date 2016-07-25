@@ -84,4 +84,15 @@ return array(
         'terminal-code' => '999999',
         'callback-url' => 'http://example.org/result'
     ),
+
+    //--------------------------------
+    // Saderat gateway
+    //--------------------------------
+    'saderat' => array(
+        'merchant-id' => '999999999999999',
+        'terminal-id' => '99999999',
+        'public-key' => __DIR__.'/public-key.pem',
+        'private-key' => __DIR__.'/private-key.pem',
+        'callback-url' => 'http://example.org/result'
+    ),
 );
