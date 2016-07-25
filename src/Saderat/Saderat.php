@@ -16,7 +16,7 @@ class Saderat extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $serverUrl = 'https://mabna.shaparak.ir/TokenService?wsdl';
+    protected $serverUrl = "https://mabna.shaparak.ir/TokenService?wsdl";
 
     /**
      * Public key
@@ -110,7 +110,14 @@ class Saderat extends PortAbstract implements PortInterface
         );
 
         try {
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, array("stream_context" => stream_context_create(
+                array(
+                    'ssl' => array(
+                        'verify_peer'       => false,
+                        'verify_peer_name'  => false,
+                    )
+                )
+            )));
             $response = $soap->reservation($fields);
 
         } catch(\SoapFault $e) {
@@ -118,16 +125,15 @@ class Saderat extends PortAbstract implements PortInterface
             $this->newLog('SoapFault', $e->getMessage());
             throw $e;
         }
-        dd($response);
 
-        $response = explode(',', $response->return);
-
-        if ($response[0] != '0') {
+        if ($response->return->result != 0) {
             $this->transactionFailed();
-            $this->newLog($response[0], MellatException::$errors[$response[0]]);
-            throw new MellatException($response[0]);
+            $this->newLog($response->return->result, SaderatException::getError($response->return->result));
+            throw new SaderatException($response->return->result);
         }
+        dd($response);
         $this->refId = $response[1];
+        $result = openssl_verify(base64_decode($response->return->token), $fields['SIGNATURE'], $this->publicKey);
         $this->transactionSetRefId($this->transactionId);
     }
 
