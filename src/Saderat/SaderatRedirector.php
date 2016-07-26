@@ -3,12 +3,12 @@
         <script>
         	var form = document.createElement("form");
         	form.setAttribute("method", "POST");
-        	form.setAttribute("action", "https://bpm.shaparak.ir/pgwchannel/startpay.mellat");
+        	form.setAttribute("action", "https://mabna.shaparak.ir");
         	form.setAttribute("target", "_self");
 
             var hiddenField = document.createElement("input");
-        	hiddenField.setAttribute("name", "RefId");
-        	hiddenField.setAttribute("value", "<?php echo $refId ?>");
+        	hiddenField.setAttribute("name", "TOKEN");
+        	hiddenField.setAttribute("value", "<?php echo $token ?>");
 
             form.appendChild(hiddenField);
 
