@@ -140,6 +140,8 @@ class Saderat extends PortAbstract implements PortInterface
         }
 
         $this->refId = $response->return->token;
+        $this->transactionSetRefId($this->transactionId);
+
         $result = openssl_verify($response->return->token, base64_decode($response->return->signature), $this->publicKey);
 
         if ($result != 1) {
