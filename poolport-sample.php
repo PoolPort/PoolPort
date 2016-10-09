@@ -75,4 +75,24 @@ return array(
         'pin'          => 'xxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://example.org/result'
     ),
+
+    //--------------------------------
+    // Pasargad gateway
+    //--------------------------------
+    'pasargad' => array(
+        'merchant-code' => '9999999',
+        'terminal-code' => '999999',
+        'callback-url' => 'http://example.org/result'
+    ),
+
+    //--------------------------------
+    // Saderat gateway
+    //--------------------------------
+    'saderat' => array(
+        'merchant-id' => '999999999999999',
+        'terminal-id' => '99999999',
+        'public-key' => __DIR__.'/saderat-public-key.pem',
+        'private-key' => __DIR__.'/saderat-private-key.pem',
+        'callback-url' => 'http://example.org/result'
+    ),
 );
