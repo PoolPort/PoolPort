@@ -12,10 +12,10 @@ return array(
     // Database configuration
     //--------------------------------
     'database' => array(
-        'host'     => '127.0.0.1',
-        'dbname'   => '',
-        'username' => '',
-        'password' => '',
+        'host'     => env('DB_HOST','127.0.0.1'),
+        'dbname'   => env('DB_DATABASE'),
+        'username' => env('DB_USERNAME'),
+        'password' => env('DB_PASSWORD'),
         'create' => true             // For first time you must set this to true for create tables in database
     ),
 
