@@ -8,24 +8,23 @@ use PoolPort\Config;
 class DataBaseManager
 {
 	/**
-     * @var PoolPort\Config
+     * @var Config
      */
 	protected $config;
 
 	/**
-	* Keep DB conection
+	* Keep DB connection
 	*
 	* @var PDO
 	*/
 	protected $dbh;
 
-	/**
-	 * Initialize class
-	 *
-	 * @param PoolPort\Config $config
-	 *
-	 * @return void
-	 */
+    /**
+     * Initialize class
+     *
+     * @param Config $config
+     *
+     */
 	public function __construct(Config $config)
 	{
 		$this->config = $config;
