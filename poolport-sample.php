@@ -102,4 +102,14 @@ return array(
         'private-key' => __DIR__.'/saderat-private-key.pem',
         'callback-url' => 'http://example.org/result'
     ),
+
+    //--------------------------------
+    // IranKish gateway
+    //--------------------------------
+    'irankish' => array(
+        'merchant-id' => 'xxxx',
+        'sha1-key' => 'xxxxxxxxxxxxxxxxxxxx',
+        'description' => 'description',
+        'callback-url' => 'http://example.org/result'
+    ),
 );
