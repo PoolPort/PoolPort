@@ -10,6 +10,7 @@ use PoolPort\Parsian\Parsian;
 use PoolPort\Pasargad\Pasargad;
 use PoolPort\Zarinpal\Zarinpal;
 use PoolPort\JahanPay\JahanPay;
+use PoolPort\IranKish\IranKish;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\Exceptions\PortNotFoundException;
 use PoolPort\Exceptions\InvalidRequestException;
@@ -33,6 +34,8 @@ class PoolPort
 
     const P_SADERAT = 8;
 
+    const P_IRANKKISH = 9;
+
     /**
      * @var Config
      */
@@ -46,7 +49,7 @@ class PoolPort
     /**
      * Keep current port driver
      *
-     * @var Mellat|Sadad|Zarinpal|Payline|JahanPay
+     * @var PortAbstract
      */
     protected $portClass;
 
@@ -83,7 +86,7 @@ class PoolPort
     {
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
-            self::P_SADERAT);
+            self::P_SADERAT, self::P_IRANKKISH);
     }
 
     /**
@@ -164,6 +167,10 @@ class PoolPort
 
             case self::P_SADERAT:
                 $this->portClass = new Saderat($this->config, $this->db, self::P_SADERAT);
+                break;
+
+            case self::P_IRANKKISH;
+                $this->portClass = new IranKish($this->config, $this->db, self::P_IRANKKISH);
                 break;
 
             default:
