@@ -3,8 +3,8 @@
 namespace PoolPort\Zarinpal;
 
 use DateTime;
-use SoapClient;
 use PoolPort\Config;
+use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -127,7 +127,7 @@ class Zarinpal extends PortAbstract implements PortInterface
         );
 
         try {
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, $this->config);
             $response = $soap->PaymentRequest($fields);
 
         } catch(\SoapFault $e) {
@@ -184,7 +184,7 @@ class Zarinpal extends PortAbstract implements PortInterface
 		);
 
         try {
-    		$soap = new SoapClient($this->serverUrl);
+    		$soap = new SoapClient($this->serverUrl, $this->config);
     		$response = $soap->PaymentVerification($fields);
 
         } catch(\SoapFault $e) {

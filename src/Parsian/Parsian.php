@@ -2,8 +2,8 @@
 
 namespace PoolPort\Parsian;
 
-use SoapClient;
 use PoolPort\Config;
+use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -94,7 +94,7 @@ class Parsian extends PortAbstract implements PortInterface
 		);
 
 		try{
-			$soap = new SoapClient($this->serverUrl);
+			$soap = new SoapClient($this->serverUrl, $this->config);
 			$response = $soap->PinPaymentRequest($params);
 
 		} catch (\SoapFault $e) {
@@ -154,7 +154,7 @@ class Parsian extends PortAbstract implements PortInterface
 		);
 
 		try {
-			$soap = new SoapClient($this->serverUrl);
+			$soap = new SoapClient($this->serverUrl, $this->config);
 			$result = $soap->PinPaymentEnquiry($params);
 
 		} catch (\SoapFault $e) {

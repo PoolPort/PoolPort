@@ -27,15 +27,16 @@ class SoapClient
     /**
      * @param string $soapServer
      * @param \PoolPort\Config $config
+     * @param array $options
      */
-    public function __construct($soapServer, Config $config)
+    public function __construct($soapServer, Config $config, $options = array())
     {
         $this->config = $config;
 
         $this->attempts = (int) $this->config->get('soap.attempts');
 
-        $this->attempt($this->attempts, function() use($soapServer) {
-            $this->makeSoapServer($soapServer);
+        $this->attempt($this->attempts, function() use($soapServer, $options) {
+            $this->makeSoapServer($soapServer, $options);
         });
     }
 
@@ -50,7 +51,6 @@ class SoapClient
     protected function attempt($attempts, Closure $statements)
     {
         do {
-            var_dump($attempts);
             try {
                 return $statements();
             } catch(\Exception $e) {
@@ -67,9 +67,9 @@ class SoapClient
      *
      * @return void
      */
-    protected function makeSoapServer($soapServer)
+    protected function makeSoapServer($soapServer, $options)
     {
-        $this->soap = new MainSoapClient($soapServer);
+        $this->soap = new MainSoapClient($soapServer, $options);
     }
 
     /**

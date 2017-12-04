@@ -3,8 +3,8 @@
 namespace PoolPort\IranKish;
 
 use DateTime;
-use SoapClient;
 use PoolPort\Config;
+use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -101,7 +101,7 @@ class IranKish extends PortAbstract implements PortInterface
         );
 
         try {
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, $this->config);
             $response = $soap->MakeToken($fields);
 
         } catch(\SoapFault $e) {
@@ -159,7 +159,7 @@ class IranKish extends PortAbstract implements PortInterface
         );
 
         try {
-            $soap = new SoapClient($this->serverVerifyUrl);
+            $soap = new SoapClient($this->serverVerifyUrl, $this->config);
             $response = $soap->KicccPaymentsVerification($fields);
 
         } catch(\SoapFault $e) {
