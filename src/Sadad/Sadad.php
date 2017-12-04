@@ -2,8 +2,8 @@
 
 namespace PoolPort\Sadad;
 
-use SoapClient;
 use PoolPort\Config;
+use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -89,7 +89,7 @@ class Sadad extends PortAbstract implements PortInterface
         $this->form = '';
 
         try{
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, $this->config);
 
             $response = $soap->PaymentUtility(
                 $this->config->get('sadad.merchant'),
@@ -126,7 +126,7 @@ class Sadad extends PortAbstract implements PortInterface
     protected function verifyPayment()
     {
         try{
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, $this->config);
 
             $result = $soap->CheckRequestStatusResult(
                 $this->transactionId(),

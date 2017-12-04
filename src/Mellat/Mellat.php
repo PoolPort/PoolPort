@@ -3,8 +3,8 @@
 namespace PoolPort\Mellat;
 
 use DateTime;
-use SoapClient;
 use PoolPort\Config;
+use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -97,7 +97,7 @@ class Mellat extends PortAbstract implements PortInterface
         );
 
         try {
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, $this->config);
             $response = $soap->bpPayRequest($fields);
 
         } catch(\SoapFault $e) {
@@ -160,7 +160,7 @@ class Mellat extends PortAbstract implements PortInterface
         );
 
         try {
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, $this->config);
             $response = $soap->bpVerifyRequest($fields);
 
         } catch(\SoapFault $e) {
@@ -198,7 +198,7 @@ class Mellat extends PortAbstract implements PortInterface
         );
 
         try {
-            $soap = new SoapClient($this->serverUrl);
+            $soap = new SoapClient($this->serverUrl, $this->config);
             $response = $soap->bpSettleRequest($fields);
 
         } catch(\SoapFault $e) {

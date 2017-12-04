@@ -9,6 +9,13 @@ return array(
     'timezone' => 'Asia/Tehran',
 
     //--------------------------------
+    // Soap configuration
+    //--------------------------------
+    'soap' => array(
+        'attempts' => 2 // Attempts if soap connection is fail
+    ),
+
+    //--------------------------------
     // Database configuration
     //--------------------------------
     'database' => array(
