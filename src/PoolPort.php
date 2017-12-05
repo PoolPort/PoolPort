@@ -34,7 +34,7 @@ class PoolPort
 
     const P_SADERAT = 8;
 
-    const P_IRANKKISH = 9;
+    const P_IRANKISH = 9;
 
     /**
      * @var Config
@@ -86,7 +86,7 @@ class PoolPort
     {
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
-            self::P_SADERAT, self::P_IRANKKISH);
+            self::P_SADERAT, self::P_IRANKISH);
     }
 
     /**
@@ -169,8 +169,8 @@ class PoolPort
                 $this->portClass = new Saderat($this->config, $this->db, self::P_SADERAT);
                 break;
 
-            case self::P_IRANKKISH;
-                $this->portClass = new IranKish($this->config, $this->db, self::P_IRANKKISH);
+            case self::P_IRANKISH;
+                $this->portClass = new IranKish($this->config, $this->db, self::P_IRANKISH);
                 break;
 
             default:
