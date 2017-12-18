@@ -12,6 +12,7 @@ use PoolPort\Zarinpal\Zarinpal;
 use PoolPort\JahanPay\JahanPay;
 use PoolPort\IranKish\IranKish;
 use PoolPort\Exceptions\RetryException;
+use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\Exceptions\PortNotFoundException;
 use PoolPort\Exceptions\InvalidRequestException;
 use PoolPort\Exceptions\NotFoundTransactionException;
@@ -35,6 +36,8 @@ class PoolPort
     const P_SADERAT = 8;
 
     const P_IRANKISH = 9;
+
+    const P_SIMULATOR = 10;
 
     /**
      * @var Config
@@ -86,7 +89,7 @@ class PoolPort
     {
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
-            self::P_SADERAT, self::P_IRANKISH);
+            self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR);
     }
 
     /**
@@ -171,6 +174,10 @@ class PoolPort
 
             case self::P_IRANKISH;
                 $this->portClass = new IranKish($this->config, $this->db, self::P_IRANKISH);
+                break;
+
+            case self::P_SIMULATOR;
+                $this->portClass = new PortSimulator($this->config, $this->db, self::P_SIMULATOR);
                 break;
 
             default:

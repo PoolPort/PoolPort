@@ -112,4 +112,11 @@ return array(
         'description' => 'description',
         'callback-url' => 'http://example.org/result'
     ),
+
+    //--------------------------------
+    // Simulator gateway
+    //--------------------------------
+    'simulator' => array(
+        'callback-url' => 'http://example.org/result'
+    ),
 );
