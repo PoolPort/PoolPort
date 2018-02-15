@@ -2,6 +2,7 @@
 
 namespace PoolPort;
 
+use PoolPort\Pay\Pay;
 use PoolPort\Sadad\Sadad;
 use PoolPort\Mellat\Mellat;
 use PoolPort\Saderat\Saderat;
@@ -38,6 +39,8 @@ class PoolPort
     const P_IRANKISH = 9;
 
     const P_SIMULATOR = 10;
+
+    const P_PAY = 11;
 
     /**
      * @var Config
@@ -178,6 +181,10 @@ class PoolPort
 
             case self::P_SIMULATOR;
                 $this->portClass = new PortSimulator($this->config, $this->db, self::P_SIMULATOR);
+                break;
+
+            case self::P_PAY:
+                $this->portClass = new Pay($this->config, $this->db, self::P_PAY);
                 break;
 
             default:
