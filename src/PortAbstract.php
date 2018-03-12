@@ -297,6 +297,29 @@ abstract class PortAbstract
     }
 
     /**
+     * Set all ports call back url
+     *
+     * @param string $url
+     *
+     * @return $this
+     */
+    public function setGlobalCallbackUrl($url)
+    {
+        $this->config->set('zarinpal.callback-url', $url);
+        $this->config->set('mellat.callback-url', $url);
+        $this->config->set('payline.callback-url', $url);
+        $this->config->set('sadad.callback-url', $url);
+        $this->config->set('jahanpay.callback-url', $url);
+        $this->config->set('parsian.callback-url', $url);
+        $this->config->set('pasargad.callback-url', $url);
+        $this->config->set('saderat.callback-url', $url);
+        $this->config->set('irankish.callback-url', $url);
+        $this->config->set('simulator.callback-url', $url);
+
+        return $this;
+    }
+
+    /**
      * Add query string to a url
      *
      * @param string $url
