@@ -12,6 +12,8 @@ See documentations in [http://poolport.github.io](http://poolport.github.io)
     JAHANPAY
     SADERAT
     IRANKKISH
+    Saman
+    Pay
 
 ## Untested ports
     PARSIAN
