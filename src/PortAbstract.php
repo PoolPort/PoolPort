@@ -315,6 +315,7 @@ abstract class PortAbstract
         $this->config->set('saderat.callback-url', $url);
         $this->config->set('irankish.callback-url', $url);
         $this->config->set('simulator.callback-url', $url);
+        $this->config->set('saman.callback-url', $url);
 
         return $this;
     }

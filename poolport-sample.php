@@ -119,4 +119,12 @@ return array(
     'simulator' => array(
         'callback-url' => 'http://example.org/result'
     ),
+
+    //--------------------------------
+    // Saman gateway
+    //--------------------------------
+    'saman' => array(
+        'merchant-id' => 'xxxxx',
+        'callback-url' => 'http://example.org/result'
+    ),
 );

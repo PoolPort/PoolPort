@@ -2,6 +2,7 @@
 
 namespace PoolPort;
 
+use PoolPort\Saman\Saman;
 use PoolPort\Sadad\Sadad;
 use PoolPort\Mellat\Mellat;
 use PoolPort\Saderat\Saderat;
@@ -38,6 +39,8 @@ class PoolPort
     const P_IRANKISH = 9;
 
     const P_SIMULATOR = 10;
+
+    const P_SAMAN = 11;
 
     /**
      * @var Config
@@ -89,7 +92,7 @@ class PoolPort
     {
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
-            self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR);
+            self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN);
     }
 
     /**
@@ -178,6 +181,10 @@ class PoolPort
 
             case self::P_SIMULATOR;
                 $this->portClass = new PortSimulator($this->config, $this->db, self::P_SIMULATOR);
+                break;
+
+            case self::P_SAMAN;
+                $this->portClass = new Saman($this->config, $this->db, self::P_SAMAN);
                 break;
 
             default:
