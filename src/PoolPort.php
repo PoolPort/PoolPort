@@ -189,6 +189,7 @@ class PoolPort
 
             case self::P_SAMAN;
                 $this->portClass = new Saman($this->config, $this->db, self::P_SAMAN);
+                break;
 
             case self::P_PAY:
                 $this->portClass = new Pay($this->config, $this->db, self::P_PAY);
