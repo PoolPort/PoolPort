@@ -127,4 +127,11 @@ return array(
         'merchant-id' => 'xxxxx',
         'callback-url' => 'http://example.org/result'
     ),
+
+    // Pay gateway
+    //--------------------------------
+    'pay' => array(
+        'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'callback-url' => 'http://www.example.org/result'
+    )
 );
