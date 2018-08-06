@@ -13,6 +13,7 @@ See documentations in [http://poolport.github.io](http://poolport.github.io)
     SADERAT
     IRANKKISH
     Saman
+    Parsian
     Pay
 
 ## Untested ports
