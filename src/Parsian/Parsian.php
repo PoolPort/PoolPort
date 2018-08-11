@@ -181,7 +181,7 @@ class Parsian extends PortAbstract implements PortInterface
 
 		$this->cardNumber = $result->ConfirmPaymentResult->CardNumberMasked;
 		$this->transactionSucceed();
-		$this->newLog($response->return, self::TRANSACTION_SUCCEED_TEXT);
+		$this->newLog($result->ConfirmPaymentResult->Status, self::TRANSACTION_SUCCEED_TEXT);
 
 		return true;
 	}
