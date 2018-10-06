@@ -61,7 +61,7 @@ class Zarinpal extends PortAbstract implements PortInterface
      */
     public function set($amount)
 	{
-		$this->amount = ($amount / 10);
+		$this->amount = $amount;
 
 		return $this;
 	}
@@ -119,7 +119,7 @@ class Zarinpal extends PortAbstract implements PortInterface
 
         $fields = array(
             'MerchantID' => $this->config->get('zarinpal.merchant-id'),
-            'Amount' => $this->amount,
+            'Amount' => $this->amount / 10,
             'CallbackURL' => $this->buildQuery($this->config->get('zarinpal.callback-url'), array('transaction_id' => $this->transactionId)),
 			'Description' 	=> $this->config->get('zarinpal.description', ''),
 			'Email' 	=> $this->config->get('zarinpal.email', ''),
@@ -180,7 +180,7 @@ class Zarinpal extends PortAbstract implements PortInterface
 		$fields = array(
 			'MerchantID' => $this->config->get('zarinpal.merchant-id'),
 			'Authority' => $this->refId,
-			'Amount' => $this->amount,
+			'Amount' => $this->amount / 10,
 		);
 
         try {
