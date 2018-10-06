@@ -4,21 +4,25 @@
 
 See documentations in [http://poolport.github.io](http://poolport.github.io)
 
+## کتابخانه پی اچ پی برای دسترسی به درگاه‌های بانکی با یک API مشخص
+
+مشاهده مستندات در [http://poolport.github.io](http://poolport.github.io)
+
 ## Active ports
-    MELLAT
-    SADAD
-    ZARINPAL
-    PAYLINE
-    JAHANPAY
-    SADERAT
-    IRANKKISH
-    Saman
-    Parsian
-    Pay
+    ملت - Mellat
+    ملی - Sadad
+    زرین پال - Zarinpal
+    پی‌لاین - Payline
+    جهان پی - Jahanpay
+    صادرات - Saderat
+    ایران کیش - IranKish
+    سامان - Saman
+    پارسیان - Parsian
+    پی‌ دات آی آر - Pay
+    جیبیت - JiBit
 
 ## Untested ports
-    PARSIAN
-    PASARGAD
+    پاسارگاد - Pasargad
 
 ## Contributors
 
