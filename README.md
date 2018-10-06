@@ -4,7 +4,7 @@
 
 See documentations in [http://poolport.github.io](http://poolport.github.io)
 
-## کتابخانه پی اچ پی برای دسترسی به درگاه‌های بانکی با یک API مشخص
+## کتابخانه پی اچ پی برای دسترسی به درگاه‌های بانکی
 
 مشاهده مستندات در [http://poolport.github.io](http://poolport.github.io)
 
