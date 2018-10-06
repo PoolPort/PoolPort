@@ -5,6 +5,7 @@ namespace PoolPort;
 use PoolPort\Pay\Pay;
 use PoolPort\Saman\Saman;
 use PoolPort\Sadad\Sadad;
+use PoolPort\JiBit\JiBit;
 use PoolPort\Mellat\Mellat;
 use PoolPort\Saderat\Saderat;
 use PoolPort\Payline\Payline;
@@ -44,6 +45,8 @@ class PoolPort
     const P_SAMAN = 11;
 
     const P_PAY = 12;
+
+    const P_JIBIT = 13;
 
     /**
      * @var Config
@@ -96,7 +99,7 @@ class PoolPort
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
-            self::P_PAY);
+            self::P_PAY, self::P_JIBIT);
     }
 
     /**
@@ -193,6 +196,10 @@ class PoolPort
 
             case self::P_PAY:
                 $this->portClass = new Pay($this->config, $this->db, self::P_PAY);
+                break;
+
+            case self::P_JIBIT:
+                $this->portClass = new JiBit($this->config, $this->db, self::P_JIBIT);
                 break;
 
             default:

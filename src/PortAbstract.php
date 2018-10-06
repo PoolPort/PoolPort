@@ -278,7 +278,7 @@ abstract class PortAbstract
         $stmt->bindParam(':result_code', $statusCode);
         $stmt->bindParam(':result_message', $statusMessage);
         $stmt->bindParam(':log_date', $date);
-        $stmt->execute();
+        $stmt->execute() || dd($stmt->errorInfo());
     }
 
     /**
@@ -317,6 +317,7 @@ abstract class PortAbstract
         $this->config->set('simulator.callback-url', $url);
         $this->config->set('saman.callback-url', $url);
         $this->config->set('pay.callback-url', $url);
+        $this->config->set('jibit.callback-url', $url);
 
         return $this;
     }

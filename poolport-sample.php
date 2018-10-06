@@ -133,5 +133,14 @@ return array(
     'pay' => array(
         'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result'
+    ),
+
+    // JiBit gateway
+    //--------------------------------
+    'jibit' => array(
+        'merchant-id' => 'xxxx',
+        'password' => 'xxxxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+        'user-mobile' => '09xxxxxxxx'
     )
 );
