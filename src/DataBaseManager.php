@@ -87,7 +87,7 @@ class DataBaseManager
 				CREATE TABLE IF NOT EXISTS `poolport_status_log` (
 					`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
 					`transaction_id` int(11) UNSIGNED NOT NULL,
-					`result_code` varchar(10) COLLATE utf8_persian_ci NULL DEFAULT NULL,
+					`result_code` varchar(255) COLLATE utf8_persian_ci NULL DEFAULT NULL,
 					`result_message` varchar(255) COLLATE utf8_persian_ci NULL DEFAULT NULL,
 				    `log_date` int NOT NULL,
 					PRIMARY KEY (`id`),
