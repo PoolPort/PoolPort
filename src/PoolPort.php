@@ -113,7 +113,7 @@ class PoolPort
     }
 
     /**
-     * Callback
+     * Verify transaction, use verifyLock for security reason
      *
      * @return $this->portClass
      *
@@ -137,6 +137,46 @@ class PoolPort
             throw new RetryException;
 
         $this->buildPort($transaction->port_id);
+
+        return $this->portClass->verify($transaction);
+    }
+
+    /**
+     * Verify transaction, preventing duplicate request at the same time
+     *
+     * @return $this->portClass
+     *
+     * @throws InvalidRequestException
+     * @throws NotFoundTransactionException
+     * @throws PortNotFoundException
+     * @throws RetryException
+     */
+    public function verifyLock()
+    {
+        if (!isset($_GET['transaction_id']))
+            throw new InvalidRequestException;
+
+        $transactionId = intval($_GET['transaction_id']);
+
+        try {
+            $this->db->beginTransaction();
+
+            $transaction = $this->db->findAndLock($transactionId);
+
+            if (!$transaction)
+                throw new NotFoundTransactionException;
+
+            if ($transaction->status != PortAbstract::TRANSACTION_INIT)
+                throw new RetryException;
+
+            $this->buildPort($transaction->port_id);
+            $this->portClass->transactionPending($transaction->id);
+
+            $this->db->commit();
+        } catch(\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
 
         return $this->portClass->verify($transaction);
     }

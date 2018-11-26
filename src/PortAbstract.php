@@ -25,6 +25,11 @@ abstract class PortAbstract
     const TRANSACTION_FAILED = 2;
 
     /**
+     * Status code for status field in poolport_transactions table
+     */
+    const TRANSACTION_PENDING = 3;
+
+    /**
      * Transaction id
      *
      * @var null|int
@@ -236,6 +241,34 @@ abstract class PortAbstract
         return $statement->execute([
             ':transactionId'    => $this->transactionId,
             ':status'           => self::TRANSACTION_FAILED,
+            ':change_date'      => $time->getTimestamp()
+        ]);
+    }
+
+    /**
+     * Pending transaction
+     * Set status pending to error status
+     *
+     * @param $transactionId int|null If this param not send, use class transactionId parameter
+     *
+     * @return bool
+     */
+    public function transactionPending($transactionId = null)
+    {
+        $transactionId = $transactionId == null ? $this->transactionId : $transactionId;
+
+        $dbh = $this->db->getDBH();
+
+        $statement = $dbh->prepare('UPDATE poolport_transactions
+                                    SET `status` = :status,
+                                        `last_change_date` = :change_date
+                                    WHERE id = :transactionId');
+
+        $time = new \DateTime();
+
+        return $statement->execute([
+            ':transactionId'    => $transactionId,
+            ':status'           => self::TRANSACTION_PENDING,
             ':change_date'      => $time->getTimestamp()
         ]);
     }

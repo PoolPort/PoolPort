@@ -63,6 +63,52 @@ class DataBaseManager
 	}
 
 	/**
+	 * Return a locked row object from poolport_transactions table
+	 *
+	 * @param int $transactionId
+	 *
+	 * @return Object|false
+	 */
+	public function findAndLock($transactionId)
+	{
+		$stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE id = :id LIMIT 1 FOR UPDATE");
+		$stmt->bindParam(':id', $transactionId);
+		$stmt->execute();
+
+		return $stmt->fetch(PDO::FETCH_OBJ);
+	}
+
+	/**
+	 * Start mysql transaction
+	 *
+	 * @return void
+	 */
+	public function beginTransaction()
+	{
+		$this->dbh->beginTransaction();
+	}
+
+	/**
+	 * Commit mysql transaction
+	 *
+	 * @return void
+	 */
+	public function commit()
+	{
+		$this->dbh->commit();
+	}
+
+	/**
+	 * Roll back mysql transaction
+	 *
+	 * @return void
+	 */
+	public function rollBack()
+	{
+		$this->dbh->rollBack();
+	}
+
+	/**
 	 * Create transactions and status log tables
 	 *
 	 * @return void
@@ -111,5 +157,4 @@ class DataBaseManager
 		$password = $this->config->get('database.password');
 		$this->dbh = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
 	}
-
 }
