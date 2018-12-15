@@ -126,15 +126,15 @@ class Sadad extends PortAbstract implements PortInterface
                 return true;
             }
 
-            $this->transactionFailed();
-            $this->newLog(@$response['ResCode'], @SadadException::$errors[@$response['ResCode']]);
-            throw SadadException::sendPayRequestError(@$response['ResCode']);
-
         } catch (\Exception $e) {
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
             throw $e;
         }
+
+        $this->transactionFailed();
+        $this->newLog(@$response['ResCode'], @SadadException::$errors[@$response['ResCode']]);
+        throw SadadException::sendPayRequestError(@$response['ResCode']);
     }
 
     /**
@@ -196,15 +196,15 @@ class Sadad extends PortAbstract implements PortInterface
                 return true;
             }
 
-            $this->transactionFailed();
-            $this->newLog(@$response['ResCode'], @SadadException::$veridyPaymentErrors[@$response['ResCode']]);
-            throw SadadException::verifyPaymentError(@$response['ResCode']);
-
         } catch (\Exception $e) {
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
             throw $e;
         }
+
+        $this->transactionFailed();
+        $this->newLog(@$response['ResCode'], @SadadException::$veridyPaymentErrors[@$response['ResCode']]);
+        throw SadadException::verifyPaymentError(@$response['ResCode']);
     }
 
     /**
