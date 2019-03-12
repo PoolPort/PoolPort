@@ -142,5 +142,18 @@ return array(
         'password' => 'xxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
         'user-mobile' => '09xxxxxxxx'
+    ),
+
+    // AP gateway
+    //--------------------------------
+    'ap' => array(
+        'merchant-config-id' => 'xxxx',
+        'username' => 'xxxxxxxxxx',
+        'password' => 'xxxxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+        'encryption-key' => 'xxxxxxxxxx',
+        'encryption-vector' => 'xxxxxxxxxx',
+        'sync-time' => false,
+        'user-mobile' => '09xxxxxxxx'
     )
 );
