@@ -20,6 +20,7 @@ See documentations in [http://poolport.github.io](http://poolport.github.io)
     پارسیان - Parsian
     پی‌ دات آی آر - Pay
     جیبیت - JiBit
+    آپ - AP
 
 ## Untested ports
     پاسارگاد - Pasargad
