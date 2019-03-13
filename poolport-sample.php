@@ -65,7 +65,8 @@ return array(
         'merchant'      => '',
         'transactionKey'=> '',
         'terminalId'    => 000000000,
-        'callback-url'  => 'http://example.org/result'
+        'callback-url'  => 'http://example.org/result',
+        'user-mobile'   => '09xxxxxxxxx'
     ),
 
     //--------------------------------
@@ -142,7 +143,7 @@ return array(
         'merchant-id' => 'xxxx',
         'password' => 'xxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
-        'user-mobile' => '09xxxxxxxx'
+        'user-mobile' => '09xxxxxxxxx'
     ),
 
     // AP gateway
@@ -155,6 +156,6 @@ return array(
         'encryption-key' => 'xxxxxxxxxx',
         'encryption-vector' => 'xxxxxxxxxx',
         'sync-time' => false,
-        'user-mobile' => '09xxxxxxxx'
+        'user-mobile' => '09xxxxxxxxx'
     )
 );
