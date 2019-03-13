@@ -357,6 +357,23 @@ abstract class PortAbstract
     }
 
     /**
+     * Set user-mobile config for all ports that support this feature
+     *
+     * @param string $mobile In format 09xxxxxxxxx
+     *
+     * @return $this
+     */
+    public function setGlobalUserMobile($mobile)
+    {
+        // Convert 09xxxxxxxxx format to 989xxxxxxxxx format for spesific ports
+        $withPrefixFormat = '989'.substr($mobile, 2);
+
+        $this->config->set('mellat.user-mobile', $withPrefixFormat);
+        $this->config->set('sadad.user-mobile', $mobile);
+        $this->config->set('ap.user-mobile', $mobile);
+    }
+
+    /**
      * Add query string to a url
      *
      * @param string $url
