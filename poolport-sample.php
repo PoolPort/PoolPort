@@ -46,7 +46,8 @@ return array(
         'username'     => '',
         'password'     => '',
         'terminalId'   => 0000000,
-        'callback-url' => 'http://www.example.org/result'
+        'callback-url' => 'http://www.example.org/result',
+        'user-mobile'  => '989xxxxxxxx'
     ),
 
     //--------------------------------

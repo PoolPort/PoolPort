@@ -52,6 +52,7 @@ class Mellat extends PortAbstract implements PortInterface
     public function redirect()
     {
         $refId = $this->refId;
+        $mobile = $this->config->get('mellat.user-mobile');
 
         require 'MellatRedirector.php';
     }
