@@ -40,8 +40,7 @@ class Config
 	public function __construct($filePath = null)
 	{
 		$this->filePath = $filePath;
-		$this->defaultFilePath = realpath(__DIR__.'/../../../..').'/poolport.php';
-
+		$this->defaultFilePath = './poolport.php';
 		$this->load();
 	}
 

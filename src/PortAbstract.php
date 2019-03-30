@@ -351,6 +351,7 @@ abstract class PortAbstract
         $this->config->set('saman.callback-url', $url);
         $this->config->set('pay.callback-url', $url);
         $this->config->set('jibit.callback-url', $url);
+        $this->config->set('idpay.callback-url', $url);
 
         return $this;
     }

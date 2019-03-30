@@ -20,9 +20,11 @@ See documentations in [http://poolport.github.io](http://poolport.github.io)
     پارسیان - Parsian
     پی‌ دات آی آر - Pay
     جیبیت - JiBit
+    آی دی پی - IDPay
 
 ## Untested ports
     پاسارگاد - Pasargad
+    آی دی پی - IDPay
 
 ## Contributors
 

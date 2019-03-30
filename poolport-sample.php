@@ -20,10 +20,10 @@ return array(
     //--------------------------------
     'database' => array(
         'host'     => '127.0.0.1',
-        'dbname'   => '',
-        'username' => '',
+        'dbname'   => 'pool',
+        'username' => 'root',
         'password' => '',
-        'create' => true             // For first time you must set this to true for create tables in database
+        'create' => false             // For first time you must set this to true for create tables in database
     ),
 
     //--------------------------------
@@ -142,5 +142,16 @@ return array(
         'password' => 'xxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
         'user-mobile' => '09xxxxxxxx'
-    )
+    ),
+    // IDPay gateway
+    //--------------------------------
+    'idpay' => array(
+      'api' => 'x-x-x-x-x',
+      'callback-url' => 'http://www.example.org/result',
+      'sandbox'=>false,
+      'name'=>'Payam Khaninejad',
+      'phone'=>'09149260370',
+      'name'=>'khaninejad@gmail.com',
+      'desc'=>'order'
+    ),
 );
