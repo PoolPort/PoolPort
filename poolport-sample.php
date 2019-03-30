@@ -20,10 +20,10 @@ return array(
     //--------------------------------
     'database' => array(
         'host'     => '127.0.0.1',
-        'dbname'   => 'pool',
-        'username' => 'root',
+        'dbname'   => '',
+        'username' => '',
         'password' => '',
-        'create' => false             // For first time you must set this to true for create tables in database
+        'create' => true             // For first time you must set this to true for create tables in database
     ),
 
     //--------------------------------
