@@ -151,7 +151,7 @@ return array(
       'sandbox'=>false,
       'name'=>'Payam Khaninejad',
       'phone'=>'09149260370',
-      'name'=>'khaninejad@gmail.com',
+      'email'=>'khaninejad@gmail.com',
       'desc'=>'order'
     ),
 );
