@@ -29,7 +29,7 @@ class IDPay extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl = 'https://idpay.ir/p/ws-sandbox/';
+    protected $gateUrl = 'https://idpay.ir/p/ws/';
 
     /**
      * {@inheritdoc}
