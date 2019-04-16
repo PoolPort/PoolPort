@@ -157,5 +157,15 @@ return array(
         'encryption-vector' => 'xxxxxxxxxx',
         'sync-time' => false,
         'user-mobile' => '09xxxxxxxxx'
-    )
+    ),
+	//--------------------------------
+	// BitPay gateway
+	//--------------------------------
+    'bitpay' => array(
+	    'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+	    'callback-url' => 'http://www.example.org/result',
+	    'name' => 'xxxxxxxxxx',
+	    'email' => 'email@gmail.com',
+	    'description' => 'description',
+    ),
 );
