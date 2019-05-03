@@ -30,6 +30,7 @@ class IDPay extends PortAbstract implements PortInterface
      * @var string
      */
     protected $gateUrl = 'https://idpay.ir/p/ws/';
+    protected $sandboxGateUrl = 'https://idpay.ir/p/ws-sandbox/';
 
     /**
      * {@inheritdoc}
@@ -64,7 +65,12 @@ class IDPay extends PortAbstract implements PortInterface
      */
     public function redirect()
     {
+      if($this->config->get('idpay.sandbox')){
+        header('Location: '.$this->sandboxGateUrl.$this->refId);
+      }else{
         header('Location: '.$this->gateUrl.$this->refId);
+      }
+
     }
 
     /**
