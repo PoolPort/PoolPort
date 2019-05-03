@@ -95,7 +95,7 @@ class IDPay extends PortAbstract implements PortInterface
         $fields = array(
 			'order_id' => $this->transactionId,
 			'amount'   => $this->amount,
-			'name'     => $this->config->get('idpay.phone'),
+			'name'     => $this->config->get('idpay.name'),
 			'phone'    => $this->config->get('idpay.phone'),
 			'mail'     => $this->config->get('idpay.mail'),
 			'desc'     => $this->config->get('idpay.desc'),
