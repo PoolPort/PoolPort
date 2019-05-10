@@ -41,7 +41,6 @@ class Config
 	{
 		$this->filePath = $filePath;
 		$this->defaultFilePath = realpath(__DIR__.'/../../../..').'/poolport.php';
-
 		$this->load();
 	}
 

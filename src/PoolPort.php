@@ -7,6 +7,8 @@ use PoolPort\Pay\Pay;
 use PoolPort\Saman\Saman;
 use PoolPort\Sadad\Sadad;
 use PoolPort\JiBit\JiBit;
+use PoolPort\IDPay\IDPay;
+use PoolPort\BitPay\BitPay;
 use PoolPort\Mellat\Mellat;
 use PoolPort\Saderat\Saderat;
 use PoolPort\Payline\Payline;
@@ -15,7 +17,6 @@ use PoolPort\Pasargad\Pasargad;
 use PoolPort\Zarinpal\Zarinpal;
 use PoolPort\JahanPay\JahanPay;
 use PoolPort\IranKish\IranKish;
-use PoolPort\BitPay\BitPay;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\Exceptions\PortNotFoundException;
@@ -53,6 +54,8 @@ class PoolPort
     const P_AP = 14;
 
     const P_BITPAY = 15;
+
+    const P_IDPAY = 16;
 
     /**
      * @var Config
@@ -105,7 +108,7 @@ class PoolPort
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
-            self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY);
+            self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY);
     }
 
     /**
@@ -130,8 +133,10 @@ class PoolPort
      */
     public function verify()
     {
+
         if (!isset($_GET['transaction_id']))
             throw new InvalidRequestException;
+
 
         $transactionId = intval($_GET['transaction_id']);
         $transaction = $this->db->find($transactionId);
@@ -255,6 +260,10 @@ class PoolPort
 	        case self::P_BITPAY:
 	        	$this->portClass = new BitPay($this->config, $this->db, self::P_BITPAY);
 	        	break;
+
+            case self::P_IDPAY:
+                $this->portClass = new IDPAY($this->config, $this->db, self::P_IDPAY);
+                break;
 
             default:
                 throw new PortNotFoundException;

@@ -353,6 +353,7 @@ abstract class PortAbstract
         $this->config->set('jibit.callback-url', $url);
         $this->config->set('ap.callback-url', $url);
         $this->config->set('bitpay.callback-url', $url);
+        $this->config->set('idpay.callback-url', $url);
 
         return $this;
     }
@@ -373,6 +374,7 @@ abstract class PortAbstract
         $this->config->set('sadad.user-mobile', $mobile);
         $this->config->set('jibit.user-mobile', $mobile);
         $this->config->set('ap.user-mobile', $mobile);
+        $this->config->set('idpay.user-mobile', $mobile);
     }
 
     /**

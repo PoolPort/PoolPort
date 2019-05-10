@@ -158,7 +158,7 @@ return array(
         'sync-time' => false,
         'user-mobile' => '09xxxxxxxxx'
     ),
-	//--------------------------------
+
 	// BitPay gateway
 	//--------------------------------
     'bitpay' => array(
@@ -167,5 +167,18 @@ return array(
 	    'name' => 'xxxxxxxxxx',
 	    'email' => 'email@gmail.com',
 	    'description' => 'description',
+        'user-mobile' => '09xxxxxxxx'
+    ),
+
+    // IDPay gateway
+    //--------------------------------
+    'idpay' => array(
+        'api' => 'x-x-x-x-x',
+        'callback-url' => 'http://www.example.org/result',
+        'sandbox'=> false,
+        'name' => 'name',
+        'email' => 'email',
+        'description' => 'description',
+        'user-mobile' => '09xxxxxxxx',
     ),
 );
