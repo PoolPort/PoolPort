@@ -352,6 +352,7 @@ abstract class PortAbstract
         $this->config->set('pay.callback-url', $url);
         $this->config->set('jibit.callback-url', $url);
         $this->config->set('ap.callback-url', $url);
+        $this->config->set('bitpay.callback-url', $url);
 
         return $this;
     }

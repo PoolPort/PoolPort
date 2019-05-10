@@ -15,6 +15,7 @@ use PoolPort\Pasargad\Pasargad;
 use PoolPort\Zarinpal\Zarinpal;
 use PoolPort\JahanPay\JahanPay;
 use PoolPort\IranKish\IranKish;
+use PoolPort\BitPay\BitPay;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\Exceptions\PortNotFoundException;
@@ -50,6 +51,8 @@ class PoolPort
     const P_JIBIT = 13;
 
     const P_AP = 14;
+
+    const P_BITPAY = 15;
 
     /**
      * @var Config
@@ -102,7 +105,7 @@ class PoolPort
         return array(self::P_MELLAT, self::P_SADAD, self::P_ZARINPAL,
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
-            self::P_PAY, self::P_JIBIT, self::P_AP);
+            self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY);
     }
 
     /**
@@ -248,6 +251,10 @@ class PoolPort
             case self::P_AP:
                 $this->portClass = new AP($this->config, $this->db, self::P_AP);
                 break;
+
+	        case self::P_BITPAY:
+	        	$this->portClass = new BitPay($this->config, $this->db, self::P_BITPAY);
+	        	break;
 
             default:
                 throw new PortNotFoundException;
