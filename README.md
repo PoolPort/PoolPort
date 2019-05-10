@@ -21,9 +21,13 @@ See documentations in [http://poolport.github.io](http://poolport.github.io)
     پی‌ دات آی آر - Pay
     جیبیت - JiBit
     آپ - AP
+    بیت پی - BitPay
+    آی دی پی - IDPay
 
 ## Untested ports
     پاسارگاد - Pasargad
+    بیت پی - BitPay
+    آی دی پی - IDPay
 
 ## Contributors
 
