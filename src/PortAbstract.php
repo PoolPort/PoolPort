@@ -386,6 +386,12 @@ abstract class PortAbstract
      */
     protected function buildQuery($url, array $query)
     {
+        // Add unique id to url if set true in configuration
+        if ($this->config->get('configuration.use_uniqeid')) {
+            $query['u'] = uniqid();
+            $this->setUniqeid($query['u'], $this->transactionId());
+        }
+
         $query = http_build_query($query);
 
         $questionMark = strpos($url, '?');
@@ -394,5 +400,19 @@ abstract class PortAbstract
         else {
             return substr($url, 0, $questionMark + 1).$query."&".substr($url, $questionMark + 1);
         }
+    }
+
+    protected function setUniqeid($uniqeid, $transactionId)
+    {
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("UPDATE poolport_transactions
+                               SET unique_id = :unique_id
+                               WHERE id = :id");
+
+        $stmt->execute([
+            ':unique_id' => $uniqeid,
+            ':id'     => $transactionId
+        ]);
     }
 }
