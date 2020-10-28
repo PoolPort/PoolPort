@@ -95,6 +95,7 @@ return array(
     'pasargad' => array(
         'merchant-code' => '9999999',
         'terminal-code' => '999999',
+        'certificate' => '',
         'callback-url' => 'http://example.org/result'
     ),
 
