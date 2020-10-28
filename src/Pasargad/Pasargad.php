@@ -16,6 +16,12 @@ class Pasargad extends PortAbstract implements PortInterface
      *
      * @var string
      */
+    protected $settleUrl = 'https://pep.shaparak.ir/VerifyPayment.aspx';
+    /**
+     * Address of main SOAP server
+     *
+     * @var string
+     */
     protected $serverUrl = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
 
     /**
@@ -139,6 +145,53 @@ class Pasargad extends PortAbstract implements PortInterface
             throw new PasargadException($response->action);
         }
 
+        return true;
+    }
+    /**
+     * settle user payment from bank server
+     *
+     * @return bool
+     *
+     * @throws PasargadException
+     */
+    protected function settleRequest()
+    {
+        $dateTime = new DateTime();
+        $fields = array(
+            'MerchantCode' => $this->config->get('pasargad.merchant-code'),
+            'TerminalCode' => $this->config->get('pasargad.terminal-code'),
+            'InvoiceNumber' => $this->transactionId(),
+            'InvoiceDate' => $dateTime->format('Ymd'),
+            'amount' => $this->amount(),
+            'TimeStamp' => date("Y/m/d H:i:s"),
+            'sign' => ''
+        );
+
+        $processor = new RsaProcessor($this->config->get('pasargad.certificate'), RsaProcessor::XMLString);
+
+        $data = "#". $fields['MerchantCode'] ."#". $fields['TerminalCode'] ."#". $fields['InvoiceNumber'] ."#". $fields['InvoiceDate'] ."#". $fields['amount'] ."#". $fields['TimeStamp'] ."#";
+        $data = sha1($data,true);
+        $data =  $processor->sign($data);
+        $fields['sign'] =  base64_encode($data);
+
+        $text = "InvoiceNumber=" . $this->transactionId() ."&InvoiceDate=" .
+            $dateTime->format('Ymd') ."&MerchantCode=" . $this->config->get('pasargad.merchant-code') ."&TerminalCode=" .
+            $this->config->get('pasargad.terminal-code') ."&Amount=" . $this->amount() ."&TimeStamp=" . $fields['TimeStamp'] .
+            "&Sign=" . $fields['sign'];
+        $ch = curl_init();
+        curl_setopt($ch,CURLOPT_URL,$this->settleUrl);
+        curl_setopt($ch,CURLOPT_POST,1);
+        curl_setopt($ch,CURLOPT_POSTFIELDS,$text);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+        $result2 = curl_exec($ch);
+        curl_close($ch);
+        $response = simplexml_load_string($result2);
+        if(!isset($response->result) and strtolower($response->result)=='false'){
+            $this->transactionFailed();
+            $this->newLog(0, PasargadException::getError($response->action));
+            throw new PasargadException($response->action);
+        }
         return true;
     }
 }
