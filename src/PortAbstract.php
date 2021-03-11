@@ -354,6 +354,7 @@ abstract class PortAbstract
         $this->config->set('ap.callback-url', $url);
         $this->config->set('bitpay.callback-url', $url);
         $this->config->set('idpay.callback-url', $url);
+        $this->config->set('payping.callback-url', $url);
 
         return $this;
     }
@@ -375,6 +376,7 @@ abstract class PortAbstract
         $this->config->set('jibit.user-mobile', $mobile);
         $this->config->set('ap.user-mobile', $mobile);
         $this->config->set('idpay.user-mobile', $mobile);
+        $this->config->set('payping.user-mobile', $mobile);
     }
 
     /**

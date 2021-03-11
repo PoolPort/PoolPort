@@ -181,4 +181,12 @@ return array(
         'description' => 'description',
         'user-mobile' => '09xxxxxxxx',
     ),
+
+    // PayPing gateway
+    //--------------------------------
+    'payping' => array(
+        'token' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'user-mobile' => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
