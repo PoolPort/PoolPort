@@ -53,26 +53,23 @@ class DataBaseManager
 	 *
 	 * @return Object|false
 	 */
-	public function find($transactionId)
+	public function find($transactionId, $uniqeId, $lock = false)
 	{
-		$stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE id = :id LIMIT 1");
-		$stmt->bindParam(':id', $transactionId);
-		$stmt->execute();
+		$u = "";
+        if ($this->config->get('configuration.use_uniqeid'))
+			$u = "AND unique_id = :unique_id";
 
-		return $stmt->fetch(PDO::FETCH_OBJ);
-	}
+		$l = "";
+		if ($lock) {
+			$l = "FOR UPDATE";
+		}
 
-	/**
-	 * Return a locked row object from poolport_transactions table
-	 *
-	 * @param int $transactionId
-	 *
-	 * @return Object|false
-	 */
-	public function findAndLock($transactionId)
-	{
-		$stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE id = :id LIMIT 1 FOR UPDATE");
+		$stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE id = :id $u LIMIT 1 $l");
 		$stmt->bindParam(':id', $transactionId);
+
+        if ($this->config->get('configuration.use_uniqeid'))
+			$stmt->bindParam(':unique_id', $uniqeId);
+
 		$stmt->execute();
 
 		return $stmt->fetch(PDO::FETCH_OBJ);
@@ -118,6 +115,7 @@ class DataBaseManager
 	{
 		$query = "CREATE TABLE IF NOT EXISTS `poolport_transactions` (
 					`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+					`unique_id` varchar(13) COLLATE utf8_persian_ci DEFAULT NULL,
 					`port_id` tinyint(2) UNSIGNED NOT NULL,
 					`price` decimal(15,2) NOT NULL,
 					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
@@ -129,6 +127,8 @@ class DataBaseManager
 					PRIMARY KEY (`id`)
 				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+				ALTER TABLE `poolport_transactions`
+					ADD KEY `unique_id` (`unique_id`);
 
 				CREATE TABLE IF NOT EXISTS `poolport_status_log` (
 					`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -137,13 +137,12 @@ class PoolPort
      */
     public function verify()
     {
-
         if (!isset($_GET['transaction_id']))
             throw new InvalidRequestException;
 
-
         $transactionId = intval($_GET['transaction_id']);
-        $transaction = $this->db->find($transactionId);
+        $uniqeId = @$_GET['u'];
+        $transaction = $this->db->find($transactionId, $uniqeId);
 
         if (!$transaction)
             throw new NotFoundTransactionException;
@@ -172,11 +171,12 @@ class PoolPort
             throw new InvalidRequestException;
 
         $transactionId = intval($_GET['transaction_id']);
+        $uniqeId = @$_GET['u'];
 
         try {
             $this->db->beginTransaction();
 
-            $transaction = $this->db->findAndLock($transactionId);
+            $transaction = $this->db->find($transactionId, $uniqeId, true);
 
             if (!$transaction)
                 throw new NotFoundTransactionException;
