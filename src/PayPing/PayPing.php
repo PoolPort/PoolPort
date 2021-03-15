@@ -29,7 +29,7 @@ class PayPing extends PortAbstract implements PortInterface
      */
     public function set($amount)
     {
-        $this->amount = $amount;
+        $this->amount = ($amount / 10);
 
         return $this;
     }
