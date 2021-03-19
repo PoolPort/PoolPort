@@ -37,7 +37,7 @@ class JahanPay extends PortAbstract implements PortInterface
      */
     public function set($amount)
     {
-        $this->amount = ($amount / 10);
+        $this->amount = $amount;
 
         return $this;
     }
@@ -88,7 +88,7 @@ class JahanPay extends PortAbstract implements PortInterface
             $soap = new SoapClient($this->serverUrl);
             $response = $soap->requestpayment(
                 $this->config->get('jahanpay.api'),
-                $this->amount,
+                $this->amount / 10,
                 $this->buildQuery($this->config->get('jahanpay.callback-url'), array('transaction_id' => $this->transactionId())),
                 $this->transactionId(),
                 ''
@@ -144,7 +144,7 @@ class JahanPay extends PortAbstract implements PortInterface
             $soap = new SoapClient($this->serverUrl);
             $response = $soap->verification(
                 $this->config->get('jahanpay.api'),
-                $this->amount,
+                $this->amount / 10,
                 $this->refId
             );
 

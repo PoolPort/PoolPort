@@ -29,7 +29,7 @@ class PayPing extends PortAbstract implements PortInterface
      */
     public function set($amount)
     {
-        $this->amount = ($amount / 10);
+        $this->amount = $amount;
 
         return $this;
     }
@@ -78,7 +78,7 @@ class PayPing extends PortAbstract implements PortInterface
 
         try {
             $fields = array(
-                "amount" => $this->amount,
+                "amount" => $this->amount / 10,
                 "payerIdentity" => $this->config->get('payping.user-mobile'),
                 "returnUrl" => $this->buildQuery($this->config->get('payping.callback-url'), array('transaction_id' => $this->transactionId)),
                 "clientRefId" => $this->transactionId(),
@@ -135,7 +135,7 @@ class PayPing extends PortAbstract implements PortInterface
         try {
             $fields = array(
                 "refId" => $this->trackingCode(),
-                "amount" => $this->amount,
+                "amount" => $this->amount / 10,
             );
 
             $ch = curl_init();
