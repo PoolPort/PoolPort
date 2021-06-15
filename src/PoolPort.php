@@ -202,7 +202,7 @@ class PoolPort
      * @param int $port
      * @throws PortNotFoundException
      */
-    private function buildPort($port)
+    protected function buildPort($port)
     {
         switch ($port) {
             case self::P_MELLAT:
