@@ -39,8 +39,8 @@ return array(
         'type'         => 'zarin-gate',                           // Types: [zarin-gate || normal]
         'callback-url' => 'http://www.example.org/result',
         'server'       => 'germany',                              // Servers: [germany || iran]
-        'email'        => 'email@gmail.com',
-        'mobile'       => '09xxxxxxxxx',
+        'user-email'        => 'email@gmail.com',
+        'user-mobile'       => '09xxxxxxxxx',
         'description'  => 'description',
     ),
 

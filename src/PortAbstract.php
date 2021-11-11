@@ -377,6 +377,7 @@ abstract class PortAbstract
         $this->config->set('ap.user-mobile', $mobile);
         $this->config->set('idpay.user-mobile', $mobile);
         $this->config->set('payping.user-mobile', $mobile);
+        $this->config->set('zarinpal.user-mobile', $mobile);
     }
 
     /**

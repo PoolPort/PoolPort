@@ -122,8 +122,8 @@ class Zarinpal extends PortAbstract implements PortInterface
             'Amount' => $this->amount / 10,
             'CallbackURL' => $this->buildQuery($this->config->get('zarinpal.callback-url'), array('transaction_id' => $this->transactionId)),
 			'Description' 	=> $this->config->get('zarinpal.description', ''),
-			'Email' 	=> $this->config->get('zarinpal.email', ''),
-			'Mobile' 	=> $this->config->get('zarinpal.mobile', ''),
+			'Email' 	=> $this->config->get('zarinpal.user-email', ''),
+			'Mobile' 	=> $this->config->get('zarinpal.user-mobile', ''),
         );
 
         try {
