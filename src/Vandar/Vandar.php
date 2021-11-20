@@ -111,7 +111,6 @@ class Vandar extends PortAbstract implements PortInterface
         }
 
         $this->transactionFailed();
-        die(var_dump($response['errors']));
         $this->newLog(@$response['status'], @$response['errors'][0]);
         throw new VandarException(@$response['errors'][0], @$response['status']);
     }
