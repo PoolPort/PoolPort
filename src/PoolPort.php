@@ -10,6 +10,7 @@ use PoolPort\JiBit\JiBit;
 use PoolPort\IDPay\IDPay;
 use PoolPort\BitPay\BitPay;
 use PoolPort\Mellat\Mellat;
+use PoolPort\Vandar\Vandar;
 use PoolPort\PayPing\PayPing;
 use PoolPort\Saderat\Saderat;
 use PoolPort\Payline\Payline;
@@ -59,6 +60,8 @@ class PoolPort
     const P_IDPAY = 16;
 
     const P_PAYPING = 17;
+
+    const P_VANDAR = 18;
 
     /**
      * @var Config
@@ -112,7 +115,7 @@ class PoolPort
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
             self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
-            self::P_PAYPING);
+            self::P_PAYPING, self::P_VANDAR);
     }
 
     /**
@@ -271,6 +274,10 @@ class PoolPort
 
             case self::P_PAYPING:
                 $this->portClass = new PayPing($this->config, $this->db, self::P_PAYPING);
+                break;
+
+            case self::P_VANDAR:
+                $this->portClass = new Vandar($this->config, $this->db, self::P_VANDAR);
                 break;
 
             default:

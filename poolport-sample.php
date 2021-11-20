@@ -194,4 +194,12 @@ return array(
         'user-mobile' => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Vandar gateway
+    //--------------------------------
+    'payping' => array(
+        'api_key' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'user-mobile' => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
