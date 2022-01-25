@@ -12,9 +12,11 @@
             "email": "rz.zare@gmail.com"
         }
     ],
+    "require": {
+        "guzzlehttp/guzzle": "^6.5"
+    },
     "autoload": {
         "psr-4": { "PoolPort\\": "src/" }
     },
-    "minimum-stability": "dev",
-    "require": {}
+    "minimum-stability": "dev"
 }

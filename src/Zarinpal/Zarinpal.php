@@ -2,49 +2,21 @@
 
 namespace PoolPort\Zarinpal;
 
-use DateTime;
 use PoolPort\Config;
-use PoolPort\SoapClient;
+use GuzzleHttp\Client;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use GuzzleHttp\Exception\ClientException;
 
 class Zarinpal extends PortAbstract implements PortInterface
 {
-	/**
-     * Address of germany SOAP server
-     *
-     * @var string
-     */
-    protected $germanyServer = 'https://de.zarinpal.com/pg/services/WebGate/wsdl';
-
-	/**
-     * Address of iran SOAP server
-     *
-     * @var string
-     */
-    protected $iranServer = 'https://ir.zarinpal.com/pg/services/WebGate/wsdl';
-
-	/**
-     * Address of main SOAP server
-     *
-     * @var string
-     */
-    protected $serverUrl;
-
 	/**
 	 * Address of gate for redirect
 	 *
 	 * @var string
 	 */
-	protected $gateUrl = 'https://www.zarinpal.com/pg/StartPay/';
-
-	/**
-	 * Address of zarin gate for redirect
-	 *
-	 * @var string
-	 */
-	protected $zarinGateUrl = 'https://www.zarinpal.com/pg/StartPay/$Authority/ZarinGate';
+	protected $gateUrl = 'https://www.zarinpal.com/pg/StartPay/$Authority';
 
     /**
      * {@inheritdoc}
@@ -52,8 +24,6 @@ class Zarinpal extends PortAbstract implements PortInterface
 	public function __construct(Config $config, DatabaseManager $db, $portId)
 	{
 		parent::__construct($config, $db, $portId);
-
-		$this->setServer();
 	}
 
     /**
@@ -81,16 +51,7 @@ class Zarinpal extends PortAbstract implements PortInterface
      */
     public function redirect()
 	{
-		switch ($this->config->get('zarinpal.type')) {
-			case 'zarin-gate':
-				Header('Location: '.str_replace('$Authority', $this->refId, $this->zarinGateUrl));
-				break;
-
-			case 'normal':
-			default:
-				Header('Location: '.$this->gateUrl.$this->refId);
-				break;
-		}
+		Header('Location: '.str_replace('$Authority', $this->refId, $this->gateUrl));
 	}
 
     /**
@@ -117,32 +78,41 @@ class Zarinpal extends PortAbstract implements PortInterface
     {
 		$this->newTransaction();
 
-        $fields = array(
-            'MerchantID' => $this->config->get('zarinpal.merchant-id'),
-            'Amount' => $this->amount / 10,
-            'CallbackURL' => $this->buildQuery($this->config->get('zarinpal.callback-url'), array('transaction_id' => $this->transactionId)),
-			'Description' 	=> $this->config->get('zarinpal.description', ''),
-			'Email' 	=> $this->config->get('zarinpal.user-email', ''),
-			'Mobile' 	=> $this->config->get('zarinpal.user-mobile', ''),
-        );
-
         try {
-            $soap = new SoapClient($this->serverUrl, $this->config);
-            $response = $soap->PaymentRequest($fields);
+			$client = new Client();
+			$res = $client->request("POST", "https://api.zarinpal.com/pg/v4/payment/request.json", [
+				"json" => [
+					'merchant_id' => $this->config->get('zarinpal.merchant-id'),
+					'amount' => $this->amount,
+					'callback_url' => $this->buildQuery($this->config->get('zarinpal.callback-url'), array('transaction_id' => $this->transactionId)),
+					'description' 	=> $this->config->get('zarinpal.description', ''),
+					'email' 	=> $this->config->get('zarinpal.user-email', ''),
+					'mobile' 	=> $this->config->get('zarinpal.user-mobile', ''),
+				]
+			]);
 
-        } catch(\SoapFault $e) {
+			$res = json_decode($res->getBody()->getContents());
+
+        } catch(ClientException $e) {
+			$res = json_decode($e->getResponse()->getBody()->getContents());
+
             $this->transactionFailed();
-			$this->newLog('SoapFault', $e->getMessage());
+			$this->newLog($res->errors->code, $res->errors->message);
             throw $e;
-        }
 
-        if ($response->Status != 100) {
-            $this->transactionFailed();
-			$this->newLog($response->Status, ZarinpalException::$errors[$response->Status]);
-            throw new ZarinpalException($response->Status);
+        } catch(\Exception $e) {
+			$this->transactionFailed();
+			$this->newLog('Error', $e->getMessage());
+			throw $e;
 		}
 
-        $this->refId = $response->Authority;
+        if ($res->data->code != 100) {
+            $this->transactionFailed();
+			$this->newLog($res->data->code, $res->data->message);
+            throw new ZarinpalException($res->data->code, $res->data->message);
+		}
+
+        $this->refId = $res->data->authority;
 		$this->transactionSetRefId($this->transactionId);
     }
 
@@ -163,8 +133,8 @@ class Zarinpal extends PortAbstract implements PortInterface
         }
 
 	    $this->transactionFailed();
-		$this->newLog(-22, ZarinpalException::$errors[-22]);
-	    throw new ZarinpalException(-22);
+		$this->newLog("Error", "NOK");
+	    throw new ZarinpalException("Error");
     }
 
 	/**
@@ -176,53 +146,42 @@ class Zarinpal extends PortAbstract implements PortInterface
 	*/
 	protected function verifyPayment()
 	{
-
-		$fields = array(
-			'MerchantID' => $this->config->get('zarinpal.merchant-id'),
-			'Authority' => $this->refId,
-			'Amount' => $this->amount / 10,
-		);
-
         try {
-    		$soap = new SoapClient($this->serverUrl, $this->config);
-    		$response = $soap->PaymentVerification($fields);
+			$client = new Client();
+			$res = $client->request("POST", "https://api.zarinpal.com/pg/v4/payment/verify.json", [
+				"json" => [
+					'merchant_id' => $this->config->get('zarinpal.merchant-id'),
+					'amount' => $this->amount,
+					'authority' => $this->refId,
+				]
+			]);
 
-        } catch(\SoapFault $e) {
+			$res = json_decode($res->getBody()->getContents());
+
+        } catch(ClientException $e) {
+			$res = json_decode($e->getResponse()->getBody()->getContents());
+
             $this->transactionFailed();
-            $this->newLog('SoapFault', $e->getMessage());
+			$this->newLog($res->errors->code, $res->errors->message);
+            throw $e;
+
+        } catch(\Exception $e) {
+            $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
             throw $e;
         }
 
-		if ($response->Status != 100) {
+		if ($res->data->code != 100) {
             $this->transactionFailed();
-			$this->newLog($response->Status, ZarinpalException::$errors[$response->Status]);
-            throw new ZarinpalException($response->Status);
+			$this->newLog($res->data->code, $res->data->message);
+            throw new ZarinpalException($res->data->code, $res->data->message);
 		}
 
-		$this->trackingCode = $response->RefID;
+		$this->trackingCode = $res->data->ref_id;
+		$this->cardNumber = $res->data->card_pan;
+
 		$this->transactionSucceed();
-		$this->newLog($response->Status, self::TRANSACTION_SUCCEED_TEXT);
+		$this->newLog($res->data->code, self::TRANSACTION_SUCCEED_TEXT);
 		return true;
-	}
-
-	/**
-	 * Set server for soap transfers data
-	 *
-	 * @return void
-	 */
-	protected function setServer()
-	{
-		$server = $this->config->get('zarinpal.server', 'germany');
-		switch ($server)
-		{
-			case 'iran':
-				$this->serverUrl = $this->iranServer;
-			break;
-
-			case 'germany':
-			default:
-				$this->serverUrl = $this->germanyServer;
-			break;
-		}
 	}
 }
