@@ -83,5 +83,7 @@ try {
     بیت پی - BitPay
     آی دی پی - IDPay
 
+## اطلاعات بیشتر
+[مشاهده کامل مستندات PoolPort](http://poolport.github.io)
 
-مشاهده مستندات در http://poolport.github.io
+[مستندات رسمی درگاه‌ها](https://github.com/PoolPort/port-docs) (اگر میخواهید از PoolPort استفاده کنید نیازی به خواندن این مستندات ندارید) 
