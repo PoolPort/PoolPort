@@ -13,6 +13,7 @@
         }
     ],
     "require": {
+        "php": ">=5.5",
         "guzzlehttp/guzzle": "^6.5"
     },
     "autoload": {
