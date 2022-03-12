@@ -2,8 +2,8 @@
 
 namespace PoolPort\Saman;
 
-use DateTime;
 use PoolPort\Config;
+use GuzzleHttp\Client;
 use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
@@ -16,14 +16,14 @@ class Saman extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $serverUrl = 'https://sep.shaparak.ir/payments/initpayment.asmx?WSDL';
+    protected $serverUrl = 'https://sep.shaparak.ir/MobilePG/MobilePayment';
 
     /**
      * Address of SOAP server for verify payment
      *
      * @var string
      */
-    protected $serverVerifyUrl = 'https://sep.shaparak.ir/payments/referencepayment.asmx?WSDL';
+    protected $serverVerifyUrl = 'https://verify.sep.ir/Payments/ReferencePayment.asmx?WSDL';
 
     /**
      * @var string|null
@@ -64,7 +64,6 @@ class Saman extends PortAbstract implements PortInterface
     public function redirect()
     {
         $token = $this->token;
-        $callbackUrl = $this->buildQuery($this->config->get('saman.callback-url'), array('transaction_id' => $this->transactionId));
 
         require 'SamanRedirector.php';
     }
@@ -91,32 +90,42 @@ class Saman extends PortAbstract implements PortInterface
      */
     protected function sendPayRequest()
     {
-        $dateTime = new DateTime();
-
         $this->newTransaction();
 
         $fields = array(
-            'MID' => $this->config->get('saman.merchant-id'),
+            'Action' => 'token',
+            'Amount' => $this->amount,
+            'TerminalId' => $this->config->get('saman.terminal-id'),
             'ResNum' => $this->transactionId(),
-            'Amount' => $this->amount
+            'RedirectURL' => $this->buildQuery($this->config->get('saman.callback-url'), array('transaction_id' => $this->transactionId)),
+            'CellNumber' => $this->config->get('saman.user-mobile'),
         );
 
         try {
-            $soap = new SoapClient($this->serverUrl, $this->config);
-            $response = $soap->RequestToken($fields['MID'], $fields['ResNum'], $fields['Amount']);
+            $client = new Client();
+            $response = $client->request('POST', $this->serverUrl, [
+                'json' => $fields,
+                'curl' => [
+                    CURLOPT_SSL_CIPHER_LIST => 'DEFAULT:@SECLEVEL=1'
+                ]
+            ]);
 
-        } catch(\SoapFault $e) {
+            $response = json_decode($response->getBody()->getContents());
+
+        } catch(\Exception $e) {
             $this->transactionFailed();
-            $this->newLog('SoapFault', $e->getMessage());
+            $this->newLog('Error', $e->getMessage());
             throw $e;
         }
 
-        if (intval($response) < 0) {
+        if ($response->status == 1) {
+            $this->token = $response->token;
+
+        } else {
             $this->transactionFailed();
-            $this->newLog($response, @SamanException::$errors[$response]);
-            throw SamanException::error($response);
+            $this->newLog($response->errorCode, $response->errorDesc);
+            throw new SamanException($response->errorDesc, $response->errorCode);
         }
-        $this->token = $response;
     }
 
     /**
@@ -128,19 +137,20 @@ class Saman extends PortAbstract implements PortInterface
      */
     protected function userPayment()
     {
-        $stateCode = intval(@$_POST['StateCode']);
+        $state = @$_POST['State'];
+        $stateCode = intval(@$_POST['Status']);
         $this->refId = @$_POST['RefNum'];
-        $this->trackingCode = @$_POST['TRACENO'];
+        $this->trackingCode = @$_POST['TraceNo'];
         $this->cardNumber = @$_POST['SecurePan'];
 
-        if ($stateCode == '0') {
+        if ($stateCode == 2) {
             $this->transactionSetRefId();
             return true;
         }
 
         $this->transactionFailed();
-        $this->newLog($stateCode, @SamanException::$stateErrors[$stateCode]);
-        throw SamanException::stateError($stateCode);
+        $this->newLog($stateCode, $state);
+        throw new SamanException($state, $stateCode);
     }
 
     /**
@@ -153,14 +163,9 @@ class Saman extends PortAbstract implements PortInterface
      */
     protected function verifyPayment()
     {
-        $fields = array(
-            'RefNum' => $this->refId,
-            'MerchantId' => $this->config->get('saman.merchant-id')
-        );
-
         try {
             $soap = new SoapClient($this->serverVerifyUrl, $this->config);
-            $response = $soap->verifyTransaction($fields['RefNum'], $fields['MerchantId']);
+            $response = $soap->verifyTransaction($this->refId, $this->config->get('saman.terminal-id'));
 
         } catch(\SoapFault $e) {
             $this->transactionFailed();
@@ -174,8 +179,8 @@ class Saman extends PortAbstract implements PortInterface
             return true;
         } else {
             $this->transactionFailed();
-            $this->newLog($response, @SamanException::$stateErrors[$response]);
-            throw SamanException::stateError($stateCode);
+            $this->newLog($response, @SamanException::$errors[$response]);
+            throw new SamanException(@SamanException::$errors[$response], $response);
         }
     }
 }

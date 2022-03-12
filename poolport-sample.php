@@ -131,8 +131,9 @@ return array(
     // Saman gateway
     //--------------------------------
     'saman' => array(
-        'merchant-id' => 'xxxxx',
-        'callback-url' => 'http://example.org/result'
+        'terminal-id' => 'xxxxx',
+        'callback-url' => 'http://example.org/result',
+        'user-mobile' => '09xxxxxxxxx',
     ),
 
     // Pay gateway
