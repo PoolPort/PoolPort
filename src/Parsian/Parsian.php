@@ -29,7 +29,7 @@ class Parsian extends PortAbstract implements PortInterface
 	 *
 	 * @var string
 	 */
-	protected $serverVerifyUrl = 'https://pec.shaparak.ir/NewIPGServices/Confirm/ConfirmService.asmx?wsdl';
+	protected $serverVerifyUrl = 'https://pec.shaparak.ir/NewIPGServices/Confirm/ConfirmService.asmx?WSDL';
 
 	/**
 	 * {@inheritdoc}
@@ -96,7 +96,8 @@ class Parsian extends PortAbstract implements PortInterface
 			'LoginAccount' => $this->config->get('parsian.pin'),
 			'Amount' => intval($this->amount),
 			'OrderId' => intval($this->transactionId()),
-			'CallBackUrl' => $this->buildQuery($this->config->get('parsian.callback-url'), array('transaction_id' => $this->transactionId()))
+			'CallBackUrl' => $this->buildQuery($this->config->get('parsian.callback-url'), array('transaction_id' => $this->transactionId())),
+			'Originator' => $this->config->get('parsian.user-mobile'),
 		);
 
 		try{

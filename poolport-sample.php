@@ -87,7 +87,8 @@ return array(
     //--------------------------------
     'parsian' => array(
         'pin'          => 'xxxxxxxxxxxxxxxxxxxx',
-        'callback-url' => 'http://example.org/result'
+        'callback-url' => 'http://example.org/result',
+        'user-mobile'   => '09xxxxxxxxx',
     ),
 
     //--------------------------------
