@@ -6,15 +6,12 @@
         {
             "name": "mohsen shafiei",
             "email": "mohsen.sh12@hotmail.com"
-        },
-        {
-            "name": "ReZa ZaRe",
-            "email": "rz.zare@gmail.com"
         }
     ],
     "require": {
-        "php": ">=5.5",
-        "guzzlehttp/guzzle": "^6.5"
+        "php": "^5.5|^7.0|^8.0",
+        "guzzlehttp/guzzle": "^6.5",
+        "ramsey/uuid": "^3.9"
     },
     "require-dev": {
         "phpunit/phpunit": "^9"

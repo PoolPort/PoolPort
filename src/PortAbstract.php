@@ -2,6 +2,8 @@
 
 namespace PoolPort;
 
+use Ramsey\Uuid\Uuid;
+
 abstract class PortAbstract
 {
     /**
@@ -311,7 +313,7 @@ abstract class PortAbstract
         $stmt->bindParam(':result_code', $statusCode);
         $stmt->bindParam(':result_message', $statusMessage);
         $stmt->bindParam(':log_date', $date);
-        $stmt->execute() || dd($stmt->errorInfo());
+        $stmt->execute();
     }
 
     /**
@@ -385,21 +387,19 @@ abstract class PortAbstract
     }
 
     /**
-     * Add query string to a url
+     * @var string $url
      *
-     * @param string $url
-     * @param array $query
-     * @return string
+     * @return string redirect url
      */
-    protected function buildQuery($url, array $query)
+    protected function buildRedirectUrl($url)
     {
-        // Add unique id to url if set true in configuration
-        if ($this->config->get('configuration.use_uniqeid')) {
-            $query['u'] = uniqid();
-            $this->setUniqeid($query['u'], $this->transactionId());
-        }
+        $uniqueId = $this->createAUniqueId();
+        $uniqueKey = $this->createAUniqueKey();
+        $verifyKey = $this->createVerifyKey($uniqueId, $uniqueKey);
 
-        $query = http_build_query($query);
+        $this->setUniqeid($uniqueId, $uniqueKey, $verifyKey, $this->transactionId());
+
+        $query = http_build_query(["u" => $uniqueId]);
 
         $questionMark = strpos($url, '?');
         if (!$questionMark)
@@ -409,16 +409,55 @@ abstract class PortAbstract
         }
     }
 
-    protected function setUniqeid($uniqeid, $transactionId)
+    private function createAUniqueId()
+    {
+        $dbh = $this->db->getDBH();
+
+        do {
+            $uuid = Uuid::uuid4();
+
+            $stmt = $dbh->prepare("SELECT `id` from `poolport_transactions`
+                            WHERE `unique_id` = :uuid
+                            LIMIT 1
+            ");
+            $stmt->bindParam(':uuid', $uuid);
+            $stmt->execute();
+
+            $found = count($stmt->fetchAll()) > 0;
+        } while($found);
+
+        return $uuid;
+    }
+
+    private function createAUniqueKey()
+    {
+        return uniqid("", true);
+    }
+
+    private function createVerifyKey($uniqueId, $uniqueKey)
+    {
+        return password_hash($uniqueId.$uniqueKey, PASSWORD_BCRYPT);
+    }
+
+    public static function checkVerifyKey($transaction)
+    {
+        return password_verify($transaction->unique_id.$transaction->unique_key, $transaction->verify_key);
+    }
+
+    protected function setUniqeid($uniqeid, $uniqueKey, $verifyKey, $transactionId)
     {
         $dbh = $this->db->getDBH();
 
         $stmt = $dbh->prepare("UPDATE poolport_transactions
-                               SET unique_id = :unique_id
+                               SET unique_id = :unique_id,
+                                 unique_key = :unique_key,
+                                 verify_key = :verify_key
                                WHERE id = :id");
 
         $stmt->execute([
             ':unique_id' => $uniqeid,
+            ':unique_key' => $uniqueKey,
+            ':verify_key' => $verifyKey,
             ':id'     => $transactionId
         ]);
     }

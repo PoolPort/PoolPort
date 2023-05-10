@@ -97,7 +97,7 @@ class Saman extends PortAbstract implements PortInterface
             'Amount' => $this->amount,
             'TerminalId' => $this->config->get('saman.terminal-id'),
             'ResNum' => $this->transactionId(),
-            'RedirectURL' => $this->buildQuery($this->config->get('saman.callback-url'), array('transaction_id' => $this->transactionId)),
+            'RedirectURL' => $this->buildRedirectUrl($this->config->get('saman.callback-url')),
             'CellNumber' => $this->config->get('saman.user-mobile'),
         );
 

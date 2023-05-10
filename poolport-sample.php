@@ -9,8 +9,6 @@ return array(
     'timezone' => 'Asia/Tehran',
 
     'configuration' => array(
-        // Use uniqe id in addition of transaction id for increase security
-        'use_uniqeid' => true
     ),
 
     //--------------------------------

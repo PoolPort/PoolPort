@@ -31,7 +31,7 @@ class ConfigTest extends TestCase
     public function testCanReadHierarchyData()
     {
         $config = new Config(__DIR__."/../poolport-sample.php");
-        $this->assertTrue($config->get("configuration.use_uniqeid"));
+        $this->assertTrue($config->get("mellat.username"));
     }
 
     public function testCanReturnDefaultData()
@@ -51,9 +51,9 @@ class ConfigTest extends TestCase
     public function testCanSetHierarchyData()
     {
         $config = new Config(__DIR__."/../poolport-sample.php");
-        $config->set("configuration.use_uniqeid", false);
+        $config->set("mellat.username", false);
 
-        $this->assertFalse($config->get("configuration.use_uniqeid"));
+        $this->assertFalse($config->get("mellat.username"));
     }
 
     public function testCanSetNewData()

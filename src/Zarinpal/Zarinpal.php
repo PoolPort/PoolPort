@@ -18,6 +18,13 @@ class Zarinpal extends PortAbstract implements PortInterface
 	 */
 	protected $gateUrl = 'https://www.zarinpal.com/pg/StartPay/$Authority';
 
+	/**
+	 * For verify payment
+	 *
+	 * @var string
+	 */
+	protected $authority;
+
     /**
      * {@inheritdoc}
      */
@@ -84,7 +91,7 @@ class Zarinpal extends PortAbstract implements PortInterface
 				"json" => [
 					'merchant_id' => $this->config->get('zarinpal.merchant-id'),
 					'amount' => $this->amount,
-					'callback_url' => $this->buildQuery($this->config->get('zarinpal.callback-url'), array('transaction_id' => $this->transactionId)),
+					'callback_url' => $this->buildRedirectUrl($this->config->get('zarinpal.callback-url')),
 					'description' 	=> $this->config->get('zarinpal.description', ''),
 					'email' 	=> $this->config->get('zarinpal.user-email', ''),
 					'mobile' 	=> $this->config->get('zarinpal.user-mobile', ''),

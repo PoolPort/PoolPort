@@ -53,22 +53,15 @@ class DataBaseManager
 	 *
 	 * @return Object|false
 	 */
-	public function find($transactionId, $uniqeId, $lock = false)
+	public function find($uniqeId, $lock = false)
 	{
-		$u = "";
-        if ($this->config->get('configuration.use_uniqeid'))
-			$u = "AND unique_id = :unique_id";
-
 		$l = "";
 		if ($lock) {
 			$l = "FOR UPDATE";
 		}
 
-		$stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE id = :id $u LIMIT 1 $l");
-		$stmt->bindParam(':id', $transactionId);
-
-        if ($this->config->get('configuration.use_uniqeid'))
-			$stmt->bindParam(':unique_id', $uniqeId);
+		$stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE unique_id = :unique_id LIMIT 1 $l");
+		$stmt->bindParam(':unique_id', $uniqeId);
 
 		$stmt->execute();
 
@@ -115,7 +108,9 @@ class DataBaseManager
 	{
 		$query = "CREATE TABLE IF NOT EXISTS `poolport_transactions` (
 					`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-					`unique_id` varchar(13) COLLATE utf8_persian_ci DEFAULT NULL,
+					`unique_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
+					`unique_key` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
+					`verify_key` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
 					`port_id` tinyint(2) UNSIGNED NOT NULL,
 					`price` decimal(15,2) NOT NULL,
 					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,

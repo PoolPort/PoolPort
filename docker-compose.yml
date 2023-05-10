@@ -1,0 +1,12 @@
+version: '3'
+services:
+  mysql:
+      image: mysql/mysql-server:5.7
+      environment:
+        MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        MYSQL_ROOT_PASSWORD: ""
+        MYSQL_DATABASE: "forge"
+        MYSQL_ROOT_HOST: "%"
+      ports:
+        - "3306:3306"
+      restart: unless-stopped

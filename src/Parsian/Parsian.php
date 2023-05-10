@@ -96,7 +96,7 @@ class Parsian extends PortAbstract implements PortInterface
 			'LoginAccount' => $this->config->get('parsian.pin'),
 			'Amount' => intval($this->amount),
 			'OrderId' => intval($this->transactionId()),
-			'CallBackUrl' => $this->buildQuery($this->config->get('parsian.callback-url'), array('transaction_id' => $this->transactionId())),
+			'CallBackUrl' => $this->buildRedirectUrl($this->config->get('parsian.callback-url')),
 			'Originator' => $this->config->get('parsian.user-mobile'),
 		);
 

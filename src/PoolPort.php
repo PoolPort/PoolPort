@@ -140,15 +140,17 @@ class PoolPort
      */
     public function verify()
     {
-        if (!isset($_GET['transaction_id']))
+        if (!isset($_GET['u']))
             throw new InvalidRequestException;
 
-        $transactionId = intval($_GET['transaction_id']);
-        $uniqeId = @$_GET['u'];
-        $transaction = $this->db->find($transactionId, $uniqeId);
+        $uniqeId = $_GET['u'];
+        $transaction = $this->db->find($uniqeId);
 
         if (!$transaction)
             throw new NotFoundTransactionException;
+
+        if (!PortAbstract::checkVerifyKey($transaction))
+            throw new InvalidRequestException;
 
         if ($transaction->status == PortAbstract::TRANSACTION_SUCCEED || $transaction->status == PortAbstract::TRANSACTION_FAILED)
             throw new RetryException;
@@ -170,19 +172,21 @@ class PoolPort
      */
     public function verifyLock()
     {
-        if (!isset($_GET['transaction_id']))
+        if (!isset($_GET['u']))
             throw new InvalidRequestException;
 
-        $transactionId = intval($_GET['transaction_id']);
-        $uniqeId = @$_GET['u'];
+        $uniqeId = $_GET['u'];
 
         try {
             $this->db->beginTransaction();
 
-            $transaction = $this->db->find($transactionId, $uniqeId, true);
+            $transaction = $this->db->find($uniqeId, true);
 
             if (!$transaction)
                 throw new NotFoundTransactionException;
+
+            if (!PortAbstract::checkVerifyKey($transaction))
+                throw new InvalidRequestException;
 
             if ($transaction->status != PortAbstract::TRANSACTION_INIT)
                 throw new RetryException;

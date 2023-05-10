@@ -44,7 +44,7 @@ class PortSimulator extends PortAbstract implements PortInterface
     public function redirect()
     {
         $refId = $this->transactionId;
-        $callbackUrl = $this->buildQuery($this->config->get('simulator.callback-url'), array('transaction_id' => $this->transactionId));
+        $callbackUrl = $this->buildRedirectUrl($this->config->get('simulator.callback-url'));
         $trackingCode = mt_rand(1000000, 9999999);
 
         require 'PortSimulatorRedirector.php';
