@@ -3,11 +3,13 @@
 namespace PoolPort\Saman;
 
 use PoolPort\Config;
+use PoolPort\PoolPort;
 use GuzzleHttp\Client;
 use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\RetryException;
 
 class Saman extends PortAbstract implements PortInterface
 {
@@ -143,7 +145,7 @@ class Saman extends PortAbstract implements PortInterface
         $this->trackingCode = @$_POST['TraceNo'];
         $this->cardNumber = @$_POST['SecurePan'];
 
-        if ($stateCode == 2) {
+        if ($stateCode == 2 && $this->refIdIsUnique()) {
             $this->transactionSetRefId();
             return true;
         }
@@ -151,6 +153,35 @@ class Saman extends PortAbstract implements PortInterface
         $this->transactionFailed();
         $this->newLog($stateCode, $state);
         throw new SamanException($state, $stateCode);
+    }
+
+    /**
+     * Check if we have that ref id on database
+     *
+     * @throws RetryException
+     *
+     * @return true
+     */
+    protected function refIdIsUnique()
+    {
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("SELECT `id` from `poolport_transactions`
+                        WHERE `ref_id` = :refId
+                            AND `port_id` = :portId
+                        LIMIT 1
+        ");
+        $stmt->bindParam(':refId', $this->refId);
+        $stmt->bindParam(':portId', PoolPort::P_SAMAN);
+        $stmt->execute();
+
+        $found = count($stmt->fetchAll()) > 0;
+
+        if ($found) {
+            throw new RetryException;
+        }
+
+        return true;
     }
 
     /**
