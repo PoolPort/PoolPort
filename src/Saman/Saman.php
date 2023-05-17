@@ -171,8 +171,11 @@ class Saman extends PortAbstract implements PortInterface
                             AND `port_id` = :portId
                         LIMIT 1
         ");
+
+        $portId = PoolPort::P_SAMAN;
+
         $stmt->bindParam(':refId', $this->refId);
-        $stmt->bindParam(':portId', PoolPort::P_SAMAN);
+        $stmt->bindParam(':portId', $portId);
         $stmt->execute();
 
         $found = count($stmt->fetchAll()) > 0;
