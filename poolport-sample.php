@@ -202,4 +202,15 @@ return array(
         'user-mobile' => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+    // PayStar gateway
+    //--------------------------------
+    'paystar' => array(
+        'pin' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'user-mobile' => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+        'description' => 'description',                     //optional
+        'name' => 'name',                                   //optional
+        'email' => 'email',                                 //optional
+        'national_code' => 'national_code',                 //optional
+    ),
 );
