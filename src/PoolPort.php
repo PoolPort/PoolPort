@@ -19,6 +19,7 @@ use PoolPort\Pasargad\Pasargad;
 use PoolPort\Zarinpal\Zarinpal;
 use PoolPort\JahanPay\JahanPay;
 use PoolPort\IranKish\IranKish;
+use PoolPort\PayStar\PayStar;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\Exceptions\PortNotFoundException;
@@ -62,6 +63,8 @@ class PoolPort
     const P_PAYPING = 17;
 
     const P_VANDAR = 18;
+
+    const P_PAYSTAR = 19;
 
     /**
      * @var Config
@@ -115,7 +118,7 @@ class PoolPort
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
             self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
-            self::P_PAYPING, self::P_VANDAR);
+            self::P_PAYPING, self::P_VANDAR, self::P_PAYSTAR);
     }
 
     /**
@@ -282,6 +285,10 @@ class PoolPort
 
             case self::P_VANDAR:
                 $this->portClass = new Vandar($this->config, $this->db, self::P_VANDAR);
+                break;
+
+            case self::P_PAYSTAR:
+                $this->portClass = new PayStar($this->config, $this->db, self::P_PAYSTAR);
                 break;
 
             default:

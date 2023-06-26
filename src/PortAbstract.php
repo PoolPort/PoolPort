@@ -358,6 +358,7 @@ abstract class PortAbstract
         $this->config->set('idpay.callback-url', $url);
         $this->config->set('payping.callback-url', $url);
         $this->config->set('vandar.callback-url', $url);
+        $this->config->set('paystar.callback-url', $url);
 
         return $this;
     }
@@ -384,6 +385,7 @@ abstract class PortAbstract
         $this->config->set('vandar.user-mobile', $mobile);
         $this->config->set('saman.user-mobile', $mobile);
         $this->config->set('parsian.user-mobile', $mobile);
+        $this->config->set('paystar.user-mobile', $mobile);
     }
 
     /**
