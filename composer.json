@@ -1,11 +1,15 @@
 {
-    "name": "poolport/poolport",
+    "name": "aminrpg/poolport",
     "description": "A PHP library to connect all Iraninan payments gateways",
     "license": "MIT",
     "authors": [
         {
             "name": "mohsen shafiei",
             "email": "mohsen.sh12@hotmail.com"
+        },
+        {
+            "name": "Amin Sepehri",
+            "email": "aminrpg@gmail.com"
         }
     ],
     "require": {
