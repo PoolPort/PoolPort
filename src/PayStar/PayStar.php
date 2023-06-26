@@ -120,6 +120,7 @@ class PayStar extends PortAbstract implements PortInterface
 
 		if($response->status == 1) {
 			$this->refId = $response->data->ref_num;
+			$this->set($response->data->payment_amount);
 			$this->transactionSetRefId();
 			return true;
 		}
@@ -139,7 +140,6 @@ class PayStar extends PortAbstract implements PortInterface
 	protected function userPayment()
 	{
 		$this->refId = @$_POST['ref_num'];
-		$this->orderID = @$_POST['order_id'];
 		$this->transactionId = @$_POST['transaction_id'];
 		$this->cardNumber = @$_POST['card_number'];
 		$this->trackingCode = @$_POST['tracking_code'];
