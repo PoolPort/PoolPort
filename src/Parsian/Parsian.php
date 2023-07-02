@@ -132,7 +132,6 @@ class Parsian extends PortAbstract implements PortInterface
 	 */
 	protected function userPayment()
 	{
-		$this->refId = @$_POST['Token'];
 		$this->trackingCode = @$_POST['RRN'];
 		$payRequestResCode = @$_POST['status'];
 
