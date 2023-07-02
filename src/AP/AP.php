@@ -115,7 +115,7 @@ class AP extends PortAbstract implements PortInterface
                     $this->amount,
                     $this->syncTime(),
                     '',
-                    $this->buildQuery($this->config->get('ap.callback-url'), array('transaction_id' => $this->transactionId())),
+                    $this->buildRedirectUrl($this->config->get('ap.callback-url')),
                     '0'
                 ))
             );

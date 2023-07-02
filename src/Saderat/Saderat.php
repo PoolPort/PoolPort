@@ -213,7 +213,7 @@ class Saderat extends PortAbstract implements PortInterface
      */
     protected function getEncryptedCallbackUrl()
     {
-        $callBackUrl = $this->buildQuery($this->config->get('saderat.callback-url'), array('transaction_id' => $this->transactionId));
+        $callBackUrl = $this->buildRedirectUrl($this->config->get('saderat.callback-url'));
         openssl_public_encrypt($callBackUrl, $crypted, $this->publicKey);
         return base64_encode($crypted);
     }
@@ -237,7 +237,7 @@ class Saderat extends PortAbstract implements PortInterface
     protected function createSignature()
     {
         $data = $this->amount.$this->transactionId().$this->config->get('saderat.merchant-id').
-            $this->buildQuery($this->config->get('saderat.callback-url'), array('transaction_id' => $this->transactionId)).
+            $this->buildRedirectUrl($this->config->get('saderat.callback-url')).
             $this->config->get('saderat.terminal-id');
 
         openssl_sign($data, $signature, $this->privateKey, OPENSSL_ALGO_SHA1);
