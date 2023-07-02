@@ -1,5 +1,5 @@
 {
-    "name": "aminrpg/poolport",
+    "name": "poolport/poolport",
     "description": "A PHP library to connect all Iraninan payments gateways",
     "license": "MIT",
     "authors": [
