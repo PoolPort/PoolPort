@@ -88,7 +88,7 @@ class JiBit extends PortAbstract implements PortInterface
 
         $fields = array(
             'amount' => $this->amount,
-            'callBackUrl' => $this->buildQuery($this->config->get('jibit.callback-url'), array('transaction_id' => $this->transactionId)),
+            'callBackUrl' => $this->buildRedirectUrl($this->config->get('jibit.callback-url')),
             'userIdentity' => $this->config->get('jibit.user-mobile'),
             'merchantOrderId' => $this->config->get('jibit.merchant-id')
         );

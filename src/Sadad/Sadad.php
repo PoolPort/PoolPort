@@ -105,7 +105,7 @@ class Sadad extends PortAbstract implements PortInterface
                 'SignData' =>  $this->encryptPKCS7($this->config->get('sadad.terminalId').";".$this->transactionId().";".$this->amount, $this->config->get('sadad.transactionKey')),
                 'LocalDateTime' => $date->format('Y-m-d H:i:s'),
                 'OrderId' => $this->transactionId(),
-                'ReturnUrl' => $this->buildQuery($this->config->get('sadad.callback-url'), array('transaction_id' => $this->transactionId())),
+                'ReturnUrl' => $this->buildRedirectUrl($this->config->get('sadad.callback-url')),
                 'UserId' => $this->config->get('sadad.user-mobile')
             );
             $data = json_encode($fields);

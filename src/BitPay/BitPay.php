@@ -98,7 +98,7 @@ class BitPay extends PortAbstract implements PortInterface
 		$fields = array(
 			'api' => $this->config->get('bitpay.api'),
 			'amount' => $this->amount,
-			'redirect' => urlencode($this->buildQuery($this->config->get('bitpay.callback-url'), array('transaction_id' => $this->transactionId))),
+			'redirect' => urlencode($this->buildRedirectUrl($this->config->get('bitpay.callback-url'))),
 			'name' => $this->config->get('bitpay.name', ''),
 			'email' => $this->config->get('bitpay.email', ''),
 			'description' => $this->config->get('bitpay.description', ''),

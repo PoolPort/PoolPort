@@ -106,7 +106,7 @@ class IDPay extends PortAbstract implements PortInterface
             'phone'    => $this->config->get('idpay.user-mobile'),
             'mail'     => $this->config->get('idpay.mail'),
             'desc'     => $this->config->get('idpay.description'),
-            'callback' => $this->buildQuery($this->config->get('idpay.callback-url'), array('transaction_id' => $this->transactionId()))
+            'callback' => $this->buildRedirectUrl($this->config->get('idpay.callback-url'))
         );
 
         $ch = curl_init();
