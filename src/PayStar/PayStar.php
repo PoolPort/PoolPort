@@ -14,7 +14,7 @@ class PayStar extends PortAbstract implements PortInterface
 	 *
 	 * @var string
 	 */
-	protected $serverUrl = 'https://core.paystar.ir/api/pardakht/create';
+	protected $serverUrl = 'https://core.paystar.ir/api/pardakht/create?';
 
 	/**
 	 * Address of gate for redirect
@@ -28,7 +28,14 @@ class PayStar extends PortAbstract implements PortInterface
 	 *
 	 * @var string
 	 */
-	protected $serverVerifyUrl = 'https://core.paystar.ir/api/pardakht/verify';
+	protected $serverVerifyUrl = 'https://core.paystar.ir/api/pardakht/verify?';
+
+	/**
+	 * Payment Token
+	 *
+	 * @var string
+	 */
+	 protected $token;
 
 	/**
 	 * {@inheritdoc}
@@ -62,7 +69,7 @@ class PayStar extends PortAbstract implements PortInterface
 	 */
 	public function redirect()
 	{
-		$url = $this->gateUrl . $this->refId();
+		header('Location: '.$this->gateUrl.$this->token);
 	}
 
 	/**
@@ -90,7 +97,6 @@ class PayStar extends PortAbstract implements PortInterface
 		$this->newTransaction();
 
 		$params = array(
-			'sign' => $this->config->get('paystar.sign'),
 			'amount' => intval($this->amount),
 			'order_id' => intval($this->transactionId()),
 			'callback' => $this->buildRedirectUrl($this->config->get('paystar.callback-url')),
@@ -100,7 +106,7 @@ class PayStar extends PortAbstract implements PortInterface
 		$curl = curl_init();
 
 		curl_setopt_array($curl, array(
-			CURLOPT_URL => $this->serverUrl,
+			CURLOPT_URL => $this->serverUrl.http_build_query($params),
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_ENCODING => '',
 			CURLOPT_MAXREDIRS => 10,
@@ -115,18 +121,19 @@ class PayStar extends PortAbstract implements PortInterface
 			),
 		  ));
 
-		$response = json_decode(curl_exec($curl), true);
+		$response = json_decode(curl_exec($curl));
 		curl_close($curl);
 
 		if($response->status == 1) {
 			$this->refId = $response->data->ref_num;
 			$this->set($response->data->payment_amount);
 			$this->transactionSetRefId();
+			$this->token = $response->data->token;
 			return true;
 		}
 
 		$this->transactionFailed();
-		$this->newLog($response, PayStarErrorException::$errors[$response]);
+		$this->newLog($response->status, PayStarErrorException::$errors[$response->status]);
 		throw new PayStarErrorException($response);
 	}
 
@@ -140,7 +147,7 @@ class PayStar extends PortAbstract implements PortInterface
 	protected function userPayment()
 	{
 		$this->refId = @$_POST['ref_num'];
-		$this->transactionId = @$_POST['transaction_id'];
+		$this->transactionId = @$_POST['order_id'];
 		$this->cardNumber = @$_POST['card_number'];
 		$this->trackingCode = @$_POST['tracking_code'];
 		$payRequestResCode = @$_POST['status'];
@@ -167,7 +174,7 @@ class PayStar extends PortAbstract implements PortInterface
 			'amount' => intval($this->amount),
 		);
 
-		$ch = curl_init($this->serverVerifyUrl);
+		$ch = curl_init($this->serverVerifyUrl.http_build_query($params));
 		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $h = array('Authorization: Bearer '.$this->config->get('paystar.pin'), 'Content-Type: application/json'));
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -175,21 +182,21 @@ class PayStar extends PortAbstract implements PortInterface
 		$result = json_decode(curl_exec($ch));
 		curl_close($ch);
 
-		if ($result === false || !isset($result->Status)) {
+		if ($result === false || !isset($result->status)) {
 			$this->transactionFailed();
 			$this->newLog(-1, @PayStarErrorException::$errors[-1]);
 			throw new PayStarErrorException(-1);
 		}
 
-		if ($result->ConfirmPaymentResult->Status != 1) {
+		if ($result->ConfirmPaymentResult->status != 1) {
 			$this->transactionFailed();
-			$this->newLog($result->ConfirmPaymentResult->Status, @PayStarErrorException::$errors[$result->ConfirmPaymentResult->Status]);
-			throw new PayStarErrorException($result->ConfirmPaymentResult->Status);
+			$this->newLog($result->ConfirmPaymentResult->status, @PayStarErrorException::$errors[$result->ConfirmPaymentResult->status]);
+			throw new PayStarErrorException($result->ConfirmPaymentResult->status);
 		}
 
 		$this->cardNumber = $result->data->card_number;
 		$this->transactionSucceed();
-		$this->newLog($result->ConfirmPaymentResult->Status, self::TRANSACTION_SUCCEED_TEXT);
+		$this->newLog($result->ConfirmPaymentResult->status, self::TRANSACTION_SUCCEED_TEXT);
 
 		return true;
 	}
