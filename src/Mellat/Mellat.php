@@ -93,7 +93,7 @@ class Mellat extends PortAbstract implements PortInterface
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
             'additionalData' => '',
-            'callBackUrl' => $this->buildQuery($this->config->get('mellat.callback-url'), array('transaction_id' => $this->transactionId)),
+            'callBackUrl' => $this->buildRedirectUrl($this->config->get('mellat.callback-url')),
             'payerId' => 0,
         );
 
