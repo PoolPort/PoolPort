@@ -4,7 +4,7 @@
 ## نصب پکیج
 
 ```shell
-composer require poolport/poolport:~v3
+composer require aminrpg/poolport:~v3
 ```
 
 ## فایل تنظیمات
@@ -77,7 +77,7 @@ try {
     پی پینگ - P_PAYPING
     وندار - P_VANDAR
     شبیه ساز پرداخت - P_SIMULATOR
-
+    پی استار - P_PAYSTAR
 ## لیست درگاه های تست نشده
     پاسارگاد - P_PASARGAD
     بیت پی - BitPay
