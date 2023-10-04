@@ -113,10 +113,12 @@ return array(
     // IranKish gateway
     //--------------------------------
     'irankish' => array(
-        'merchant-id' => 'xxxx',
-        'sha1-key' => 'xxxxxxxxxxxxxxxxxxxx',
-        'description' => 'description',
-        'callback-url' => 'http://example.org/result'
+        'terminal-id'  => 'xxxxxxxx',
+        'acceptor-id'  => 'xxxxxxxxxxxxxxx',
+        'pass-phrase'  => 'xxxxxxxxxxxxxxxx',
+        'public-key'   => __DIR__.'/irankish-public-key.pem',
+        'callback-url' => 'http://example.org/result',
+        'user-mobile'  => '989xxxxxxxxx',
     ),
 
     //--------------------------------

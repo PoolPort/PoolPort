@@ -375,6 +375,7 @@ abstract class PortAbstract
         $withPrefixFormat = '989'.substr($mobile, 2);
 
         $this->config->set('mellat.user-mobile', $withPrefixFormat);
+        $this->config->set('irankish.user-mobile', $withPrefixFormat);
         $this->config->set('sadad.user-mobile', $mobile);
         $this->config->set('jibit.user-mobile', $mobile);
         $this->config->set('ap.user-mobile', $mobile);

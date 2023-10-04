@@ -3,19 +3,15 @@
         <script>
         	var form = document.createElement("form");
         	form.setAttribute("method", "POST");
-        	form.setAttribute("action", "https://ikc.shaparak.ir/TPayment/Payment/index");
+        	form.setAttribute("action", "https://ikc.shaparak.ir/iuiv3/IPG/Index/");
         	form.setAttribute("target", "_self");
+        	form.setAttribute("enctype", "multipart/form-data");
 
             var hiddenField = document.createElement("input");
-        	hiddenField.setAttribute("name", "token");
-        	hiddenField.setAttribute("value", "<?php echo $refId ?>");
-
-            var hiddenField2 = document.createElement("input");
-        	hiddenField2.setAttribute("name", "merchantId");
-        	hiddenField2.setAttribute("value", "<?php echo $merchantId ?>");
+        	hiddenField.setAttribute("name", "tokenIdentity");
+        	hiddenField.setAttribute("value", "<?php echo $token ?>");
 
             form.appendChild(hiddenField);
-            form.appendChild(hiddenField2);
 
         	document.body.appendChild(form);
         	form.submit();

@@ -2,12 +2,13 @@
 
 namespace PoolPort\IranKish;
 
-use DateTime;
 use PoolPort\Config;
+use GuzzleHttp\Client;
 use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\PoolPortException;
 
 class IranKish extends PortAbstract implements PortInterface
 {
@@ -16,14 +17,24 @@ class IranKish extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $serverUrl = 'https://ikc.shaparak.ir/TToken/Tokens.xml';
+    protected $serverUrl = 'https://ikc.shaparak.ir/api/v3/tokenization/make';
 
     /**
      * Address of SOAP server for verify payment
      *
      * @var string
      */
-    protected $serverVerifyUrl = 'https://ikc.shaparak.ir/TVerify/Verify.xml';
+    protected $serverVerifyUrl = 'https://ikc.shaparak.ir/api/v3/confirmation/purchase';
+
+    /**
+     * @var string
+     */
+    protected $token;
+
+    /**
+     * @var string
+     */
+    protected $retrievalReferenceNumber;
 
     /**
      * {@inheritdoc}
@@ -58,8 +69,7 @@ class IranKish extends PortAbstract implements PortInterface
      */
     public function redirect()
     {
-        $refId = $this->refId;
-        $merchantId = $this->config->get('irankish.merchant-id');
+        $token = $this->token;
 
         require 'IranKishRedirector.php';
     }
@@ -86,37 +96,81 @@ class IranKish extends PortAbstract implements PortInterface
      */
     protected function sendPayRequest()
     {
-        $dateTime = new DateTime();
-
         $this->newTransaction();
 
-        $fields = array(
-            'amount' => $this->amount,
-            'merchantId' => $this->config->get('irankish.merchant-id'),
-            'description' => $this->config->get('irankish.description'),
-            'invoiceNo' => $this->transactionId(),
-            'paymentId' => $this->transactionId(),
-            'specialPaymentId' => $this->transactionId(),
-            'revertURL' => $this->buildQuery($this->config->get('irankish.callback-url'), array('transaction_id' => $this->transactionId)),
-        );
+        try {
+            $tokenData = $this->generateAuthenticationEnvelope(
+                $this->config->get('irankish.public-key'),
+                $this->config->get('irankish.terminal-id'),
+                $this->config->get('irankish.pass-phrase'),
+                $this->amount
+            );
+        } catch (\Exception $e) {
+            $this->transactionFailed();
+            $this->newLog('OpenSSL Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
 
         try {
-            $soap = new SoapClient($this->serverUrl, $this->config);
-            $response = $soap->MakeToken($fields);
+            $client = new Client();
+            $response = $client->post($this->serverUrl, [
+                'json' => [
+                    'authenticationEnvelope' => $tokenData,
+                    'request' => [
+                        'transactionType' => 'Purchase',
+                        'terminalId' => $this->config->get('irankish.terminal-id'),
+                        'acceptorId' => $this->config->get('irankish.acceptor-id'),
+                        'amount' => intval($this->amount),
+                        'revertUri' => $this->buildRedirectUrl($this->config->get('irankish.callback-url')),
+                        'requestId' => $this->transactionId(),
+                        'requestTimestamp' => time(),
+                        'cmsPreservationId' => $this->config->get('irankish.user-mobile'),
+                    ],
+                ],
+                'verify' => false,
+                'curl' => [
+                    CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1'
+                ]
+            ]);
 
-        } catch(\SoapFault $e) {
-            $this->transactionFailed();
-            $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
-        }
+            $response = json_decode($response->getBody()->getContents());
 
-        if ($response->MakeTokenResult->result == false) {
+            if ($response->responseCode != "00") {
+                throw new \Exception($response->description);
+            }
+
+            $this->token = $response->result->token;
+            $this->refId = $response->result->token;
+			$this->transactionSetRefId();
+            return true;
+
+        } catch (\Exception $e) {
             $this->transactionFailed();
-            $this->newLog($response->MakeTokenResult->result, $response->MakeTokenResult->message);
-            throw new IranKishException;
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
-        $this->refId = $response->MakeTokenResult->token;
-        $this->transactionSetRefId($this->transactionId);
+    }
+
+    /**
+     * @return array
+     */
+    protected function generateAuthenticationEnvelope($publicKey, $terminalId, $password, $amount)
+    {
+        $data = $terminalId.$password.str_pad($amount, 12, '0', STR_PAD_LEFT).'00';
+        $data = hex2bin($data);
+        $AESSecretKey = openssl_random_pseudo_bytes(16);
+        $ivlen = openssl_cipher_iv_length($cipher = "AES-128-CBC");
+        $iv = openssl_random_pseudo_bytes($ivlen);
+        $ciphertext_raw = openssl_encrypt($data, $cipher, $AESSecretKey, OPENSSL_RAW_DATA, $iv);
+        $hmac = hash('sha256', $ciphertext_raw, true);
+        $crypttext = '';
+
+        openssl_public_encrypt($AESSecretKey . $hmac, $crypttext, file_get_contents($publicKey));
+
+        return array(
+            "data" => bin2hex($crypttext),
+            "iv" => bin2hex($iv),
+        );
     }
 
     /**
@@ -124,21 +178,22 @@ class IranKish extends PortAbstract implements PortInterface
      *
      * @return bool
      *
-     * @throws IranKishException
+     * @throws PoolPortException
      */
     protected function userPayment()
     {
-        $this->refId = @$_POST['token'];
-        $this->trackingCode = @$_POST['referenceId'];
-        $resultCode = @$_POST['resultCode'];
+        $responseCode = @$_POST['responseCode'];
+        $this->trackingCode = @$_POST['systemTraceAuditNumber'];
+        $this->retrievalReferenceNumber = @$_POST['retrievalReferenceNumber'];
+        $this->cardNumber = $_POST['maskedPan'];
 
-        if ($resultCode == '100') {
-            return true;
+        if ($responseCode != "00") {
+            $this->transactionFailed();
+            $this->newLog($responseCode, $responseCode);
+            throw new PoolPortException($responseCode);
         }
 
-        $this->transactionFailed();
-        $this->newLog($resultCode, @IranKishException::$errors[$resultCode]);
-        throw new IranKishException($resultCode);
+        return true;
     }
 
     /**
@@ -151,33 +206,35 @@ class IranKish extends PortAbstract implements PortInterface
      */
     protected function verifyPayment()
     {
-        $fields = array(
-            'token' => $this->refId,
-            'referenceNumber' => $this->trackingCode,
-            'merchantId' => $this->config->get('irankish.merchant-id'),
-            'sha1Key' => $this->config->get('irankish.sha1-key')
-        );
-
         try {
-            $soap = new SoapClient($this->serverVerifyUrl, $this->config);
-            $response = $soap->KicccPaymentsVerification($fields);
+            $client = new Client();
+            $response = $client->post($this->serverVerifyUrl, [
+                'json' => [
+                    'terminalId' => $this->config->get('irankish.terminal-id'),
+                    'systemTraceAuditNumber' => $this->trackingCode(),
+                    'retrievalReferenceNumber' => $this->retrievalReferenceNumber,
+                    'tokenIdentity' => $this->refId(),
+                ],
+                'verify' => false,
+                'curl' => [
+                    CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1'
+                ]
+            ]);
 
-        } catch(\SoapFault $e) {
-            $this->transactionFailed();
-            $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
-        }
+            $response = json_decode($response->getBody()->getContents());
 
-        $response = floatval($response->KicccPaymentsVerificationResult);
+            if ($response->responseCode != "00") {
+                throw new \Exception($response->description);
+            }
 
-        if ($response > 0) {
             $this->transactionSucceed();
             $this->newLog('100', self::TRANSACTION_SUCCEED_TEXT);
             return true;
-        } else {
+
+        } catch (\Exception $e) {
             $this->transactionFailed();
-            $this->newLog($response, @IranKishException::$errors[$response]);
-            throw new IranKishException($response);
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
     }
 }
