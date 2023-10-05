@@ -4,7 +4,6 @@ namespace PoolPort\IranKish;
 
 use PoolPort\Config;
 use GuzzleHttp\Client;
-use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -127,10 +126,6 @@ class IranKish extends PortAbstract implements PortInterface
                         'cmsPreservationId' => $this->config->get('irankish.user-mobile'),
                     ],
                 ],
-                'verify' => false,
-                'curl' => [
-                    CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1'
-                ]
             ]);
 
             $response = json_decode($response->getBody()->getContents());
@@ -215,10 +210,6 @@ class IranKish extends PortAbstract implements PortInterface
                     'retrievalReferenceNumber' => $this->retrievalReferenceNumber,
                     'tokenIdentity' => $this->refId(),
                 ],
-                'verify' => false,
-                'curl' => [
-                    CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1'
-                ]
             ]);
 
             $response = json_decode($response->getBody()->getContents());
