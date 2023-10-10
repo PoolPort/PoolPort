@@ -385,6 +385,9 @@ abstract class PortAbstract
         $this->config->set('vandar.user-mobile', $mobile);
         $this->config->set('saman.user-mobile', $mobile);
         $this->config->set('parsian.user-mobile', $mobile);
+        $this->config->set('pna.user-mobile', $mobile);
+
+        return $this;
     }
 
     /**
