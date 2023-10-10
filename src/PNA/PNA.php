@@ -86,7 +86,7 @@ class PNA extends PortAbstract implements PortInterface
      *
      * @return void
      *
-     * @throws MellatException
+     * @throws PoolPortException
      */
     protected function sendPayRequest()
     {
@@ -127,6 +127,8 @@ class PNA extends PortAbstract implements PortInterface
 
     /**
      * @return array
+     *
+     * @throws PoolPortException
      */
     protected function signPurchaseParam($sessionId)
     {
@@ -192,16 +194,15 @@ class PNA extends PortAbstract implements PortInterface
      *
      * @return bool
      *
-     * @throws MellatException
+     * @throws PoolPortException
      */
     protected function userPayment()
     {
-        dd($_POST);
         $this->trackingCode = @$_POST['RefNum'];
         $this->cardNumber = (float) @$_POST['CardMaskPan'];
         $state = @$_POST['State'];
 
-        if ($state != 'ok') {
+        if ($state != 'OK') {
             $this->transactionFailed();
             $this->newLog($state, "");
             throw new PoolPortException($state);
@@ -215,8 +216,7 @@ class PNA extends PortAbstract implements PortInterface
      *
      * @return bool
      *
-     * @throws MellatException
-     * @throws SoapFault
+     * @throws PoolPortException
      */
     protected function verifyPayment()
     {
@@ -238,14 +238,25 @@ class PNA extends PortAbstract implements PortInterface
 
             $response = json_decode($response->getBody()->getContents());
 
-            dd($response);
+            if ($response->Result != 'erSucceed') {
+                throw new \Exception($response->Result);
+            }
+
+            $this->transactionSucceed();
+            $this->newLog('100', self::TRANSACTION_SUCCEED_TEXT);
+            return true;
+
         } catch (\Exception $e) {
-            dd($e);
+            $this->transactionFailed();
+            $this->newLog("Error", $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
     /**
      * @return string
+     *
+     * @throws PoolPortException
      */
     protected function getSessionId()
     {

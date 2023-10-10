@@ -204,4 +204,14 @@ return array(
         'user-mobile' => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // PNA (Eghtesad Novin) gateway
+    //--------------------------------
+    'pna' => array(
+        'mid' => 'xxxxxxxxx',
+        'password' => 'xxxxxx',
+        'public-key' => __DIR__.'/pna-public-key.pem',
+        'callback-url' => 'http://exmaple.org/result',
+        'user-mobile' => '09xxxxxxxx',
+    ),
 );
