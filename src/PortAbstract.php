@@ -358,6 +358,7 @@ abstract class PortAbstract
         $this->config->set('idpay.callback-url', $url);
         $this->config->set('payping.callback-url', $url);
         $this->config->set('vandar.callback-url', $url);
+        $this->config->set('pna.callback-url', $url);
 
         return $this;
     }
