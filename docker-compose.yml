@@ -1,12 +1,27 @@
 version: '3'
 services:
+  poolport:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: poolport
+    container_name: poolport
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
   mysql:
-      image: mysql/mysql-server:5.7
-      environment:
-        MYSQL_ALLOW_EMPTY_PASSWORD: 1
-        MYSQL_ROOT_PASSWORD: ""
-        MYSQL_DATABASE: "forge"
-        MYSQL_ROOT_HOST: "%"
-      ports:
-        - "3306:3306"
-      restart: unless-stopped
+    image: mysql/mysql-server:5.7
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_DATABASE: "poolport"
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
