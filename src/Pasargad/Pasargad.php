@@ -89,7 +89,7 @@ class Pasargad extends PortAbstract implements PortInterface
         parent::verify($transaction);
 
         $this->verifyPayment();
-        // $this->settleRequest();
+        $this->settleRequest();
 
         return $this;
     }
@@ -161,7 +161,7 @@ class Pasargad extends PortAbstract implements PortInterface
             'TerminalCode' => $this->config->get('pasargad.terminal-code'),
             'InvoiceNumber' => $this->transactionId(),
             'InvoiceDate' => $dateTime->format('Ymd'),
-            'amount' => $this->amount(),
+            'amount' => $this->amount,
             'TimeStamp' => date("Y/m/d H:i:s"),
             'sign' => ''
         );
@@ -175,7 +175,7 @@ class Pasargad extends PortAbstract implements PortInterface
 
         $text = "InvoiceNumber=" . $this->transactionId() ."&InvoiceDate=" .
             $dateTime->format('Ymd') ."&MerchantCode=" . $this->config->get('pasargad.merchant-code') ."&TerminalCode=" .
-            $this->config->get('pasargad.terminal-code') ."&Amount=" . $this->amount() ."&TimeStamp=" . $fields['TimeStamp'] .
+            $this->config->get('pasargad.terminal-code') ."&Amount=" . $this->amount ."&TimeStamp=" . $fields['TimeStamp'] .
             "&Sign=" . $fields['sign'];
         $ch = curl_init();
         curl_setopt($ch,CURLOPT_URL,$this->settleUrl);
