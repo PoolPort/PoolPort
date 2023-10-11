@@ -2,4 +2,6 @@
 
 namespace PoolPort\Exceptions;
 
-class PortNotFoundException extends \Exception {}
+class PortNotFoundException extends PoolPortException
+{
+}

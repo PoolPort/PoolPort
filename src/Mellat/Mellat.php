@@ -8,6 +8,7 @@ use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class Mellat extends PortAbstract implements PortInterface
 {
@@ -93,7 +94,7 @@ class Mellat extends PortAbstract implements PortInterface
             'localDate' => $dateTime->format('Ymd'),
             'localTime' => $dateTime->format('His'),
             'additionalData' => '',
-            'callBackUrl' => $this->buildQuery($this->config->get('mellat.callback-url'), array('transaction_id' => $this->transactionId)),
+            'callBackUrl' => $this->buildRedirectUrl($this->config->get('mellat.callback-url')),
             'payerId' => 0,
         );
 
@@ -104,7 +105,7 @@ class Mellat extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         $response = explode(',', $response->return);
@@ -185,7 +186,6 @@ class Mellat extends PortAbstract implements PortInterface
      * @return bool
      *
      * @throws MellatException
-     * @throws SoapFault
      */
     protected function settleRequest()
     {
@@ -205,7 +205,7 @@ class Mellat extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         if ($response->return == '0' || $response->return == '45') {

@@ -1,6 +1,6 @@
 <?php
 
-namespace PoolPort;
+namespace PoolPort\Exceptions;
 
 class PoolPortException extends \Exception
 {

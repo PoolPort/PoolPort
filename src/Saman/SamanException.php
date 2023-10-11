@@ -2,7 +2,9 @@
 
 namespace PoolPort\Saman;
 
-class SamanException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class SamanException extends PoolPortException
 {
     public static $errors = array(
         -1 => 'خطا در پردازش اطلاعات ارسالی (مشکل در یکی از ورودی ها و ناموفق بودن فراخوانی متد برگشت تراکنش)',

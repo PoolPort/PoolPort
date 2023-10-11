@@ -31,7 +31,7 @@ class ConfigTest extends TestCase
     public function testCanReadHierarchyData()
     {
         $config = new Config(__DIR__."/../poolport-sample.php");
-        $this->assertTrue($config->get("mellat.username"));
+        $this->assertIsString($config->get("mellat.username"));
     }
 
     public function testCanReturnDefaultData()

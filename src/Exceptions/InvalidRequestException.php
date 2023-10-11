@@ -2,4 +2,6 @@
 
 namespace PoolPort\Exceptions;
 
-class InvalidRequestException extends \Exception {}
+class InvalidRequestException extends PoolPortException
+{
+}

@@ -6,6 +6,7 @@ use PoolPort\Config;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class PayPing extends PortAbstract implements PortInterface
 {
@@ -80,7 +81,7 @@ class PayPing extends PortAbstract implements PortInterface
             $fields = array(
                 "amount" => $this->amount / 10,
                 "payerIdentity" => $this->config->get('payping.user-mobile'),
-                "returnUrl" => $this->buildQuery($this->config->get('payping.callback-url'), array('transaction_id' => $this->transactionId)),
+                "returnUrl" => $this->buildRedirectUrl($this->config->get('payping.callback-url')),
                 "clientRefId" => $this->transactionId(),
             );
 
@@ -106,7 +107,7 @@ class PayPing extends PortAbstract implements PortInterface
         } catch(\Exception $e) {
             $this->transactionFailed();
             $this->newLog($e->getCode(), $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         $this->transactionFailed();
@@ -160,7 +161,7 @@ class PayPing extends PortAbstract implements PortInterface
         } catch(\Exception $e) {
             $this->transactionFailed();
             $this->newLog($e->getCode(), $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         $this->transactionFailed();

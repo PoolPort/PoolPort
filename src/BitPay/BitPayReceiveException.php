@@ -2,7 +2,9 @@
 
 namespace PoolPort\BitPay;
 
-class BitPayReceiveException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class BitPayReceiveException extends PoolPortException
 {
 	public static $errors = array(
 		-1 => 'api ارسالی با نوع api تعریف شده در bitpay سازگاری ندارد.',
@@ -13,8 +15,8 @@ class BitPayReceiveException extends \Exception
 
 	public function __construct($errorId)
 	{
-		$this->errorId = intval($errorId);
+		$errorId = intval($errorId);
 
-		parent::__construct(@self::$errors[$this->errorId].' #'.$this->errorId, $this->errorId);
+		parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
 	}
 }

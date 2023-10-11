@@ -2,7 +2,9 @@
 
 namespace PoolPort\Mellat;
 
-class MellatException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class MellatException extends PoolPortException
 {
     public static $errors = array(
         11 => 'شماره کارت نامعتبر است',
@@ -53,8 +55,8 @@ class MellatException extends \Exception
 
     public function __construct($errorId)
     {
-        $this->errorId = intval($errorId);
+        $errorId = intval($errorId);
 
-        parent::__construct(@self::$errors[$this->errorId].' #'.$this->errorId, $this->errorId);
+        parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
     }
 }

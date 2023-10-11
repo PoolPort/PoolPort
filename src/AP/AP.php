@@ -8,6 +8,7 @@ use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class AP extends PortAbstract implements PortInterface
 {
@@ -115,7 +116,7 @@ class AP extends PortAbstract implements PortInterface
                     $this->amount,
                     $this->syncTime(),
                     '',
-                    $this->buildQuery($this->config->get('ap.callback-url'), array('transaction_id' => $this->transactionId())),
+                    $this->buildRedirectUrl($this->config->get('ap.callback-url')),
                     '0'
                 ))
             );
@@ -126,7 +127,7 @@ class AP extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         $response = explode(',', $response->RequestOperationResult);
@@ -216,7 +217,7 @@ class AP extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         $this->transactionSucceed();

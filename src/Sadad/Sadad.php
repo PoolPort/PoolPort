@@ -4,10 +4,10 @@ namespace PoolPort\Sadad;
 
 use DateTime;
 use PoolPort\Config;
-use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class Sadad extends PortAbstract implements PortInterface
 {
@@ -105,7 +105,7 @@ class Sadad extends PortAbstract implements PortInterface
                 'SignData' =>  $this->encryptPKCS7($this->config->get('sadad.terminalId').";".$this->transactionId().";".$this->amount, $this->config->get('sadad.transactionKey')),
                 'LocalDateTime' => $date->format('Y-m-d H:i:s'),
                 'OrderId' => $this->transactionId(),
-                'ReturnUrl' => $this->buildQuery($this->config->get('sadad.callback-url'), array('transaction_id' => $this->transactionId())),
+                'ReturnUrl' => $this->buildRedirectUrl($this->config->get('sadad.callback-url')),
                 'UserId' => $this->config->get('sadad.user-mobile')
             );
             $data = json_encode($fields);
@@ -130,7 +130,7 @@ class Sadad extends PortAbstract implements PortInterface
         } catch (\Exception $e) {
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         $this->transactionFailed();
@@ -200,7 +200,7 @@ class Sadad extends PortAbstract implements PortInterface
         } catch (\Exception $e) {
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         $this->transactionFailed();

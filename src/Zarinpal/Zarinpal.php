@@ -8,6 +8,7 @@ use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
 use GuzzleHttp\Exception\ClientException;
+use PoolPort\Exceptions\PoolPortException;
 
 class Zarinpal extends PortAbstract implements PortInterface
 {
@@ -105,12 +106,12 @@ class Zarinpal extends PortAbstract implements PortInterface
 
             $this->transactionFailed();
 			$this->newLog($res->errors->code, $res->errors->message);
-            throw $e;
+			throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
 
         } catch(\Exception $e) {
 			$this->transactionFailed();
 			$this->newLog('Error', $e->getMessage());
-			throw $e;
+			throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
 		}
 
         if ($res->data->code != 100) {
@@ -170,12 +171,12 @@ class Zarinpal extends PortAbstract implements PortInterface
 
             $this->transactionFailed();
 			$this->newLog($res->errors->code, $res->errors->message);
-            throw $e;
+			throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
 
         } catch(\Exception $e) {
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
-            throw $e;
+			throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
 		if ($res->data->code != 100) {

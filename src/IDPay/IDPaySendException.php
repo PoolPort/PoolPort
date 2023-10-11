@@ -2,7 +2,9 @@
 
 namespace PoolPort\IDPay;
 
-class IDPaySendException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class IDPaySendException extends PoolPortException
 {
     public static $errors = array(
         11 => 'کاربر مسدود شده است.',
@@ -13,8 +15,6 @@ class IDPaySendException extends \Exception
 
     public function __construct($errorId)
     {
-        $this->errorId = $errorId;
-
         parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
     }
 }

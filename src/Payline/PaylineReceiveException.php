@@ -2,7 +2,9 @@
 
 namespace PoolPort\Payline;
 
-class PaylineReceiveException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class PaylineReceiveException extends PoolPortException
 {
     public static $errors = array(
         -1 => 'api ارسالی با نوع api تعریف شده در payline سازگار نیست.',
@@ -13,8 +15,6 @@ class PaylineReceiveException extends \Exception
 
     public function __construct($errorId)
     {
-        $this->errorId = $errorId;
-
         parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
     }
 }

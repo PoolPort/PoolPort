@@ -2,7 +2,9 @@
 
 namespace PoolPort\Pasargad;
 
-class PasargadException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class PasargadException extends PoolPortException
 {
     public static $errors = array(
         'NOTRANSACTON' => 'هیچ پرداختی انجام نشد.',

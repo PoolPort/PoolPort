@@ -2,4 +2,6 @@
 
 namespace PoolPort\Exceptions;
 
-class NotFoundTransactionException extends \Exception {}
+class NotFoundTransactionException extends PoolPortException
+{
+}

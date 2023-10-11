@@ -2,4 +2,6 @@
 
 namespace PoolPort\Exceptions;
 
-class ConfigFileNotFoundException extends \Exception {}
+class ConfigFileNotFoundException extends PoolPortException
+{
+}

@@ -2,7 +2,9 @@
 
 namespace PoolPort\PayPing;
 
-class PayPingException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class PayPingException extends PoolPortException
 {
     public static $errors = array(
         '1' => 'تراكنش توسط شما لغو شد',

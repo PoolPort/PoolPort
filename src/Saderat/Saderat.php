@@ -8,6 +8,7 @@ use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class Saderat extends PortAbstract implements PortInterface
 {
@@ -95,7 +96,8 @@ class Saderat extends PortAbstract implements PortInterface
      *
      * @return void
      *
-     * @throws MellatException
+     * @throws SaderatException
+     * @throws PoolPortException
      */
     protected function sendPayRequest()
     {
@@ -130,7 +132,7 @@ class Saderat extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         if ($response->return->result != 0) {
@@ -213,7 +215,7 @@ class Saderat extends PortAbstract implements PortInterface
      */
     protected function getEncryptedCallbackUrl()
     {
-        $callBackUrl = $this->buildQuery($this->config->get('saderat.callback-url'), array('transaction_id' => $this->transactionId));
+        $callBackUrl = $this->buildRedirectUrl($this->config->get('saderat.callback-url'));
         openssl_public_encrypt($callBackUrl, $crypted, $this->publicKey);
         return base64_encode($crypted);
     }
@@ -237,7 +239,7 @@ class Saderat extends PortAbstract implements PortInterface
     protected function createSignature()
     {
         $data = $this->amount.$this->transactionId().$this->config->get('saderat.merchant-id').
-            $this->buildQuery($this->config->get('saderat.callback-url'), array('transaction_id' => $this->transactionId)).
+            $this->buildRedirectUrl($this->config->get('saderat.callback-url')).
             $this->config->get('saderat.terminal-id');
 
         openssl_sign($data, $signature, $this->privateKey, OPENSSL_ALGO_SHA1);
@@ -306,7 +308,7 @@ class Saderat extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         if (empty($_POST) || @$_POST['RESCODE'] != '00') {

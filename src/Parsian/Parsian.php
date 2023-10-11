@@ -7,6 +7,7 @@ use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class Parsian extends PortAbstract implements PortInterface
 {
@@ -107,7 +108,7 @@ class Parsian extends PortAbstract implements PortInterface
 		} catch (\SoapFault $e) {
 			$this->transactionFailed();
 			$this->newLog('SoapFault', $e->getMessage());
-			throw $e;
+			throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
 		}
 
 		if ($response->SalePaymentRequestResult->Status === 0) {
@@ -164,7 +165,7 @@ class Parsian extends PortAbstract implements PortInterface
 		} catch (\SoapFault $e) {
 			$this->transactionFailed();
 			$this->newLog('SoapFault', $e->getMessage());
-			throw $e;
+			throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
 		}
 
 		if ($result === false || !isset($result->ConfirmPaymentResult->Status)) {

@@ -86,8 +86,8 @@ class Vandar extends PortAbstract implements PortInterface
         $fields = array(
             'api_key' => $this->config->get('vandar.api_key'),
             'amount' => $this->amount,
-            'callback_url' => $this->buildQuery($this->config->get('vandar.callback-url'), array('transaction_id' => $this->transactionId)),
-            'mobile_number' => $this->config->get('jibit.user-mobile'),
+            'callback_url' => $this->buildRedirectUrl($this->config->get('vandar.callback-url')),
+            'mobile_number' => $this->config->get('vandar.user-mobile'),
             'factorNumber' => '',
             'description' => '',
             'valid_card_number' => ''

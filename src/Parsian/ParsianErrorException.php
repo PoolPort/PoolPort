@@ -2,7 +2,9 @@
 
 namespace PoolPort\Parsian;
 
-class ParsianErrorException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class ParsianErrorException extends PoolPortException
 {
     public static $errors = array(
         -32768 =>  'خطاي ناشناخته رخ داده است',

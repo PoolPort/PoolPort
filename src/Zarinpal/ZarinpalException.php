@@ -2,4 +2,8 @@
 
 namespace PoolPort\Zarinpal;
 
-class ZarinpalException extends \Exception {}
+use PoolPort\Exceptions\PoolPortException;
+
+class ZarinpalException extends PoolPortException
+{
+}

@@ -4,7 +4,6 @@ namespace PoolPort\Pasargad;
 
 use DateTime;
 use PoolPort\Config;
-use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -63,7 +62,7 @@ class Pasargad extends PortAbstract implements PortInterface
         $fields = array(
             'terminalCode' => $this->config->get('pasargad.terminal-code'),
             'merchantCode' => $this->config->get('pasargad.merchant-code'),
-            'redirectAddress' => $this->buildQuery($this->config->get('pasargad.callback-url'), array('transaction_id' => $this->transactionId)),
+            'redirectAddress' => $this->buildRedirectUrl($this->config->get('pasargad.callback-url')),
             'timeStamp' => $dateTime->format('Ymd'),
             'invoiceDate' => $dateTime->format('Ymd'),
             'action' => 1003,
@@ -84,7 +83,7 @@ class Pasargad extends PortAbstract implements PortInterface
         parent::verify($transaction);
 
         $this->verifyPayment();
-        $this->settleRequest();
+        // $this->settleRequest();
 
         return $this;
     }

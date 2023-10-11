@@ -2,7 +2,9 @@
 
 namespace PoolPort\IDPay;
 
-class IDPayReceiveException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class IDPayReceiveException extends PoolPortException
 {
     public static $errors = array(
         1 => 'پرداخت انجام نشده است',
@@ -28,8 +30,6 @@ class IDPayReceiveException extends \Exception
 
     public function __construct($errorId)
     {
-        $this->errorId = $errorId;
-
         parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
     }
 }

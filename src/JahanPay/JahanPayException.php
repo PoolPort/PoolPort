@@ -2,7 +2,9 @@
 
 namespace PoolPort\JahanPay;
 
-class JahanPayException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class JahanPayException extends PoolPortException
 {
     public static $errors = array(
         -32 => 'تراکنش انجام شده اما مبلغ مطابقت ندارد',
@@ -22,8 +24,8 @@ class JahanPayException extends \Exception
 
     public function __construct($errorId)
     {
-        $this->errorId = intval($errorId);
+        $errorId = intval($errorId);
 
-        parent::__construct(@self::$errors[$this->errorId].' #'.$this->errorId, $this->errorId);
+        parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
     }
 }

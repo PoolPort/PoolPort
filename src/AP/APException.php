@@ -2,7 +2,9 @@
 
 namespace PoolPort\AP;
 
-class APException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class APException extends PoolPortException
 {
     public static $errors = array(
         '0' => 'تراکنش با موفقیت انجام شد',

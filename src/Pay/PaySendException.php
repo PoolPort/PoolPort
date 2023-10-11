@@ -2,7 +2,9 @@
 
 namespace PoolPort\Pay;
 
-class PaySendException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class PaySendException extends PoolPortException
 {
     public static $errors = array(
         -1 => 'ارسال api الزامی می باشد',
@@ -18,8 +20,6 @@ class PaySendException extends \Exception
 
     public function __construct($errorId)
     {
-        $this->errorId = $errorId;
-
         parent::__construct(@self::$errors[$errorId].' #'.$errorId, $errorId);
     }
 }

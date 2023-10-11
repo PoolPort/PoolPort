@@ -2,7 +2,9 @@
 
 namespace PoolPort\JiBit;
 
-class JiBitException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class JiBitException extends PoolPortException
 {
     public static $paymentErrors = array(
         'INITIAL' => 'درخواست Initiate Order انجام شده و OrderId دریافت شده است',

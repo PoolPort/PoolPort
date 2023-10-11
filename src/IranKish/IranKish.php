@@ -7,7 +7,7 @@ use GuzzleHttp\Client;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
-use PoolPort\PoolPortException;
+use PoolPort\Exceptions\PoolPortException;
 
 class IranKish extends PortAbstract implements PortInterface
 {
@@ -91,7 +91,7 @@ class IranKish extends PortAbstract implements PortInterface
      *
      * @return void
      *
-     * @throws IranKishException
+     * @throws PoolPortException
      */
     protected function sendPayRequest()
     {
@@ -196,8 +196,7 @@ class IranKish extends PortAbstract implements PortInterface
      *
      * @return bool
      *
-     * @throws IranKishException
-     * @throws SoapFault
+     * @throws PoolPortException
      */
     protected function verifyPayment()
     {

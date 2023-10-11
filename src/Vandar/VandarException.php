@@ -2,4 +2,8 @@
 
 namespace PoolPort\Vandar;
 
-class VandarException extends \Exception { }
+use PoolPort\Exceptions\PoolPortException;
+
+class VandarException extends PoolPortException
+{
+}

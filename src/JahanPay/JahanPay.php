@@ -7,6 +7,7 @@ use PoolPort\Config;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class JahanPay extends PortAbstract implements PortInterface
 {
@@ -89,7 +90,7 @@ class JahanPay extends PortAbstract implements PortInterface
             $response = $soap->requestpayment(
                 $this->config->get('jahanpay.api'),
                 $this->amount / 10,
-                $this->buildQuery($this->config->get('jahanpay.callback-url'), array('transaction_id' => $this->transactionId())),
+                $this->buildRedirectUrl($this->config->get('jahanpay.callback-url')),
                 $this->transactionId(),
                 ''
             );
@@ -97,7 +98,7 @@ class JahanPay extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         if (intval($response) >= 0) {
@@ -151,7 +152,7 @@ class JahanPay extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         if (intval($response) == 1) {

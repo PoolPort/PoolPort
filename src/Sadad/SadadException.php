@@ -2,7 +2,9 @@
 
 namespace PoolPort\Sadad;
 
-class SadadException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class SadadException extends PoolPortException
 {
     public static $errors = array(
         0 => 'تراکنش موفق',

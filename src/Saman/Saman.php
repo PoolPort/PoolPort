@@ -9,6 +9,7 @@ use PoolPort\SoapClient;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 use PoolPort\Exceptions\RetryException;
 
 class Saman extends PortAbstract implements PortInterface
@@ -117,7 +118,7 @@ class Saman extends PortAbstract implements PortInterface
         } catch(\Exception $e) {
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         if ($response->status == 1) {
@@ -204,7 +205,7 @@ class Saman extends PortAbstract implements PortInterface
         } catch(\SoapFault $e) {
             $this->transactionFailed();
             $this->newLog('SoapFault', $e->getMessage());
-            throw $e;
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
 
         if ($response == $this->amount) {

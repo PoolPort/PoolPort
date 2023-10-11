@@ -2,7 +2,9 @@
 
 namespace PoolPort\Saderat;
 
-class SaderatException extends \Exception
+use PoolPort\Exceptions\PoolPortException;
+
+class SaderatException extends PoolPortException
 {
     public static $errors = array(
         '1' => 'وجود خطا در فرمت اطلاعات ارسالی',
