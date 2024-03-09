@@ -7,7 +7,7 @@ use GuzzleHttp\Client;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
-use PoolPort\PoolPortException;
+use PoolPort\Exceptions\PoolPortException;
 
 class PNA extends PortAbstract implements PortInterface
 {
