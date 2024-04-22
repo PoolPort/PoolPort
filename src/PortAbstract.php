@@ -359,6 +359,7 @@ abstract class PortAbstract
         $this->config->set('payping.callback-url', $url);
         $this->config->set('vandar.callback-url', $url);
         $this->config->set('pna.callback-url', $url);
+        $this->config->set('azki.callback-url', $url);
 
         return $this;
     }
@@ -387,6 +388,7 @@ abstract class PortAbstract
         $this->config->set('saman.user-mobile', $mobile);
         $this->config->set('parsian.user-mobile', $mobile);
         $this->config->set('pna.user-mobile', $mobile);
+        $this->config->set('azki.user-mobile', $mobile);
 
         return $this;
     }

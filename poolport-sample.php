@@ -8,44 +8,43 @@ return array(
     //--------------------------------
     'timezone' => 'Asia/Tehran',
 
-    'configuration' => array(
-    ),
+    'configuration' => array(),
 
     //--------------------------------
     // Soap configuration
     //--------------------------------
-    'soap' => array(
+    'soap'          => array(
         'attempts' => 2 // Attempts if soap connection is fail
     ),
 
     //--------------------------------
     // Database configuration
     //--------------------------------
-    'database' => array(
+    'database'      => array(
         'host'     => '127.0.0.1',
         'dbname'   => '',
         'username' => '',
         'password' => '',
-        'create' => true             // For first time you must set this to true for create tables in database
+        'create'   => true             // For first time you must set this to true for create tables in database
     ),
 
     //--------------------------------
     // Zarinpal gateway
     //--------------------------------
-    'zarinpal' => array(
+    'zarinpal'      => array(
         'merchant-id'  => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
         'type'         => 'zarin-gate',                           // Types: [zarin-gate || normal]
         'callback-url' => 'http://www.example.org/result',
         'server'       => 'germany',                              // Servers: [germany || iran]
-        'user-email'        => 'email@gmail.com',
-        'user-mobile'       => '09xxxxxxxxx',
+        'user-email'   => 'email@gmail.com',
+        'user-mobile'  => '09xxxxxxxxx',
         'description'  => 'description',
     ),
 
     //--------------------------------
     // Mellat gateway
     //--------------------------------
-    'mellat' => array(
+    'mellat'        => array(
         'username'     => '',
         'password'     => '',
         'terminalId'   => 0000000,
@@ -56,68 +55,68 @@ return array(
     //--------------------------------
     // Payline gateway
     //--------------------------------
-    'payline' => array(
-        'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    'payline'       => array(
+        'api'          => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result'
     ),
 
     //--------------------------------
     // Sadad gateway
     //--------------------------------
-    'sadad' => array(
-        'merchant'      => '',
-        'transactionKey'=> '',
-        'terminalId'    => 000000000,
-        'callback-url'  => 'http://example.org/result',
-        'user-mobile'   => '09xxxxxxxxx'
+    'sadad'         => array(
+        'merchant'       => '',
+        'transactionKey' => '',
+        'terminalId'     => 000000000,
+        'callback-url'   => 'http://example.org/result',
+        'user-mobile'    => '09xxxxxxxxx'
     ),
 
     //--------------------------------
     // JahanPay gateway
     //--------------------------------
-    'jahanpay' => array(
-        'api' => 'xxxxxxxxxxx',
+    'jahanpay'      => array(
+        'api'          => 'xxxxxxxxxxx',
         'callback-url' => 'http://example.org/result'
     ),
 
     //--------------------------------
     // Parsian gateway
     //--------------------------------
-    'parsian' => array(
+    'parsian'       => array(
         'pin'          => 'xxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://example.org/result',
-        'user-mobile'   => '09xxxxxxxxx',
+        'user-mobile'  => '09xxxxxxxxx',
     ),
 
     //--------------------------------
     // Pasargad gateway
     //--------------------------------
-    'pasargad' => array(
+    'pasargad'      => array(
         'merchant-code' => '9999999',
         'terminal-code' => '999999',
-        'certificate' => '',
-        'callback-url' => 'http://example.org/result'
+        'certificate'   => '',
+        'callback-url'  => 'http://example.org/result'
     ),
 
     //--------------------------------
     // Saderat gateway
     //--------------------------------
-    'saderat' => array(
-        'merchant-id' => '999999999999999',
-        'terminal-id' => '99999999',
-        'public-key' => __DIR__.'/saderat-public-key.pem',
-        'private-key' => __DIR__.'/saderat-private-key.pem',
+    'saderat'       => array(
+        'merchant-id'  => '999999999999999',
+        'terminal-id'  => '99999999',
+        'public-key'   => __DIR__ . '/saderat-public-key.pem',
+        'private-key'  => __DIR__ . '/saderat-private-key.pem',
         'callback-url' => 'http://example.org/result'
     ),
 
     //--------------------------------
     // IranKish gateway
     //--------------------------------
-    'irankish' => array(
+    'irankish'      => array(
         'terminal-id'  => 'xxxxxxxx',
         'acceptor-id'  => 'xxxxxxxxxxxxxxx',
         'pass-phrase'  => 'xxxxxxxxxxxxxxxx',
-        'public-key'   => __DIR__.'/irankish-public-key.pem',
+        'public-key'   => __DIR__ . '/irankish-public-key.pem',
         'callback-url' => 'http://example.org/result',
         'user-mobile'  => '989xxxxxxxxx',
     ),
@@ -125,91 +124,100 @@ return array(
     //--------------------------------
     // Simulator gateway
     //--------------------------------
-    'simulator' => array(
+    'simulator'     => array(
         'callback-url' => 'http://example.org/result'
     ),
 
     //--------------------------------
     // Saman gateway
     //--------------------------------
-    'saman' => array(
-        'terminal-id' => 'xxxxx',
+    'saman'         => array(
+        'terminal-id'  => 'xxxxx',
         'callback-url' => 'http://example.org/result',
-        'user-mobile' => '09xxxxxxxxx',
+        'user-mobile'  => '09xxxxxxxxx',
     ),
 
     // Pay gateway
     //--------------------------------
-    'pay' => array(
-        'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    'pay'           => array(
+        'api'          => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result'
     ),
 
     // JiBit gateway
     //--------------------------------
-    'jibit' => array(
-        'merchant-id' => 'xxxx',
-        'password' => 'xxxxxxxxxx',
+    'jibit'         => array(
+        'merchant-id'  => 'xxxx',
+        'password'     => 'xxxxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
-        'user-mobile' => '09xxxxxxxxx'
+        'user-mobile'  => '09xxxxxxxxx'
     ),
 
     // AP gateway
     //--------------------------------
-    'ap' => array(
+    'ap'            => array(
         'merchant-config-id' => 'xxxx',
-        'username' => 'xxxxxxxxxx',
-        'password' => 'xxxxxxxxxx',
-        'callback-url' => 'http://www.example.org/result',
-        'user-mobile' => '09xxxxxxxxx'
+        'username'           => 'xxxxxxxxxx',
+        'password'           => 'xxxxxxxxxx',
+        'callback-url'       => 'http://www.example.org/result',
+        'user-mobile'        => '09xxxxxxxxx'
     ),
 
-	// BitPay gateway
-	//--------------------------------
-    'bitpay' => array(
-	    'api' => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-	    'callback-url' => 'http://www.example.org/result',
-	    'name' => 'xxxxxxxxxx',
-	    'email' => 'email@gmail.com',
-	    'description' => 'description',
-        'user-mobile' => '09xxxxxxxx'
+    // BitPay gateway
+    //--------------------------------
+    'bitpay'        => array(
+        'api'          => 'xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+        'name'         => 'xxxxxxxxxx',
+        'email'        => 'email@gmail.com',
+        'description'  => 'description',
+        'user-mobile'  => '09xxxxxxxx'
     ),
 
     // IDPay gateway
     //--------------------------------
-    'idpay' => array(
-        'api' => 'x-x-x-x-x',
+    'idpay'         => array(
+        'api'          => 'x-x-x-x-x',
         'callback-url' => 'http://www.example.org/result',
-        'sandbox'=> false,
-        'name' => 'name',
-        'email' => 'email',
-        'description' => 'description',
-        'user-mobile' => '09xxxxxxxx',
+        'sandbox'      => false,
+        'name'         => 'name',
+        'email'        => 'email',
+        'description'  => 'description',
+        'user-mobile'  => '09xxxxxxxx',
     ),
 
     // PayPing gateway
     //--------------------------------
-    'payping' => array(
-        'token' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        'user-mobile' => '09xxxxxxxx',
+    'payping'       => array(
+        'token'        => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
 
     // Vandar gateway
     //--------------------------------
-    'payping' => array(
-        'api_key' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        'user-mobile' => '09xxxxxxxx',
+    'payping'       => array(
+        'api_key'      => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
 
     // PNA (Eghtesad Novin) gateway
     //--------------------------------
-    'pna' => array(
-        'mid' => 'xxxxxxxxx',
-        'password' => 'xxxxxx',
-        'public-key' => __DIR__.'/pna-public-key.pem',
+    'pna'           => array(
+        'mid'          => 'xxxxxxxxx',
+        'password'     => 'xxxxxx',
+        'public-key'   => __DIR__ . '/pna-public-key.pem',
         'callback-url' => 'http://exmaple.org/result',
-        'user-mobile' => '09xxxxxxxx',
+        'user-mobile'  => '09xxxxxxxx',
+    ),
+
+    // Azki gateway
+    //--------------------------------
+    'azki'          => array(
+        'merchant-id'  => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'api_key'      => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
     ),
 );
