@@ -3,6 +3,7 @@
 namespace PoolPort;
 
 use PoolPort\AP\AP;
+use PoolPort\Azki\Azki;
 use PoolPort\Pay\Pay;
 use PoolPort\PNA\PNA;
 use PoolPort\Saman\Saman;
@@ -66,6 +67,8 @@ class PoolPort
 
     const P_PNA = 19;
 
+    const P_AZKI = 20;
+
     /**
      * @var Config
      */
@@ -118,7 +121,7 @@ class PoolPort
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
             self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
-            self::P_PAYPING, self::P_VANDAR, self::P_PNA);
+            self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI);
     }
 
     /**
@@ -289,6 +292,10 @@ class PoolPort
 
             case self::P_PNA:
                 $this->portClass = new PNA($this->config, $this->db, self::P_PNA);
+                break;
+
+            case self::P_AZKI:
+                $this->portClass = new Azki($this->config, $this->db, self::P_AZKI);
                 break;
 
             default:
