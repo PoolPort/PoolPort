@@ -191,11 +191,11 @@ class Azki extends PortAbstract implements PortInterface
 
             $response = json_decode($response->getBody()->getContents());
 
-            if ($response->rsCode != AzkiStatusTicketCodes::VERIFIED) {
+            if ($response->result->status != AzkiStatusTicketCodes::VERIFIED) {
                 $this->transactionFailed();
-                $errorMessage = AzkiStatusTicketCodes::getMessage($response->rsCode);
-                $this->newLog($response->rsCode, $errorMessage);
-                throw new AzkiException($errorMessage, $response->rsCode);
+                $errorMessage = AzkiStatusTicketCodes::getMessage($response->result->status);
+                $this->newLog($response->result->status, $errorMessage);
+                throw new AzkiException($errorMessage, $response->result->status);
             }
 
             return $response;
