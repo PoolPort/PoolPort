@@ -97,13 +97,14 @@ class Azki extends PortAbstract implements PortInterface
         try {
             $subUrl = '/payment/purchase';
             $client = new Client();
+            $redirectUri = $this->buildRedirectUrl($this->config->get('azki.callback-url'));
 
             $response = $client->request("POST", $this->gateUrl . $subUrl, [
                 "json"    => [
                     'merchant_id'   => $this->config->get('azki.merchant-id'),
                     'amount'        => $this->amount,
-                    'redirect_uri'  => $this->buildRedirectUrl($this->config->get('azki.callback-url')),
-                    'fallback_uri'  => $this->buildRedirectUrl($this->config->get('azki.callback-url')),
+                    'redirect_uri'  => $redirectUri,
+                    'fallback_uri'  => $redirectUri,
                     'provider_id'   => mt_rand(1000000000, 999999999999),
                     'mobile_number' => $this->config->get('zarinpal.user-mobile', ''),
                     "items"         => $this->items
