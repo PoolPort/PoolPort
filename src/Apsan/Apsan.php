@@ -25,13 +25,6 @@ class Apsan extends PortAbstract implements PortInterface
     private $uniqueIdentifier;
 
     /**
-     * items of invoice
-     *
-     * @var array
-     */
-    private $items;
-
-    /**
      * {@inheritdoc}
      */
     public function __construct(Config $config, DatabaseManager $db, $portId)
