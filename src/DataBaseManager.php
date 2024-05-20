@@ -113,7 +113,7 @@ class DataBaseManager
 					`verify_key` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
 					`port_id` tinyint(2) UNSIGNED NOT NULL,
 					`price` decimal(15,2) NOT NULL,
-					`ref_id` varchar(255) COLLATE utf8_persian_ci DEFAULT NULL,
+					`ref_id` varchar(1024) COLLATE utf8_persian_ci DEFAULT NULL,
 					`tracking_code` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
 					`cardNumber` varchar(50) COLLATE utf8_persian_ci DEFAULT NULL,
 					`status` tinyint(1) NOT NULL DEFAULT '0',

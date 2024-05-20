@@ -3,13 +3,13 @@
 namespace PoolPort\Apsan;
 
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use PoolPort\Config;
 use PoolPort\DataBaseManager;
 use PoolPort\Exceptions\PoolPortException;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
-use Symfony\Component\HttpFoundation\Response;
 
 class Apsan extends PortAbstract implements PortInterface
 {
@@ -19,8 +19,6 @@ class Apsan extends PortAbstract implements PortInterface
      * @var string
      */
     protected $gateUrl = 'https://pay.cpg.ir/api/v1';
-
-    private $token;
 
     private $uniqueIdentifier;
 
@@ -57,7 +55,7 @@ class Apsan extends PortAbstract implements PortInterface
      */
     public function redirect()
     {
-        $fields['token'] = $this->token;
+        $fields['token'] = $this->refId;
 
         require 'ApsanRedirector.php';
     }
@@ -69,7 +67,6 @@ class Apsan extends PortAbstract implements PortInterface
     {
         parent::verify($transaction);
 
-        $this->userPayment();
         $this->verifyPayment();
 
         return $this;
@@ -87,85 +84,36 @@ class Apsan extends PortAbstract implements PortInterface
         $this->newTransaction();
 
         try {
+            $client = new Client();
             $this->uniqueIdentifier = uniqid();
 
-            $data = [
-                'amount'           => $this->amount,
-                'redirectUri'      => $this->buildRedirectUrl($this->config->get('apsan.callback-url')),
-                'terminalId'       => $this->config->get('apsan.terminalId'),
-                'uniqueIdentifier' => $this->uniqueIdentifier,
-            ];
+            $response = $client->request("POST", "{$this->gateUrl}/Token", [
+                "json"    => [
+                    'amount'           => $this->amount,
+                    'redirectUri'      => $this->buildRedirectUrl($this->config->get('apsan.callback-url')),
+                    'terminalId'       => $this->config->get('apsan.terminalId'),
+                    'uniqueIdentifier' => $this->uniqueIdentifier,
+                ],
+                'headers' => [
+                    'Authorization' => $this->generateSignature(),
+                ]
+            ]);
 
-            $headers = [
-                'accept: application/json',
-                'Authorization: ' . $this->generateSignature(),
-                'Content-Type: application/json'
-            ];
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
 
-            $curl = curl_init("{$this->gateUrl}/Token");
-            curl_setopt($curl, CURLOPT_POST, true);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-
-            $response = curl_exec($curl);
-            $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $response = json_decode($response);
-            curl_close($curl);
-
-            if ($statusCode != Response::HTTP_OK) {
+            if ($statusCode != 200) {
                 $this->transactionFailed();
                 $this->newLog($statusCode, $response->description);
                 throw new ApsanException($response->description, $statusCode);
             }
 
-            $this->token = $response->result;
-            session()->put('token', $this->token);
-            $this->refId = $this->uniqueIdentifier;
+            $this->refId = $response->result;
             $this->transactionSetRefId();
 
         } catch (\Exception $e) {
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Check user payment with GET data
-     *
-     * @return bool
-     *
-     * @throws ApsanException
-     */
-    protected function userPayment()
-    {
-        try {
-            $data = [
-                'uniqueIdentifier' => $this->refId(),
-            ];
-
-            $headers = [
-                'accept: application/json',
-                'Authorization: ' . $this->generateSignature(),
-                'Content-Type: application/json'
-            ];
-
-            $curl = curl_init("{$this->gateUrl}/transaction/status");
-            curl_setopt($curl, CURLOPT_POST, true);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-            $response = curl_exec($curl);
-            $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $response = json_decode($response);
-            curl_close($curl);
-
-            return $response;
-
-        } catch (\Exception $e) {
-            $this->transactionFailed();
-            $this->newLog("Error", $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
     }
@@ -180,34 +128,25 @@ class Apsan extends PortAbstract implements PortInterface
     protected function verifyPayment()
     {
         try {
-            $data = [
-                'token' => session('token'),
-            ];
+            $client = new Client();
 
-            $headers = [
-                'accept: application/json',
-                'Authorization: ' . $this->generateSignature(),
-                'Content-Type: application/json'
-            ];
+            $response = $client->request("POST", "{$this->gateUrl}/payment/acknowledge", [
+                "json"    => [
+                    'token' => $this->refId(),
+                ],
+                'headers' => [
+                    'Authorization' => $this->generateSignature(),
+                ]
+            ]);
 
-            $curl = curl_init("{$this->gateUrl}/payment/acknowledge");
-            curl_setopt($curl, CURLOPT_POST, true);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
 
-            $response = curl_exec($curl);
-            $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $response = json_decode($response);
-            curl_close($curl);
-
-            if ($statusCode != Response::HTTP_OK) {
+            if ($statusCode != 200) {
                 $this->transactionFailed();
                 $this->newLog($statusCode, $response->description);
                 throw new ApsanException($response->description, $statusCode);
             }
-
-            session()->forget('token');
 
             return $response;
 
@@ -223,7 +162,7 @@ class Apsan extends PortAbstract implements PortInterface
      *
      * @return string
      */
-    public function generateSignature()
+    protected function generateSignature()
     {
         $username = $this->config->get('apsan.username');
         $password = $this->config->get('apsan.password');
