@@ -230,4 +230,14 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Dara gateway
+    //--------------------------------
+    'dara'          => array(
+        'merchant-id'  => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'terminal-key' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'terminal-id'  => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
