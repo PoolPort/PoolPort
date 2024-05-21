@@ -106,7 +106,7 @@ class Azki extends PortAbstract implements PortInterface
                     'redirect_uri'  => $redirectUri,
                     'fallback_uri'  => $redirectUri,
                     'provider_id'   => mt_rand(1000000000, 999999999999),
-                    'mobile_number' => $this->config->get('zarinpal.user-mobile', ''),
+                    'mobile_number' => $this->config->get('azki.user-mobile', ''),
                     "items"         => $this->items
                 ],
                 "headers" => [
@@ -168,7 +168,7 @@ class Azki extends PortAbstract implements PortInterface
     }
 
     /**
-     * Verify user payment from zarinpal server
+     * Verify user payment from azki server
      *
      * @return bool
      *

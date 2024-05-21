@@ -220,4 +220,14 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Apsan gateway
+    //--------------------------------
+    'apsan'         => array(
+        'username'     => 'xxxxx',
+        'password'     => 'xxxxx',
+        'terminalId'   => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
