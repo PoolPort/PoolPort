@@ -361,6 +361,7 @@ abstract class PortAbstract
         $this->config->set('pna.callback-url', $url);
         $this->config->set('azki.callback-url', $url);
         $this->config->set('apsan.callback-url', $url);
+        $this->config->set('dara.callback-url', $url);
 
         return $this;
     }
@@ -391,6 +392,7 @@ abstract class PortAbstract
         $this->config->set('pna.user-mobile', $mobile);
         $this->config->set('azki.user-mobile', $mobile);
         $this->config->set('apsan.user-mobile', $mobile);
+        $this->config->set('dara.user-mobile', $mobile);
 
         return $this;
     }
