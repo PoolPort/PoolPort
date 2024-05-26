@@ -2,9 +2,7 @@
 
 namespace PoolPort\Dara;
 
-use Carbon\Carbon;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Log;
 use PoolPort\Config;
 use PoolPort\DataBaseManager;
 use PoolPort\Exceptions\PoolPortException;
@@ -21,8 +19,6 @@ class Dara extends PortAbstract implements PortInterface
      * @var string
      */
     protected $gateUrl = 'https://ipg.daracard.co/api/v0';
-
-    private $orderId;
 
     /**
      * {@inheritdoc}
@@ -84,7 +80,6 @@ class Dara extends PortAbstract implements PortInterface
         $this->newTransaction();
 
         try {
-            $this->orderId = uniqid();
             $client = new Client();
 
             $response = $client->request("POST", "{$this->gateUrl}/Request/PaymentRequest/", [
@@ -94,7 +89,7 @@ class Dara extends PortAbstract implements PortInterface
                     'MerchantId'    => $this->config->get('dara.merchant-id'),
                     'TerminalId'    => $this->config->get('dara.terminal-id'),
                     'LocalDateTime' => date("m/d/Y g:i:s a"),
-                    'OrderId'       => $this->orderId,
+                    'OrderId'       => $this->transactionId(),
                     'SignData'      => $this->generateSignature(),
                 ],
             ]);
@@ -161,7 +156,7 @@ class Dara extends PortAbstract implements PortInterface
     {
         $key = $this->config->get('dara.merchant-id');
         $terminalId = $this->config->get('dara.terminal-id');
-        $string = "$terminalId;{$this->orderId};{$this->amount}";
+        $string = "$terminalId;{$this->transactionId()};{$this->amount}";
         $key = base64_decode($key);
         $ciphertext = OpenSSL_encrypt($string, self::ALGORITHM, $key, 0);
 
