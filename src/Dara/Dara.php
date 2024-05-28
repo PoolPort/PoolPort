@@ -18,7 +18,9 @@ class Dara extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl = 'https://ipg.daracard.co/api/v0';
+    protected $gateUrl = 'https://ipg.daracard.co/#/purchase';
+
+    protected $apiUrl = 'https://ipg.daracard.co/api/v0';
 
     /**
      * {@inheritdoc}
@@ -53,7 +55,7 @@ class Dara extends PortAbstract implements PortInterface
      */
     public function redirect()
     {
-        header('Location: ' . $this->refId());
+        header('Location: ' . "{$this->gateUrl}/{$this->refId()}");
     }
 
     /**
@@ -82,7 +84,7 @@ class Dara extends PortAbstract implements PortInterface
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/Request/PaymentRequest/", [
+            $response = $client->request("POST", "{$this->apiUrl}/Request/PaymentRequest/", [
                 "json" => [
                     'Amount'        => $this->amount,
                     'ReturnUrl'     => $this->buildRedirectUrl($this->config->get('dara.callback-url')),
@@ -124,7 +126,7 @@ class Dara extends PortAbstract implements PortInterface
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/Advice/Verify/", [
+            $response = $client->request("POST", "{$this->apiUrl}/Advice/Verify/", [
                 "json" => [
                     'Token' => $this->refId(),
                 ],
