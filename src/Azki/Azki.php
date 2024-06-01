@@ -18,7 +18,7 @@ class Azki extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl = 'https://api.azkiloan.com';
+    protected $gateUrl = 'https://api.azkivam.com';
 
     /**
      * Address of payment gateway
