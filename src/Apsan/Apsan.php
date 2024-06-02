@@ -20,8 +20,6 @@ class Apsan extends PortAbstract implements PortInterface
      */
     protected $gateUrl = 'https://pay.cpg.ir/api/v1';
 
-    private $uniqueIdentifier;
-
     private $token;
 
     /**
@@ -87,14 +85,13 @@ class Apsan extends PortAbstract implements PortInterface
 
         try {
             $client = new Client();
-            $this->uniqueIdentifier = uniqid();
 
             $response = $client->request("POST", "{$this->gateUrl}/Token", [
                 "json"    => [
                     'amount'           => $this->amount,
                     'redirectUri'      => $this->buildRedirectUrl($this->config->get('apsan.callback-url')),
                     'terminalId'       => $this->config->get('apsan.terminalId'),
-                    'uniqueIdentifier' => $this->uniqueIdentifier,
+                    'uniqueIdentifier' => $this->transactionId(),
                 ],
                 'headers' => [
                     'Authorization' => $this->generateSignature(),
@@ -111,7 +108,7 @@ class Apsan extends PortAbstract implements PortInterface
             }
 
             $this->token = $response->result;
-            $this->refId = $this->uniqueIdentifier;
+            $this->refId = $this->transactionId();
             $this->transactionSetRefId();
 
             $this->setMeta([
