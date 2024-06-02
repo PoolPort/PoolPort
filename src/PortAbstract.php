@@ -472,4 +472,47 @@ abstract class PortAbstract
             ':id'     => $transactionId
         ]);
     }
+
+    protected function setMeta(array $data)
+    {
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("SELECT meta FROM poolport_transactions WHERE id = :id");
+
+        $stmt->execute([
+            ':id' => $this->transactionId()
+        ]);
+
+        $currentMeta = $stmt->fetchColumn();
+        $currentMeta = $currentMeta ? json_decode($currentMeta, true) : [];
+        $newMeta = array_merge($currentMeta, $data);
+        $newMeta = json_encode($newMeta, JSON_UNESCAPED_UNICODE);
+
+        $stmt = $dbh->prepare("UPDATE poolport_transactions SET meta = :meta WHERE id = :id");
+
+        $stmt->execute([
+            ':meta' => $newMeta,
+            ':id'   => $this->transactionId(),
+        ]);
+    }
+
+    protected function getMeta($key = null)
+    {
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("SELECT meta FROM poolport_transactions WHERE id = :id");
+
+        $stmt->execute([
+            ':id' => $this->transactionId()
+        ]);
+
+        $meta = $stmt->fetchColumn();
+        $meta = $meta ? json_decode($meta, true) : [];
+
+        if ($key !== null) {
+            return isset($meta[$key]) ? $meta[$key] : null;
+        }
+
+        return $meta;
+    }
 }

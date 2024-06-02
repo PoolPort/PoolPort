@@ -22,6 +22,8 @@ class Apsan extends PortAbstract implements PortInterface
 
     private $uniqueIdentifier;
 
+    private $token;
+
     /**
      * {@inheritdoc}
      */
@@ -55,7 +57,7 @@ class Apsan extends PortAbstract implements PortInterface
      */
     public function redirect()
     {
-        $fields['token'] = $this->refId;
+        $fields['token'] = $this->token;
 
         require 'ApsanRedirector.php';
     }
@@ -108,8 +110,13 @@ class Apsan extends PortAbstract implements PortInterface
                 throw new ApsanException($response->description, $statusCode);
             }
 
-            $this->refId = $response->result;
+            $this->token = $response->result;
+            $this->refId = $this->uniqueIdentifier;
             $this->transactionSetRefId();
+
+            $this->setMeta([
+                'token' => $this->token,
+            ]);
 
         } catch (\Exception $e) {
             $this->transactionFailed();
@@ -132,7 +139,7 @@ class Apsan extends PortAbstract implements PortInterface
 
             $response = $client->request("POST", "{$this->gateUrl}/payment/acknowledge", [
                 "json"    => [
-                    'token' => $this->refId(),
+                    'token' => $this->getMeta('token'),
                 ],
                 'headers' => [
                     'Authorization' => $this->generateSignature(),
