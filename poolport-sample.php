@@ -230,4 +230,12 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Keepa gateway
+    //--------------------------------
+    'keepa'         => array(
+        'token'        => 'e201347b-9563-4a03-9bbc-020843b003a9',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
