@@ -231,6 +231,17 @@ return array(
         'callback-url' => 'http://www.example.org/result',
     ),
 
+
+    // Dara gateway
+    //--------------------------------
+    'dara'          => array(
+        'merchant-id'  => 120000000185396,
+        'terminal-key' => 120000000185396,
+        'terminal-id'  => 3017273953,
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
+
     // Keepa gateway
     //--------------------------------
     'keepa'         => array(

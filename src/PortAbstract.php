@@ -361,6 +361,7 @@ abstract class PortAbstract
         $this->config->set('pna.callback-url', $url);
         $this->config->set('azki.callback-url', $url);
         $this->config->set('apsan.callback-url', $url);
+        $this->config->set('dara.callback-url', $url);
         $this->config->set('keepa.callback-url', $url);
 
         return $this;
@@ -392,6 +393,7 @@ abstract class PortAbstract
         $this->config->set('pna.user-mobile', $mobile);
         $this->config->set('azki.user-mobile', $mobile);
         $this->config->set('apsan.user-mobile', $mobile);
+        $this->config->set('dara.user-mobile', $mobile);
         $this->config->set('keepa.user-mobile', $mobile);
 
         return $this;
@@ -471,5 +473,48 @@ abstract class PortAbstract
             ':verify_key' => $verifyKey,
             ':id'     => $transactionId
         ]);
+    }
+
+    protected function setMeta(array $data)
+    {
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("SELECT meta FROM poolport_transactions WHERE id = :id");
+
+        $stmt->execute([
+            ':id' => $this->transactionId()
+        ]);
+
+        $currentMeta = $stmt->fetchColumn();
+        $currentMeta = $currentMeta ? json_decode($currentMeta, true) : [];
+        $newMeta = array_merge($currentMeta, $data);
+        $newMeta = json_encode($newMeta, JSON_UNESCAPED_UNICODE);
+
+        $stmt = $dbh->prepare("UPDATE poolport_transactions SET meta = :meta WHERE id = :id");
+
+        $stmt->execute([
+            ':meta' => $newMeta,
+            ':id'   => $this->transactionId(),
+        ]);
+    }
+
+    protected function getMeta($key = null)
+    {
+        $dbh = $this->db->getDBH();
+
+        $stmt = $dbh->prepare("SELECT meta FROM poolport_transactions WHERE id = :id");
+
+        $stmt->execute([
+            ':id' => $this->transactionId()
+        ]);
+
+        $meta = $stmt->fetchColumn();
+        $meta = $meta ? json_decode($meta, true) : [];
+
+        if ($key !== null) {
+            return isset($meta[$key]) ? $meta[$key] : null;
+        }
+
+        return $meta;
     }
 }
