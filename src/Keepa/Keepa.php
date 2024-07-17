@@ -156,6 +156,8 @@ class Keepa extends PortAbstract implements PortInterface
                 throw new KeepaException($response->Message, $response->Status);
             }
 
+            $this->transactionSucceed();
+
             return $response;
 
         } catch (\Exception $e) {
