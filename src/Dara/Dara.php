@@ -1,26 +1,26 @@
 <?php
 
-namespace PoolPort\Apsan;
+namespace PoolPort\Dara;
 
-use Carbon\Carbon;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Log;
 use PoolPort\Config;
 use PoolPort\DataBaseManager;
 use PoolPort\Exceptions\PoolPortException;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 
-class Apsan extends PortAbstract implements PortInterface
+class Dara extends PortAbstract implements PortInterface
 {
+    const ALGORITHM = "DES-EDE3";
+
     /**
      * Address of gate for redirect
      *
      * @var string
      */
-    protected $gateUrl = 'https://pay.cpg.ir/api/v1';
+    protected $gateUrl = 'https://ipg.daracard.co/#/purchase';
 
-    private $token;
+    protected $apiUrl = 'https://ipg.daracard.co/api/v0';
 
     /**
      * {@inheritdoc}
@@ -55,9 +55,7 @@ class Apsan extends PortAbstract implements PortInterface
      */
     public function redirect()
     {
-        $fields['token'] = $this->token;
-
-        require 'ApsanRedirector.php';
+        header('Location: ' . "{$this->gateUrl}/{$this->refId()}");
     }
 
     /**
@@ -77,7 +75,7 @@ class Apsan extends PortAbstract implements PortInterface
      *
      * @return void
      *
-     * @throws ApsanException
+     * @throws DaraException
      */
     protected function sendPayRequest()
     {
@@ -86,34 +84,28 @@ class Apsan extends PortAbstract implements PortInterface
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/Token", [
-                "json"    => [
-                    'amount'           => $this->amount,
-                    'redirectUri'      => $this->buildRedirectUrl($this->config->get('apsan.callback-url')),
-                    'terminalId'       => $this->config->get('apsan.terminalId'),
-                    'uniqueIdentifier' => $this->transactionId(),
+            $response = $client->request("POST", "{$this->apiUrl}/Request/PaymentRequest/", [
+                "json" => [
+                    'Amount'        => $this->amount,
+                    'ReturnUrl'     => $this->buildRedirectUrl($this->config->get('dara.callback-url')),
+                    'MerchantId'    => $this->config->get('dara.merchant-id'),
+                    'TerminalId'    => $this->config->get('dara.terminal-id'),
+                    'LocalDateTime' => date("m/d/Y g:i:s a"),
+                    'OrderId'       => $this->transactionId(),
+                    'SignData'      => $this->generateSignature(),
                 ],
-                'headers' => [
-                    'Authorization' => $this->generateSignature(),
-                ]
             ]);
 
-            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($statusCode != 200) {
+            if ($response->ResultCode != 0) {
                 $this->transactionFailed();
-                $this->newLog($statusCode, $response->description);
-                throw new ApsanException($response->description, $statusCode);
+                $this->newLog($response->ResultCode, $response->ResultMessage);
+                throw new DaraException($response->ResultMessage, $response->ResultCode);
             }
 
-            $this->token = $response->result;
-            $this->refId = $this->transactionId();
+            $this->refId = $response->ResultData->Token;
             $this->transactionSetRefId();
-
-            $this->setMeta([
-                'token' => $this->token,
-            ]);
 
         } catch (\Exception $e) {
             $this->transactionFailed();
@@ -123,33 +115,29 @@ class Apsan extends PortAbstract implements PortInterface
     }
 
     /**
-     * Verify user payment from apsan server
+     * Verify user payment from dara server
      *
      * @return bool
      *
-     * @throws ApsanException
+     * @throws Dara
      */
     protected function verifyPayment()
     {
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/payment/acknowledge", [
-                "json"    => [
-                    'token' => $this->getMeta('token'),
+            $response = $client->request("POST", "{$this->apiUrl}/Advice/Verify/", [
+                "json" => [
+                    'Token' => $this->refId(),
                 ],
-                'headers' => [
-                    'Authorization' => $this->generateSignature(),
-                ]
             ]);
 
-            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($statusCode != 200) {
+            if ($response->ResultCode != 0) {
                 $this->transactionFailed();
-                $this->newLog($statusCode, $response->description);
-                throw new ApsanException($response->description, $statusCode);
+                $this->newLog($response->ResultCode, $response->ResultMessage);
+                throw new DaraException($response->ResultMessage, $response->ResultCode);
             }
 
             return $response;
@@ -168,9 +156,12 @@ class Apsan extends PortAbstract implements PortInterface
      */
     protected function generateSignature()
     {
-        $username = $this->config->get('apsan.username');
-        $password = $this->config->get('apsan.password');
+        $key = $this->config->get('dara.merchant-id');
+        $terminalId = $this->config->get('dara.terminal-id');
+        $string = "$terminalId;{$this->transactionId()};{$this->amount}";
+        $key = base64_decode($key);
+        $ciphertext = OpenSSL_encrypt($string, self::ALGORITHM, $key, 0);
 
-        return "Basic " . base64_encode("$username:$password");
+        return base64_encode($ciphertext);
     }
 }

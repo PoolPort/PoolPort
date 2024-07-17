@@ -6,6 +6,7 @@ use PoolPort\AP\AP;
 use PoolPort\Apsan\Apsan;
 use PoolPort\Azki\Azki;
 use PoolPort\Keepa\Keepa;
+use PoolPort\Dara\Dara;
 use PoolPort\Pay\Pay;
 use PoolPort\PNA\PNA;
 use PoolPort\Saman\Saman;
@@ -72,7 +73,9 @@ class PoolPort
     const P_AZKI = 20;
 
     const P_APSAN = 21;
-
+  
+    const P_DARA = 22;
+  
     const P_KEEPA = 23;
 
     /**
@@ -127,7 +130,7 @@ class PoolPort
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
             self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
-            self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN, self::P_KEEPA);
+            self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN, self::P_DARA, self::P_KEEPA);
     }
 
     /**
@@ -307,10 +310,13 @@ class PoolPort
             case self::P_APSAN:
                 $this->portClass = new Apsan($this->config, $this->db, self::P_APSAN);
                 break;
-
+            
+            case self::P_DARA:
+                $this->portClass = new Dara($this->config, $this->db, self::P_DARA);
+                break;
+            
             case self::P_KEEPA:
                 $this->portClass = new Keepa($this->config, $this->db, self::P_KEEPA);
-                break;
 
             default:
                 throw new PortNotFoundException;
