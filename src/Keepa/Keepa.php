@@ -2,9 +2,7 @@
 
 namespace PoolPort\Keepa;
 
-use Carbon\Carbon;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Log;
 use PoolPort\Config;
 use PoolPort\DataBaseManager;
 use PoolPort\Exceptions\PoolPortException;
@@ -23,6 +21,8 @@ class Keepa extends PortAbstract implements PortInterface
     private $token;
 
     private $paymentUrl;
+
+    private $recieptNumber;
 
     /**
      * {@inheritdoc}
@@ -68,6 +68,8 @@ class Keepa extends PortAbstract implements PortInterface
      */
     public function verify($transaction)
     {
+        $this->recieptNumber = $_POST['reciept_number'];
+
         parent::verify($transaction);
 
         $this->verifyPayment();
@@ -114,7 +116,7 @@ class Keepa extends PortAbstract implements PortInterface
             $this->transactionSetRefId();
 
             $this->setMeta([
-                'token'     => $this->token,
+                'token' => $this->token,
             ]);
 
         } catch (\Exception $e) {
@@ -139,7 +141,7 @@ class Keepa extends PortAbstract implements PortInterface
             $response = $client->request("POST", "{$this->gateUrl}/verify_transaction", [
                 "json"    => [
                     'payment_token'  => $this->getMeta('token'),
-                    'reciept_number' => $this->getMeta('reciept_number'),
+                    'reciept_number' => $this->recieptNumber,
                 ],
                 'headers' => [
                     'Authorization' => $this->getToken(),
