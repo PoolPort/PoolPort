@@ -235,9 +235,9 @@ return array(
     // Dara gateway
     //--------------------------------
     'dara'          => array(
-        'merchant-id'  => 120000000185396,
-        'terminal-key' => 120000000185396,
-        'terminal-id'  => 3017273953,
+        'merchant-id'  => 'xxxxxxxxxx',
+        'terminal-key' => 'xxxxxxxxxx',
+        'terminal-id'  => 'xxxxxxxxxx',
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
@@ -245,7 +245,7 @@ return array(
     // Keepa gateway
     //--------------------------------
     'keepa'         => array(
-        'token'        => 'e201347b-9563-4a03-9bbc-020843b003a9',
+        'token'        => 'xxxxxxxxxx',
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),

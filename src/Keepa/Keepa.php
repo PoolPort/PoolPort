@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Log;
 use PoolPort\Config;
 use PoolPort\DataBaseManager;
 use PoolPort\Exceptions\PoolPortException;
-use PoolPort\Keepa\KeepaException;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 
@@ -92,8 +91,7 @@ class Keepa extends PortAbstract implements PortInterface
 
             $response = $client->request("POST", "{$this->gateUrl}/request_payment_token", [
                 "json"    => [
-//                    'amount'       => $this->amount,
-                    'amount'       => 1000,
+                    'amount'       => $this->amount,
                     'callback_url' => $this->buildRedirectUrl($this->config->get('keepa.callback-url')),
                     'mobile'       => $this->config->get('keepa.user-mobile'),
                 ],
@@ -112,7 +110,7 @@ class Keepa extends PortAbstract implements PortInterface
 
             $this->token = $response->Content->payment_token;
             $this->paymentUrl = $response->Content->payment_url;
-            $this->refId = $this->transactionId();
+            $this->refId = $response->CallingID;
             $this->transactionSetRefId();
 
             $this->setMeta([
