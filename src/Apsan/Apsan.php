@@ -152,6 +152,8 @@ class Apsan extends PortAbstract implements PortInterface
                 throw new ApsanException($response->description, $statusCode);
             }
 
+            $this->transactionSucceed();
+
             return $response;
 
         } catch (\Exception $e) {
