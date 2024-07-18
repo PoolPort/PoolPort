@@ -317,6 +317,7 @@ class PoolPort
             
             case self::P_KEEPA:
                 $this->portClass = new Keepa($this->config, $this->db, self::P_KEEPA);
+                break;
 
             default:
                 throw new PortNotFoundException;
