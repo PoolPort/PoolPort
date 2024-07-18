@@ -199,6 +199,8 @@ class Azki extends PortAbstract implements PortInterface
                 throw new AzkiException($errorMessage, $response->result->status);
             }
 
+            $this->transactionSucceed();
+
             return $response;
 
         } catch (\Exception $e) {
