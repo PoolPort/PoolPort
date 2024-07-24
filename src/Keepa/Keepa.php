@@ -73,6 +73,7 @@ class Keepa extends PortAbstract implements PortInterface
         parent::verify($transaction);
 
         $this->verifyPayment();
+        $this->confirmPayment();
 
         return $this;
     }
@@ -139,6 +140,45 @@ class Keepa extends PortAbstract implements PortInterface
             $client = new Client();
 
             $response = $client->request("POST", "{$this->gateUrl}/verify_transaction", [
+                "json"    => [
+                    'payment_token'  => $this->getMeta('token'),
+                    'reciept_number' => $this->recieptNumber,
+                ],
+                'headers' => [
+                    'Authorization' => $this->getToken(),
+                ]
+            ]);
+
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($response->Status != 200) {
+                $this->transactionFailed();
+                $this->newLog($response->Status, $response->Message);
+                throw new KeepaException($response->Message, $response->Status);
+            }
+
+            return $response;
+
+        } catch (\Exception $e) {
+            $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Confirm user payment from keepa server
+     *
+     * @return bool
+     *
+     * @throws KeepaException
+     */
+    protected function confirmPayment()
+    {
+        try {
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->gateUrl}/confirm_transaction", [
                 "json"    => [
                     'payment_token'  => $this->getMeta('token'),
                     'reciept_number' => $this->recieptNumber,
