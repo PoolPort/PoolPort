@@ -68,6 +68,22 @@ class DataBaseManager
 		return $stmt->fetch(PDO::FETCH_OBJ);
 	}
 
+    /**
+     * Find transaction by id
+     *
+     * @param $transactionId
+     *
+     * @return mixed
+     */
+    public function findByTransactionId($transactionId)
+    {
+        $stmt = $this->dbh->prepare("SELECT * FROM poolport_transactions WHERE id = :id LIMIT 1");
+        $stmt->bindParam(':id', $transactionId);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_OBJ);
+    }
+
 	/**
 	 * Start mysql transaction
 	 *

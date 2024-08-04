@@ -5,6 +5,7 @@ namespace PoolPort;
 use PoolPort\AP\AP;
 use PoolPort\Apsan\Apsan;
 use PoolPort\Azki\Azki;
+use PoolPort\BazaarPay\BazaarPay;
 use PoolPort\Keepa\Keepa;
 use PoolPort\Dara\Dara;
 use PoolPort\Pay\Pay;
@@ -78,6 +79,8 @@ class PoolPort
   
     const P_KEEPA = 23;
 
+    const P_BAZAARPAY = 24;
+
     /**
      * @var Config
      */
@@ -130,7 +133,8 @@ class PoolPort
             self::P_PAYLINE, self::P_JAHANPAY, self::P_PARSIAN, self::P_PASARGAD,
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
             self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
-            self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN, self::P_DARA, self::P_KEEPA);
+            self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
+            self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY);
     }
 
     /**
@@ -216,6 +220,27 @@ class PoolPort
         }
 
         return $this->portClass->verify($transaction);
+    }
+
+    /**
+     * Refund user payment
+     *
+     * @param $transactionId
+     *
+     * @return mixed
+     * @throws NotFoundTransactionException
+     * @throws PortNotFoundException
+     */
+    public function refund($transactionId, $params = [])
+    {
+        $transaction = $this->db->findByTransactionId($transactionId);
+
+        if (!$transaction)
+            throw new NotFoundTransactionException;
+
+        $this->buildPort($transaction->port_id);
+
+        return $this->portClass->refundPayment($transaction, $params);
     }
 
     /**
@@ -317,6 +342,10 @@ class PoolPort
             
             case self::P_KEEPA:
                 $this->portClass = new Keepa($this->config, $this->db, self::P_KEEPA);
+                break;
+
+            case self::P_BAZAARPAY:
+                $this->portClass = new BazaarPay($this->config, $this->db, self::P_BAZAARPAY);
                 break;
 
             default:
