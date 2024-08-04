@@ -250,6 +250,8 @@ class Azki extends PortAbstract implements PortInterface
                 throw new AzkiException($errorMessage, $response->rsCode);
             }
 
+            $this->newLog($response->rsCode, json_encode($response));
+
             return $response;
 
         } catch (\Exception $e) {
