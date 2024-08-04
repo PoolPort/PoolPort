@@ -194,6 +194,8 @@ class BazaarPay extends PortAbstract implements PortInterface
                 throw new BazaarPayException($response, $statusCode);
             }
 
+            $this->newLog($statusCode, $response);
+
             return true;
 
         } catch (\Exception $e) {
