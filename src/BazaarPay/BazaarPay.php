@@ -57,6 +57,7 @@ class BazaarPay extends PortAbstract implements PortInterface
     public function redirect()
     {
         $redirectUrl = $this->buildRedirectUrl($this->config->get('bazaarpay.callback-url'));
+        $redirectUrl = urlencode($redirectUrl);
         $phone = $this->config->get('bazaarpay.user-mobile', '');
 
         header("Location: {$this->paymentUrl}&phone={$phone}&redirect_url={$redirectUrl}");
