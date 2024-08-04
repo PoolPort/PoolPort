@@ -234,7 +234,7 @@ class Azki extends PortAbstract implements PortInterface
                 "json"    => [
                     'ticket_id'   => $transaction->ref_id,
                     'provider_id' => $meta['provider_id'],
-                    'reaseon'     => !empty($params['reason']) ? $params['regret'] : self::DEFAULT_REFUND_REASON,
+                    'reason'     => !empty($params['reason']) ? $params['regret'] : self::DEFAULT_REFUND_REASON,
                 ],
                 "headers" => [
                     'Signature'  => $this->generateSignature($subUrl),
