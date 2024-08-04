@@ -11,7 +11,8 @@ use PoolPort\PortInterface;
 
 class Azki extends PortAbstract implements PortInterface
 {
-    const ALGORITHM = 'AES-256-CBC';
+    const ALGORITHM             = 'AES-256-CBC';
+    const DEFAULT_REFUND_REASON = 'regret';
 
     /**
      * Address of gate for redirect
@@ -98,6 +99,11 @@ class Azki extends PortAbstract implements PortInterface
             $subUrl = '/payment/purchase';
             $client = new Client();
             $redirectUri = $this->buildRedirectUrl($this->config->get('azki.callback-url'));
+            $providerId = mt_rand(1000000000, 999999999999);
+
+            $this->setMeta([
+                'provider_id' => $providerId,
+            ]);
 
             $response = $client->request("POST", $this->gateUrl . $subUrl, [
                 "json"    => [
@@ -105,7 +111,7 @@ class Azki extends PortAbstract implements PortInterface
                     'amount'        => $this->amount,
                     'redirect_uri'  => $redirectUri,
                     'fallback_uri'  => $redirectUri,
-                    'provider_id'   => mt_rand(1000000000, 999999999999),
+                    'provider_id'   => $providerId,
                     'mobile_number' => $this->config->get('azki.user-mobile', ''),
                     "items"         => $this->items
                 ],
@@ -205,6 +211,50 @@ class Azki extends PortAbstract implements PortInterface
 
         } catch (\Exception $e) {
             $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Refund user payment
+     *
+     * @return bool
+     *
+     * @throws AzkiException
+     */
+    public function refundPayment($transaction, $params = [])
+    {
+        try {
+            $meta = json_decode($transaction->meta, true);
+            $subUrl = '/payment/reverse';
+            $client = new Client();
+
+            $response = $client->request("POST", $this->gateUrl . $subUrl, [
+                "json"    => [
+                    'ticket_id'   => $transaction->ref_id,
+                    'provider_id' => $meta['provider_id'],
+                    'reaseon'     => !empty($params['reason']) ? $params['regret'] : self::DEFAULT_REFUND_REASON,
+                ],
+                "headers" => [
+                    'Signature'  => $this->generateSignature($subUrl),
+                    'MerchantId' => $this->config->get('azki.merchant-id'),
+                ],
+            ]);
+
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($response->rsCode != AzkiCreateTicketCodes::SUCCESS) {
+                $errorMessage = AzkiCreateTicketCodes::getMessage($response->rsCode);
+                $this->newLog($response->rsCode, $errorMessage);
+                throw new AzkiException($errorMessage, $response->rsCode);
+            }
+
+            $this->newLog('Refunded', json_encode($response));
+
+            return $response;
+
+        } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }

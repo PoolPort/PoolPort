@@ -248,4 +248,14 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Bazaar Pay gateway
+    //--------------------------------
+    'bazaarpay'     => array(
+        'token'        => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'destination'  => 'xxxxx',
+        'service_name' => 'xxxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
