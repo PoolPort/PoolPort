@@ -364,6 +364,7 @@ abstract class PortAbstract
         $this->config->set('dara.callback-url', $url);
         $this->config->set('keepa.callback-url', $url);
         $this->config->set('bazaarpay.callback-url', $url);
+        $this->config->set('tara.callback-url', $url);
 
         return $this;
     }
@@ -397,6 +398,7 @@ abstract class PortAbstract
         $this->config->set('dara.user-mobile', $mobile);
         $this->config->set('keepa.user-mobile', $mobile);
         $this->config->set('bazaarpay.user-mobile', $mobile);
+        $this->config->set('tara.user-mobile', $mobile);
 
         return $this;
     }
