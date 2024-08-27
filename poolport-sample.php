@@ -240,7 +240,7 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
-  
+
     // Keepa gateway
     //--------------------------------
     'keepa'         => array(
@@ -255,6 +255,22 @@ return array(
         'token'        => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         'destination'  => 'xxxxx',
         'service_name' => 'xxxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
+
+    // Tara gateway
+    //--------------------------------
+    'tara'          => array(
+        'username'   => 'xxxx',
+        'password'   => 'xxxx',
+        'service-id' => 'xxxx',
+
+        'refund' => [
+            'username' => 'xxxx',
+            'password' => 'xxxx',
+        ],
+
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),

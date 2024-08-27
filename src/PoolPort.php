@@ -3,6 +3,7 @@
 namespace PoolPort;
 
 use PoolPort\AP\AP;
+use PoolPort\Tara\Tara;
 use PoolPort\Apsan\Apsan;
 use PoolPort\Azki\Azki;
 use PoolPort\BazaarPay\BazaarPay;
@@ -81,6 +82,8 @@ class PoolPort
 
     const P_BAZAARPAY = 24;
 
+    const P_TARA = 25;
+
     /**
      * @var Config
      */
@@ -134,7 +137,7 @@ class PoolPort
             self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
             self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
             self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
-            self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY);
+            self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA);
     }
 
     /**
@@ -346,6 +349,10 @@ class PoolPort
 
             case self::P_BAZAARPAY:
                 $this->portClass = new BazaarPay($this->config, $this->db, self::P_BAZAARPAY);
+                break;
+
+            case self::P_TARA:
+                $this->portClass = new Tara($this->config, $this->db, self::P_TARA);
                 break;
 
             default:
