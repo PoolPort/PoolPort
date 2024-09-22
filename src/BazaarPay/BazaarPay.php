@@ -11,6 +11,8 @@ use PoolPort\PortInterface;
 
 class BazaarPay extends PortAbstract implements PortInterface
 {
+    const PAID_COMMITTED = 'paid_committed';
+
     /**
      * Address of gate for redirect
      *
@@ -145,8 +147,13 @@ class BazaarPay extends PortAbstract implements PortInterface
                 ]
             ]);
 
-            $statusCode = $response->getStatusCode();
             $response = $response->getBody()->getContents();
+
+            if(empty($response)) {
+                return $this->tracePayment();
+            }
+
+            $statusCode = $response->getStatusCode();
 
             if ($statusCode != 204) {
                 $this->transactionFailed();
@@ -198,6 +205,48 @@ class BazaarPay extends PortAbstract implements PortInterface
             $this->newLog('Refunded', $response);
 
             return true;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * trace user payment
+     *
+     * @param $refId
+     *
+     * @return mixed
+     * @throws PoolPortException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function tracePayment()
+    {
+        try {
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->gateUrl}/trace/", [
+                "json"    => [
+                    'checkout_token' => $this->refId,
+                ],
+                'headers' => [
+                    'Content-Type'  => 'application/json',
+                ]
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($statusCode != 200 || ($statusCode == 200 && $response->status != self::PAID_COMMITTED)) {
+                $this->transactionFailed();
+                $this->newLog($statusCode, json_encode($response));
+                throw new BazaarPayException(json_encode($response), $statusCode);
+            }
+
+            $this->transactionSucceed();
+
+            return $response;
 
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
