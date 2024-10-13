@@ -16,7 +16,7 @@ class Keepa extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl = 'https://api.kipaa.ir/ipg/v1/supplier';
+    protected $gateUrl = 'https://api.kipaa.ir/ipg/v2/supplier';
 
     private $token;
 
