@@ -366,6 +366,7 @@ abstract class PortAbstract
         $this->config->set('bazaarpay.callback-url', $url);
         $this->config->set('tara.callback-url', $url);
         $this->config->set('sib.callback-url', $url);
+        $this->config->set('digipay.callback-url', $url);
 
         return $this;
     }
@@ -401,6 +402,7 @@ abstract class PortAbstract
         $this->config->set('bazaarpay.user-mobile', $mobile);
         $this->config->set('tara.user-mobile', $mobile);
         $this->config->set('sib.user-mobile', $mobile);
+        $this->config->set('digipay.user-mobile', $mobile);
 
         return $this;
     }
