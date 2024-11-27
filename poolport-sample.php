@@ -274,4 +274,16 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // DigiPay gateway
+    //--------------------------------
+    'digipay'           => array(
+        'username'      => 'xxxx',
+        'password'      => 'xxxx',
+        'client-id'     => 'xxxx',
+        'client-secret' => 'xxxx',
+        'type'          => 'xxxx',
+        'user-mobile'   => '09xxxxxxxx',
+        'callback-url'  => 'http://www.example.org/result',
+    ),
 );

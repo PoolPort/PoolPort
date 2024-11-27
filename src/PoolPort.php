@@ -7,6 +7,7 @@ use PoolPort\Sib\Sib;
 use PoolPort\Tara\Tara;
 use PoolPort\Apsan\Apsan;
 use PoolPort\Azki\Azki;
+use PoolPort\DigiPay\DigiPay;
 use PoolPort\BazaarPay\BazaarPay;
 use PoolPort\Keepa\Keepa;
 use PoolPort\Dara\Dara;
@@ -87,6 +88,8 @@ class PoolPort
 
     const P_SIB = 26;
 
+    const P_DIGIPAY = 27;
+
     /**
      * @var Config
      */
@@ -143,7 +146,7 @@ class PoolPort
                      self::P_SADERAT, self::P_IRANKISH, self::P_SIMULATOR, self::P_SAMAN,
                      self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
-                     self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB);
+                     self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB, self::P_DIGIPAY);
     }
 
     /**
@@ -373,6 +376,10 @@ class PoolPort
 
             case self::P_SIB:
                 $this->portClass = new Sib($this->config, $this->db, self::P_SIB);
+                break;
+
+            case self::P_DIGIPAY:
+                $this->portClass = new DigiPay($this->config, $this->db, self::P_DIGIPAY);
                 break;
 
             default:
