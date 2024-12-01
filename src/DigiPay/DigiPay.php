@@ -205,7 +205,7 @@ class DigiPay extends PortAbstract implements PortInterface
 
             $response = $client->request("POST", "{$this->gateUrl}/purchases/deliver?type={$_POST['type']}", [
                 "json" => [
-                    'deliveryDate'  => time(),
+                    'deliveryDate'  => round(microtime(true) * 1000),
                     'invoiceNumber' => mt_rand(10000000, 999999999),
                     'trackingCode'  => $this->getMeta('trackingCode'),
                     'products'      => $products,
