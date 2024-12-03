@@ -92,10 +92,11 @@ return array(
     // Pasargad gateway
     //--------------------------------
     'pasargad'      => array(
-        'merchant-code' => '9999999',
-        'terminal-code' => '999999',
-        'certificate'   => '',
-        'callback-url'  => 'http://example.org/result'
+        'username'        => 'xxx',
+        'password'        => 'xxx',
+        'terminal-number' => 'xxx',
+        'user-mobile'     => '09xxxxxxxx',
+        'callback-url'    => 'http://example.org/result'
     ),
 
     //--------------------------------
@@ -287,7 +288,7 @@ return array(
         'callback-url'  => 'http://www.example.org/result',
     ),
 
-    // Pasargad gateway
+    // Zibal gateway
     //--------------------------------
     'zibal'     => array(
         'merchant'     => 'xxxx',
