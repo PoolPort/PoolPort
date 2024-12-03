@@ -2,38 +2,40 @@
 
 namespace PoolPort\Pasargad;
 
-use DateTime;
 use PoolPort\Config;
+use GuzzleHttp\Client;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
+use PoolPort\Exceptions\PoolPortException;
 
 class Pasargad extends PortAbstract implements PortInterface
 {
-    /**
-     * Address of main SOAP server
-     *
-     * @var string
-     */
-    protected $settleUrl = 'https://pep.shaparak.ir/VerifyPayment.aspx';
-    /**
-     * Address of main SOAP server
-     *
-     * @var string
-     */
-    protected $serverUrl = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
+    const SERVICE_CODE = 8;
+    const SERVICE_TYPE = 'PURCHASE';
 
     /**
-     * Address of CURL server for verify payment
+     * Address of gate for redirect
      *
      * @var string
      */
-    protected $serverVerifyUrl = 'https://pep.shaparak.ir/CheckTransactionResult.aspx';
+    protected $gateUrl = 'https://pep.shaparak.ir/dorsa1';
+
+    /**
+     * Address of payment gateway
+     *
+     * @var string
+     */
+    private $paymentUri;
+
+    private $token;
+
+    private $items;
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(Config $config, DataBaseManager $db, $portId)
+    public function __construct(Config $config, DatabaseManager $db, $portId)
     {
         parent::__construct($config, $db, $portId);
     }
@@ -53,6 +55,10 @@ class Pasargad extends PortAbstract implements PortInterface
      */
     public function ready()
     {
+        $this->newTransaction();
+        $this->authenticate();
+        $this->sendPayRequest();
+
         return $this;
     }
 
@@ -61,24 +67,7 @@ class Pasargad extends PortAbstract implements PortInterface
      */
     public function redirect()
     {
-        $dateTime = new DateTime();
-
-        $this->newTransaction();
-
-        $fields = array(
-            'terminalCode' => $this->config->get('pasargad.terminal-code'),
-            'merchantCode' => $this->config->get('pasargad.merchant-code'),
-            'redirectAddress' => $this->buildRedirectUrl($this->config->get('pasargad.callback-url')),
-            'timeStamp' => $dateTime->format('Ymd'),
-            'invoiceDate' => $dateTime->format('Ymd'),
-            'action' => 1003,
-            'amount' => $this->amount,
-            'invoiceNumber' => $this->transactionId(),
-        );
-
-        $fields['sign'] = $this->generateSign($fields);
-
-        require 'PasargadRedirector.php';
+        header("Location: " . $this->paymentUri);
     }
 
     /**
@@ -88,109 +77,164 @@ class Pasargad extends PortAbstract implements PortInterface
     {
         parent::verify($transaction);
 
-        $this->verifyPayment();
-        $this->settleRequest();
+        $this->confirmPayment();
 
         return $this;
     }
 
     /**
-     * Generate sign for redirect form
+     * Send pay request to server
      *
-     * @param array $fields
-     * @return string
+     * @return void
+     *
+     * @throws PasargadException
      */
-    protected function generateSign(array $fields)
+    protected function sendPayRequest()
     {
-        $data = "#".$fields['merchantCode']."#".$fields['terminalCode']."#".$fields['invoiceNumber']."#".
-            $fields['invoiceDate']."#".$fields['amount']."#".$fields['redirectAddress']."#".
-            $fields['action']."#".$fields['timeStamp']."#";
-        $data = sha1($data, true);
+        try {
+            $client = new Client();
+            $invoice = mt_rand(1000000000, 999999999999);
 
-        $processor = new RsaProcessor($this->config->get('pasargad.certificate'), RsaProcessor::XMLString);
-        return base64_encode($processor->sign($data));
+            $response = $client->request("POST", "{$this->gateUrl}/api/payment/purchase", [
+                "json" => [
+                    'amount'         => $this->amount,
+                    'callbackApi'    => $this->buildRedirectUrl($this->config->get('pasargad.callback-url')),
+                    'mobileNumber'   => $this->config->get('pasargad.user-mobile', ''),
+                    'invoice'        => "$invoice",
+                    'invoiceDate'    => jdate('Y/m/d H:i:s'),
+                    'serviceCode'    => self::SERVICE_CODE,
+                    'serviceType'    => self::SERVICE_TYPE,
+                    'terminalNumber' => $this->config->get('pasargad.terminal-number'),
+                    'description'    => isset($this->items['description']) ? $this->items['description'] : null,
+                    'payerMail'      => isset($this->items['payerMail']) ? $this->items['payerMail'] : null,
+                    'payerName'      => isset($this->items['payerName']) ? $this->items['payerName'] : null,
+                    'pans'           => isset($this->items['pans']) ? $this->items['pans'] : null,
+                    'nationalCode'   => isset($this->items['nationalCode']) ? $this->items['nationalCode'] : null,
+                ],
+
+                "headers" => [
+                    'Authorization' => "Bearer {$this->token}",
+                    'Content-Type'  => 'application/json',
+                ],
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($statusCode != 200 || $response->resultCode != 0) {
+                $this->transactionFailed();
+                $this->newLog($statusCode, json_encode($response));
+                throw new PasargadException(json_encode($response), $statusCode);
+            }
+
+            $this->paymentUri = $response->data->url;
+
+            $this->setMeta([
+                'invoice' => $invoice,
+                'urlId'   => $response->data->urlId,
+            ]);
+
+        } catch (\Exception $e) {
+            $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 
     /**
-     * Verify user payment from bank server
+     * Verify user payment from pasargad server
      *
      * @return bool
      *
      * @throws PasargadException
      */
-    protected function verifyPayment()
+    protected function confirmPayment()
     {
-        $this->refId = @$_GET['tref'];
-        $this->transactionSetRefId();
+        try {
+            $client = new Client();
 
-        $fields = array(
-            'invoiceUID' => $this->refId()
-        );
+            $response = $client->request("POST", "{$this->gateUrl}/api/payment/confirm-transactions", [
+                "json"    => [
+                    'invoice' => "{$this->getMeta('invoice')}",
+                    'urlId'   => $this->getMeta('urlId'),
+                ],
+                "headers" => [
+                    'Authorization' => "Bearer " . $this->getMeta('token'),
+                    'Content-Type'  => 'application/json',
+                ],
+            ]);
 
-        $ch = curl_init();
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
 
-        curl_setopt($ch, CURLOPT_URL, $this->serverVerifyUrl);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            if ($statusCode != 200 || $response->resultCode != 0) {
+                $this->transactionFailed();
+                $this->newLog($statusCode, json_encode($response));
+                throw new PasargadException(json_encode($response), $statusCode);
+            }
 
-        $response = curl_exec($ch);
-        curl_close($ch);
+            $this->trackingCode = $response->data->trackId;
+            $this->refId = $response->data->referenceNumber;
+            $this->transactionSetRefId();
+            $this->transactionSucceed();
 
-        $response = simplexml_load_string($response);
-        if ($response->result == 'False') {
+            return $response;
+
+        } catch (\Exception $e) {
             $this->transactionFailed();
-            $this->newLog(0, PasargadException::getError($response->action));
-            throw new PasargadException($response->action);
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
-
-        return true;
     }
+
     /**
-     * settle user payment from bank server
+     * Authenticate and obtain an access token.
      *
-     * @return bool
+     * @return void
      *
-     * @throws PasargadException
+     * @throws PoolPortException
      */
-    protected function settleRequest()
+    protected function authenticate()
     {
-        $dateTime = new DateTime();
-        $fields = array(
-            'MerchantCode' => $this->config->get('pasargad.merchant-code'),
-            'TerminalCode' => $this->config->get('pasargad.terminal-code'),
-            'InvoiceNumber' => $this->transactionId(),
-            'InvoiceDate' => $dateTime->format('Ymd'),
-            'amount' => $this->amount,
-            'TimeStamp' => date("Y/m/d H:i:s"),
-            'sign' => ''
-        );
+        try {
+            $client = new Client();
 
-        $processor = new RsaProcessor($this->config->get('pasargad.certificate'), RsaProcessor::XMLString);
+            $response = $client->request("POST", "{$this->gateUrl}/token/getToken", [
+                "json" => [
+                    'username' => $this->config->get('pasargad.username'),
+                    'password' => $this->config->get('pasargad.password'),
+                ],
+            ]);
 
-        $data = "#". $fields['MerchantCode'] ."#". $fields['TerminalCode'] ."#". $fields['InvoiceNumber'] ."#". $fields['InvoiceDate'] ."#". $fields['amount'] ."#". $fields['TimeStamp'] ."#";
-        $data = sha1($data,true);
-        $data =  $processor->sign($data);
-        $fields['sign'] =  base64_encode($data);
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
 
-        $text = "InvoiceNumber=" . $this->transactionId() ."&InvoiceDate=" .
-            $dateTime->format('Ymd') ."&MerchantCode=" . $this->config->get('pasargad.merchant-code') ."&TerminalCode=" .
-            $this->config->get('pasargad.terminal-code') ."&Amount=" . $this->amount ."&TimeStamp=" . $fields['TimeStamp'] .
-            "&Sign=" . $fields['sign'];
-        $ch = curl_init();
-        curl_setopt($ch,CURLOPT_URL,$this->settleUrl);
-        curl_setopt($ch,CURLOPT_POST,1);
-        curl_setopt($ch,CURLOPT_POSTFIELDS,$text);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-        $result2 = curl_exec($ch);
-        curl_close($ch);
-        $response = simplexml_load_string($result2);
-        if(!isset($response->result) and strtolower($response->result)=='false'){
-            $this->transactionFailed();
-            $this->newLog(0, PasargadException::getError($response->action));
-            throw new PasargadException($response->action);
+            if ($statusCode != 200 || $response->resultCode != 0) {
+                $this->newLog($statusCode, json_encode($response));
+                throw new PasargadException(json_encode($response), $statusCode);
+            }
+
+            $this->token = $response->token;
+
+            $this->setMeta([
+                'token' => $this->token
+            ]);
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
-        return true;
+    }
+
+    /**
+     * add items to invoice
+     *
+     * @return $this
+     */
+    public function addItem($items)
+    {
+        $this->items = $items;
+
+        return $this;
     }
 }

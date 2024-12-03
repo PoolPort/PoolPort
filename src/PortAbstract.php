@@ -405,6 +405,7 @@ abstract class PortAbstract
         $this->config->set('sib.user-mobile', $mobile);
         $this->config->set('digipay.user-mobile', $mobile);
         $this->config->set('zibal.user-mobile', $mobile);
+        $this->config->set('pasargad.user-mobile', $mobile);
 
         return $this;
     }
