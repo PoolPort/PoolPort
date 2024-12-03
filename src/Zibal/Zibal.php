@@ -94,12 +94,12 @@ class Zibal extends PortAbstract implements PortInterface
                     'callbackUrl'         => $this->buildRedirectUrl($this->config->get('zibal.callback-url')),
                     'merchant'            => $this->config->get('zibal.merchant'),
                     'mobile'              => $this->config->get('zibal.user-mobile', ''),
-                    'description'         => $this->items['description'] ?? null,
-                    'orderId'             => $this->items['orderId']?? null,
-                    'allowedCards'        => $this->items['allowedCards'] ?? null,
-                    'ledgerId'            => $this->items['ledgerId'] ?? null,
-                    'nationalCode'        => $this->items['nationalCode'] ?? null,
-                    'checkMobileWithCard' => $this->items['checkMobileWithCard'] ?? null,
+                    'description'         => isset($this->items['description']) ? $this->items['description'] : null,
+                    'orderId'             => isset($this->items['orderId']) ? $this->items['orderId'] : null,
+                    'allowedCards'        => isset($this->items['allowedCards']) ? $this->items['allowedCards'] : null,
+                    'ledgerId'            => isset($this->items['ledgerId']) ? $this->items['ledgerId'] : null,
+                    'nationalCode'        => isset($this->items['nationalCode']) ? $this->items['nationalCode'] : null,
+                    'checkMobileWithCard' => isset($this->items['checkMobileWithCard']) ? $this->items['checkMobileWithCard'] : null,
                 ],
             ]);
 
