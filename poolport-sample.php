@@ -286,4 +286,12 @@ return array(
         'user-mobile'   => '09xxxxxxxx',
         'callback-url'  => 'http://www.example.org/result',
     ),
+
+    // Pasargad gateway
+    //--------------------------------
+    'zibal'     => array(
+        'merchant'     => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
