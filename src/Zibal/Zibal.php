@@ -156,6 +156,7 @@ class Zibal extends PortAbstract implements PortInterface
             }
 
             $this->trackingCode = $response->refNumber;
+            $this->cardNumber = $response->cardNumber;
             $this->transactionSucceed();
 
             return $response;

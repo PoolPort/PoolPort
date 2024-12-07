@@ -175,6 +175,7 @@ class Pasargad extends PortAbstract implements PortInterface
 
             $this->trackingCode = $response->data->trackId;
             $this->refId = $response->data->referenceNumber;
+            $this->cardNumber = $response->data->maskedCardNumber;
             $this->transactionSetRefId();
             $this->transactionSucceed();
 
