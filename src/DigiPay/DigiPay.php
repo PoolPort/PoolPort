@@ -247,6 +247,8 @@ class DigiPay extends PortAbstract implements PortInterface
     public function refundPayment($transaction, $params = [])
     {
         try {
+            $this->authenticate();
+
             $meta = json_decode($transaction->meta, true);
             $client = new Client();
 
@@ -258,7 +260,7 @@ class DigiPay extends PortAbstract implements PortInterface
                 ],
 
                 "headers" => [
-                    'Authorization' => "Bearer " . $meta['access_token'],
+                    'Authorization' => "Bearer {$this->accessToken}",
                     'Content-Type'  => 'application/json; charset=UTF-8',
                 ],
             ]);
@@ -311,6 +313,7 @@ class DigiPay extends PortAbstract implements PortInterface
                 $this->newLog($statusCode, json_encode($response));
                 throw new DigiPayException(json_encode($response), $statusCode);
             }
+
             $this->accessToken = $response->access_token;
 
             $this->setMeta([
