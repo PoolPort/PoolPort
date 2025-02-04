@@ -202,12 +202,13 @@ class DigiPay extends PortAbstract implements PortInterface
             $client = new Client();
             $items = $this->getMeta('items');
             $products = collect($items)->pluck('brand')->toArray();
+            $trackingCode = $this->getMeta('trackingCode');
 
             $response = $client->request("POST", "{$this->gateUrl}/purchases/deliver?type={$_POST['type']}", [
                 "json" => [
                     'deliveryDate'  => round(microtime(true) * 1000),
                     'invoiceNumber' => mt_rand(10000000, 999999999),
-                    'trackingCode'  => $this->getMeta('trackingCode'),
+                    'trackingCode'  => $trackingCode,
                     'products'      => $products,
                 ],
 
@@ -226,6 +227,7 @@ class DigiPay extends PortAbstract implements PortInterface
                 throw new DigiPayException($response, $statusCode);
             }
 
+            $this->trackingCode = $trackingCode;
             $this->transactionSucceed();
 
             return $response;
