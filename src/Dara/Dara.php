@@ -140,6 +140,7 @@ class Dara extends PortAbstract implements PortInterface
                 throw new DaraException($response->ResultMessage, $response->ResultCode);
             }
 
+            $this->trackingCode = $response->AcquirerRRN;
             $this->transactionSucceed();
 
             return $response;

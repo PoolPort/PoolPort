@@ -196,6 +196,7 @@ class Keepa extends PortAbstract implements PortInterface
                 throw new KeepaException($response->Message, $response->Status);
             }
 
+            $this->trackingCode = $this->recieptNumber;
             $this->transactionSucceed();
 
             return $response;

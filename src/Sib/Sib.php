@@ -136,6 +136,7 @@ class Sib extends PortAbstract implements PortInterface
         // transaction is successfull
         if (isset($_POST['transaction'])) {
             $this->refId = $_POST['transaction'];
+            $this->trackingCode = $_POST['rnn'];
             $this->transactionSetRefId();
             $this->transactionSucceed();
 
@@ -180,6 +181,7 @@ class Sib extends PortAbstract implements PortInterface
             ]);
 
             $this->refId = $response['data'][0]['transaction'];
+            $this->trackingCode = $_POST['rnn'];
             $this->transactionSetRefId();
             $this->transactionSucceed();
 

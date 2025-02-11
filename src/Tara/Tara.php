@@ -204,6 +204,7 @@ class Tara extends PortAbstract implements PortInterface
                 'rrn' => $response->rrn
             ]);
 
+            $this->trackingCode = $response->rrn;
             $this->transactionSucceed();
 
             return $response;
