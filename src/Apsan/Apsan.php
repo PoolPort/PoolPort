@@ -152,6 +152,7 @@ class Apsan extends PortAbstract implements PortInterface
                 throw new ApsanException($response->description, $statusCode);
             }
 
+            $this->trackingCode = $response->result->grantId;
             $this->transactionSucceed();
 
             return $response;
