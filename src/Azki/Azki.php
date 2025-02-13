@@ -99,7 +99,7 @@ class Azki extends PortAbstract implements PortInterface
             $subUrl = '/payment/purchase';
             $client = new Client();
             $redirectUri = $this->buildRedirectUrl($this->config->get('azki.callback-url'));
-            $providerId = mt_rand(1000000000, 999999999999);
+            $providerId = $this->transactionId();
 
             $this->setMeta([
                 'provider_id' => $providerId,

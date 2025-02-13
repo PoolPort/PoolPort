@@ -82,7 +82,7 @@ class Sib extends PortAbstract implements PortInterface
         $this->newTransaction();
 
         try {
-            $productId = !empty($this->items['productId']) ? $this->items['productId'] : uniqid();
+            $productId = !empty($this->items['productId']) ? $this->items['productId'] : $this->transactionId();
             $client = new Client();
 
             $response = $client->request("POST", "{$this->gateUrl}/webservice/request", [
