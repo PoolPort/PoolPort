@@ -95,7 +95,7 @@ class Zibal extends PortAbstract implements PortInterface
                     'merchant'            => $this->config->get('zibal.merchant'),
                     'mobile'              => $this->config->get('zibal.user-mobile', ''),
                     'description'         => isset($this->items['description']) ? $this->items['description'] : null,
-                    'orderId'             => isset($this->items['orderId']) ? $this->items['orderId'] : null,
+                    'orderId'             => isset($this->items['orderId']) ? $this->items['orderId'] : $this->transactionId(),
                     'allowedCards'        => isset($this->items['allowedCards']) ? $this->items['allowedCards'] : null,
                     'ledgerId'            => isset($this->items['ledgerId']) ? $this->items['ledgerId'] : null,
                     'nationalCode'        => isset($this->items['nationalCode']) ? $this->items['nationalCode'] : null,

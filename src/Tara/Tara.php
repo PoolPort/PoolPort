@@ -311,7 +311,7 @@ class Tara extends PortAbstract implements PortInterface
 
     public function addItem($taraInvoiceItem, $orderId = null, $vat = 0, $additionalData = "")
     {
-        $orderId = $orderId ? $orderId : mt_rand(10000000, 99999999);
+        $orderId = $orderId ? $orderId : $this->transactionId();
 
         $this->items = [
             'taraInvoiceItem' => $taraInvoiceItem,

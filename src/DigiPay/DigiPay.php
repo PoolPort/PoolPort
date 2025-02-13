@@ -98,7 +98,7 @@ class DigiPay extends PortAbstract implements PortInterface
     {
         try {
             $client = new Client();
-            $prividerId = mt_rand(1000000000, 999999999999);
+            $prividerId = $this->transactionId();
             $basketId = mt_rand(1000000000, 999999999999);
             $type = $this->config->get('digipay.type');
 

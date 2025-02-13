@@ -93,7 +93,7 @@ class Pasargad extends PortAbstract implements PortInterface
     {
         try {
             $client = new Client();
-            $invoice = mt_rand(1000000000, 999999999999);
+            $invoice = $this->transactionId();
 
             $response = $client->request("POST", "{$this->gateUrl}/api/payment/purchase", [
                 "json" => [
