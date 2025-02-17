@@ -16,8 +16,8 @@ class Tara extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl       = 'https://stage-pay.tara360.ir/pay';
-    protected $refundGateUrl = 'https://stage.tara-club.ir/club';
+    protected $gateUrl       = 'https://pay.tara360.ir/pay';
+    protected $refundGateUrl = 'https://club.tara-club.ir/club';
 
     private $accessToken;
 
