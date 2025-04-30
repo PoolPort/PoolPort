@@ -261,6 +261,49 @@ class Azki extends PortAbstract implements PortInterface
     }
 
     /**
+     * Partial refund user payment
+     *
+     * @return bool
+     *
+     * @throws AzkiException
+     */
+    public function partialRefundPayment($transaction, $amount, $params = [])
+    {
+        try {
+            $meta = json_decode($transaction->meta, true);
+            $subUrl = '/payment/partial-reverse-by-amount';
+            $client = new Client();
+
+            $response = $client->request("POST", $this->gateUrl . $subUrl, [
+                "json"    => [
+                    'ticket_id'      => $transaction->ref_id,
+                    'reverse_amount' => $amount,
+                ],
+                "headers" => [
+                    'Signature'  => $this->generateSignature($subUrl),
+                    'MerchantId' => $this->config->get('azki.merchant-id'),
+                ],
+            ]);
+
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($response->rsCode != AzkiCreateTicketCodes::SUCCESS) {
+                $errorMessage = AzkiCreateTicketCodes::getMessage($response->rsCode);
+                $this->newLog($response->rsCode, $errorMessage);
+                throw new AzkiException($errorMessage, $response->rsCode);
+            }
+
+            $this->newLog('Refunded', json_encode($response));
+
+            return $response;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
      * generate a signature based in api key
      *
      * @return string

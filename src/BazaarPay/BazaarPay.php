@@ -213,6 +213,47 @@ class BazaarPay extends PortAbstract implements PortInterface
     }
 
     /**
+     * Partial refund user payment
+     *
+     * @return bool
+     *
+     * @throws BazaarPayException
+     */
+    public function partialRefundPayment($transaction, $amount, $params = [])
+    {
+        try {
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->gateUrl}/refund/", [
+                "json"    => [
+                    'checkout_token' => $transaction->ref_id,
+                    'amount'         => $amount,
+                ],
+                'headers' => [
+                    'Authorization' => 'Token ' . $this->config->get('bazaarpay.token'),
+                    'Content-Type'  => 'application/json',
+                ]
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $response = $response->getBody()->getContents();
+
+            if ($statusCode != 204) {
+                $this->newLog($statusCode, $response);
+                throw new BazaarPayException($response, $statusCode);
+            }
+
+            $this->newLog('Refunded', $response);
+
+            return true;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
      * trace user payment
      *
      * @param $refId
