@@ -258,6 +258,50 @@ class Tara extends PortAbstract implements PortInterface
         }
     }
 
+    /**
+     * Partial refund user payment
+     *
+     * @return bool
+     *
+     * @throws TaraException
+     */
+    public function partialRefundPayment($transaction, $amount, $params = [])
+    {
+        try {
+            $this->refundLogin();
+
+            $meta = json_decode($transaction->meta, true);
+            $referenceNumber = $meta['rrn'];
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->refundGateUrl}/api/v1/user/purchase/limited/refund/partial/$referenceNumber", [
+                "json"    => [
+                    'amount' => $amount,
+                    'items'  => !empty($params['items']) ? $params['items'] : '',
+                ],
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->refundToken,
+                    'Content-Type'  => 'application/json',
+                ]
+            ]);
+
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($response->success == false) {
+                $this->newLog($response->data->code, json_encode($response));
+                throw new TaraException(json_encode($response), $response->data->code);
+            }
+
+            $this->newLog('Refunded', json_encode($response));
+
+            return true;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
     private function refundLogin()
     {
         try {

@@ -268,6 +268,29 @@ class PoolPort
     }
 
     /**
+     * Partial refund user payment
+     *
+     * @param $transactionId
+     * @param $amount
+     *
+     * @return mixed
+     * @throws NotFoundTransactionException
+     * @throws PortNotFoundException
+     */
+    public function partialRefund($transactionId, $amount, $params = [])
+    {
+        $transaction = $this->db->findByTransactionId($transactionId);
+
+        if (!$transaction) {
+            throw new NotFoundTransactionException;
+        }
+
+        $this->buildPort($transaction->port_id);
+
+        return $this->portClass->partialRefundPayment($transaction, $amount, $params);
+    }
+
+    /**
      * Create new object from port class
      *
      * @param int $port

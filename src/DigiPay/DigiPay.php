@@ -286,6 +286,52 @@ class DigiPay extends PortAbstract implements PortInterface
     }
 
     /**
+     * Partial refund user payment
+     *
+     * @return bool
+     *
+     * @throws DigiPayException
+     */
+    public function partialRefundPayment($transaction, $amount, $params = [])
+    {
+        try {
+            $this->authenticate();
+
+            $meta = json_decode($transaction->meta, true);
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->gateUrl}/refunds?type={$meta['type']}", [
+                "json" => [
+                    'providerId'       => $meta['providerId'],
+                    'amount'           => $amount,
+                    'saleTrackingCode' => $meta['trackingCode'],
+                ],
+
+                "headers" => [
+                    'Authorization' => "Bearer {$this->accessToken}",
+                    'Content-Type'  => 'application/json; charset=UTF-8',
+                ],
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $response = $response->getBody()->getContents();
+
+            if ($statusCode != 200) {
+                $this->newLog($statusCode, $response);
+                throw new DigiPayException($response, $statusCode);
+            }
+
+            $this->newLog('Refunded', $response);
+
+            return $response;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
      * Authenticate and obtain an access token.
      *
      * @return void

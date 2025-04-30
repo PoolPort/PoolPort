@@ -236,6 +236,49 @@ class Sib extends PortAbstract implements PortInterface
         }
     }
 
+    /**
+     * Partial refund user payment
+     *
+     * @return bool
+     *
+     * @throws SibException
+     */
+    public function partialRefundPayment($transaction, $amount, $params = [])
+    {
+        try {
+            $meta = json_decode($transaction->meta, true);
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->gateUrl}/webservice/returnTransaction", [
+                "json"    => [
+                    'token'        => $this->config->get('sib.token'),
+                    'merchantCode' => $this->config->get('sib.merchantCode'),
+                    'productId'    => $meta['productId'],
+                    'paymentToken' => $meta['paymentToken'],
+                    'amount'       => $amount,
+                ],
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ]
+            ]);
+
+            $response = json_decode($response->getBody()->getContents(), true);
+
+            if ($response['result'] == false) {
+                $this->newLog($response['errorCode'], json_encode($response));
+                throw new SibException(json_encode($response), $response['errorCode']);
+            }
+
+            $this->newLog('Refunded', json_encode($response));
+
+            return true;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
     public function addItem($productId = null, $inCount = 0, $prepaid = 0, $extraParams = "")
     {
         $this->items = [
