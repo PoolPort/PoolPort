@@ -161,7 +161,6 @@ class Lendroll extends PortAbstract implements PortInterface
             return $response;
 
         } catch (\Exception $e) {
-            dd($e->getMessage(), $e->getFile(), $e->getLine());
             $this->transactionFailed();
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
