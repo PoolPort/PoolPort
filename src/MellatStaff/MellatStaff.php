@@ -119,11 +119,8 @@ class MellatStaff extends PortAbstract implements PortInterface
             $this->refId = uniqid();
             $this->transactionSetRefId();
 
-            $otpCode = explode(' ', $response->message)[2];
-
             $this->setMeta([
                 'amount'     => $this->amount,
-                'otpCode'    => $otpCode,
                 'mobile'     => $mobile,
                 'status'     => self::PENDING,
                 'items'      => !empty($this->items) ? $this->items : [],
