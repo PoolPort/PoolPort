@@ -393,7 +393,7 @@ class MellatStaff extends PortAbstract implements PortInterface
                 "json" => [
                     'token'       => $meta['creditToken'],
                     'credit'      => $amount,
-                    'description' => $params['description'] ?? '',
+                    'description' => !empty($params['description']) ? $params['description'] : '',
                 ],
 
                 "headers" => [
