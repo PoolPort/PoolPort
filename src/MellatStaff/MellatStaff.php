@@ -152,6 +152,8 @@ class MellatStaff extends PortAbstract implements PortInterface
 
             $this->markStatus(self::DONE);
 
+            $this->trackingCode = $this->refId();
+
             $this->transactionSucceed();
 
         } catch (\Exception $e) {
