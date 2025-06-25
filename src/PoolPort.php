@@ -9,6 +9,7 @@ use PoolPort\Apsan\Apsan;
 use PoolPort\Azki\Azki;
 use PoolPort\Zibal\Zibal;
 use PoolPort\DigiPay\DigiPay;
+use PoolPort\Lendroll\Lendroll;
 use PoolPort\BazaarPay\BazaarPay;
 use PoolPort\Keepa\Keepa;
 use PoolPort\Dara\Dara;
@@ -94,6 +95,8 @@ class PoolPort
 
     const P_ZIBAL = 29;
 
+    const P_LENDROLL = 30;
+
     const P_MELLAT_STAFF = 32;
 
     /**
@@ -153,7 +156,7 @@ class PoolPort
                      self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
-                     self::P_DIGIPAY, self::P_ZIBAL, self::P_MELLAT_STAFF);
+                     self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_MELLAT_STAFF);
     }
 
     /**
@@ -414,6 +417,10 @@ class PoolPort
 
             case self::P_ZIBAL:
                 $this->portClass = new Zibal($this->config, $this->db, self::P_ZIBAL);
+                break;
+
+            case self::P_LENDROLL:
+                $this->portClass = new Lendroll($this->config, $this->db, self::P_LENDROLL);
                 break;
 
             case self::P_MELLAT_STAFF:
