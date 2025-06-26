@@ -30,6 +30,7 @@ use PoolPort\Pasargad\Pasargad;
 use PoolPort\Zarinpal\Zarinpal;
 use PoolPort\JahanPay\JahanPay;
 use PoolPort\IranKish\IranKish;
+use PoolPort\MellatStaff\MellatStaff;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\Exceptions\PortNotFoundException;
@@ -96,6 +97,8 @@ class PoolPort
 
     const P_LENDROLL = 30;
 
+    const P_MELLAT_STAFF = 32;
+
     /**
      * @var Config
      */
@@ -153,7 +156,7 @@ class PoolPort
                      self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
-                     self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL);
+                     self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_MELLAT_STAFF);
     }
 
     /**
@@ -418,6 +421,10 @@ class PoolPort
 
             case self::P_LENDROLL:
                 $this->portClass = new Lendroll($this->config, $this->db, self::P_LENDROLL);
+                break;
+
+            case self::P_MELLAT_STAFF:
+                $this->portClass = new MellatStaff($this->config, $this->db, self::P_MELLAT_STAFF);
                 break;
 
             default:
