@@ -94,7 +94,9 @@ class MellatStaff extends PortAbstract implements PortInterface
 
             $userCredit = $this->getCredit();
 
-            throw_if($userCredit < $this->amount, new MellatStaffException('credit not enough', -1));
+            if ($userCredit < $this->amount) {
+                throw new MellatStaffException('credit not enough', -1);
+            }
 
             $client = new Client();
             $mobile = $this->config->get('mellatStaff.user-mobile');
