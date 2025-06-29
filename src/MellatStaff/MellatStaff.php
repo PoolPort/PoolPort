@@ -7,7 +7,6 @@ use GuzzleHttp\Client;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
-use GuzzleHttp\Exception\ClientException;
 use PoolPort\Exceptions\PoolPortException;
 
 class MellatStaff extends PortAbstract implements PortInterface
@@ -152,6 +151,8 @@ class MellatStaff extends PortAbstract implements PortInterface
 
             $this->finalizeCredit();
 
+            $this->reportActivity();
+
             $this->markStatus(self::DONE);
 
             $this->trackingCode = $this->refId();
@@ -280,7 +281,7 @@ class MellatStaff extends PortAbstract implements PortInterface
                     'mobile' => $meta['mobile'],
                     'otp'    => $_POST['otp_code'],
                     'credit' => $meta['amount'],
-                    'schema' => $meta['items']
+                    'schema' => $meta['items']['credit_items']
                 ],
                 "headers" => [
                     'Authorization' => "Bearer {$this->authToken}",
@@ -439,5 +440,48 @@ class MellatStaff extends PortAbstract implements PortInterface
         $this->setMeta([
             'status' => $status
         ]);
+    }
+
+    public function reportActivity()
+    {
+        try {
+            $client = new Client();
+            $meta = $this->getMeta();
+
+            $response = $client->request("POST", "{$this->apiUrl}/Report/Activity", [
+                "json"    => [
+                    'mobile'          => $meta['mobile'],
+                    'categoryCode'    => $meta['items']['activity_items']['categoryCode'],
+                    'stateCode'       => $meta['items']['activity_items']['stateCode'],
+                    'city'            => $meta['items']['activity_items']['city'],
+                    'usedMoneyAmount' => $meta['amount'],
+                    'mainMoneyAmount' => $meta['items']['activity_items']['mainMoneyAmount'],
+                    'usedDateTime'    => $meta['items']['activity_items']['usedDateTime'],
+                    'locationName'    => $meta['items']['activity_items']['locationName'],
+                    'isCredit'        => $meta['items']['activity_items']['isCredit'],
+                    'extraField'      => $meta['items']['activity_items']['extraField'],
+                ],
+                "headers" => [
+                    'Authorization' => "Bearer {$this->authToken}",
+                    'Content-Type'  => 'application/json; charset=UTF-8',
+                ],
+            ]);
+
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($response->resultCode != 0) {
+                $this->newLog($response->resultCode, $response->message);
+                throw new MellatStaffException($response->message, $response->resultCode);
+            }
+
+            return true;
+
+        } catch (\Exception $e) {
+            $this->transactionFailed();
+            $this->markStatus(self::ERROR);
+            $this->newLog('Error', $e->getMessage());
+
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 }
