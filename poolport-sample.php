@@ -296,10 +296,27 @@ return array(
         'callback-url' => 'http://www.example.org/result',
     ),
 
+    // Soshiant gateway
+    //--------------------------------
+    'soshiant'  => array(
+        'token'        => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
+
     // Lendroll gateway
     //--------------------------------
     'lendroll'  => array(
         'merchantId'   => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
+
+    // MellatStaff gateway
+    //--------------------------------
+    'mellatStaff'  => array(
+        'username'     => 'xxxx',
+        'password'     => 'xxxx',
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
