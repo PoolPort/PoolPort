@@ -295,4 +295,12 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Lendroll gateway
+    //--------------------------------
+    'lendroll'  => array(
+        'merchantId'   => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );

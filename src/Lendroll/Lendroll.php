@@ -12,8 +12,8 @@ use PoolPort\Exceptions\PoolPortException;
 class Lendroll extends PortAbstract implements PortInterface
 {
 
-    protected $apiUrl     = 'https://sandbox.api.lendroll.ir/api/v1.1/Gateway';
-    protected $paymentUrl = 'https://sandbox.api.lendroll.ir/v1.1/Gateway/start';
+    protected $apiUrl     = 'https://open.api.lendroll.ir/api/v1.1/Gateway';
+    protected $paymentUrl = 'https://open.api.lendroll.ir/v1.1/Gateway/start';
 
     private $items;
 
@@ -85,7 +85,7 @@ class Lendroll extends PortAbstract implements PortInterface
             $response = $client->request("POST", "{$this->apiUrl}/request", [
                 "json"    => [
                     'amount'      => $this->amount,
-                    'description' => $this->items['description'] ?? 'خرید',
+                    'description' => !empty($this->items['description']) ? $this->items['description'] : 'خرید',
                     'merchantId'  => $this->config->get('lendroll.merchantId'),
                     'callbackUrl' => $this->buildRedirectUrl($this->config->get('lendroll.callback-url')),
                     'orderId'     => $this->transactionId(),
@@ -132,7 +132,8 @@ class Lendroll extends PortAbstract implements PortInterface
         try {
             $client = new Client();
             $meta = $this->getMeta();
-            $this->setMeta(['referenceId' => $_POST['referenceId']]);
+            $referenceId = $_POST['referenceId'];
+            $this->setMeta(['referenceId' => $referenceId]);
 
             $response = $client->request("POST", "{$this->apiUrl}/verify", [
                 "json"    => [
@@ -140,7 +141,7 @@ class Lendroll extends PortAbstract implements PortInterface
                     'merchantId'  => $this->config->get('lendroll.merchantId'),
                     'amount'      => $meta['amount'],
                     'orderId'     => $meta['orderId'],
-                    'referenceId' => $_POST['referenceId'],
+                    'referenceId' => $referenceId,
                 ],
                 "headers" => [
                     'Content-Type' => 'application/json; charset=UTF-8',
@@ -155,7 +156,7 @@ class Lendroll extends PortAbstract implements PortInterface
                 throw new LendrollException($errorMessages, $response->resultCode);
             }
 
-            $this->trackingCode = $_POST['referenceId'];
+            $this->trackingCode = $referenceId;
             $this->transactionSucceed();
 
             return $response;
