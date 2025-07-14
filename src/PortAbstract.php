@@ -369,6 +369,7 @@ abstract class PortAbstract
         $this->config->set('digipay.callback-url', $url);
         $this->config->set('zibal.callback-url', $url);
         $this->config->set('lendroll.callback-url', $url);
+        $this->config->set('soshiant.callback-url', $url);
         $this->config->set('mellatStaff.callback-url', $url);
 
         return $this;
@@ -409,6 +410,7 @@ abstract class PortAbstract
         $this->config->set('zibal.user-mobile', $mobile);
         $this->config->set('pasargad.user-mobile', $mobile);
         $this->config->set('lendroll.user-mobile', $mobile);
+        $this->config->set('soshiant.user-mobile', $mobile);
         $this->config->set('mellatStaff.user-mobile', $mobile);
 
         return $this;
