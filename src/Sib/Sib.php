@@ -16,7 +16,7 @@ class Sib extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl = 'https://testdev.sibpay.ir';
+    protected $gateUrl = 'https://api.sibpay.ir';
 
     private $paymentUrl;
 
@@ -136,6 +136,8 @@ class Sib extends PortAbstract implements PortInterface
         // transaction is successfull
         if (isset($_POST['transaction'])) {
             $this->refId = $_POST['transaction'];
+            $this->trackingCode = $_POST['rnn'];
+            $this->cardNumber = $_POST['cardNumber'];
             $this->transactionSetRefId();
             $this->transactionSucceed();
 
@@ -144,13 +146,13 @@ class Sib extends PortAbstract implements PortInterface
             ]);
 
             return true;
-        } // failed to get transaction data
-        else {
-            return $this->tracepayment();
+        }
+        else { // failed to get transaction data
+            return $this->tracePayment();
         }
     }
 
-    public function tracepayment()
+    public function tracePayment()
     {
         try {
             $client = new Client();
@@ -180,6 +182,8 @@ class Sib extends PortAbstract implements PortInterface
             ]);
 
             $this->refId = $response['data'][0]['transaction'];
+            $this->trackingCode = $response['data'][0]['rnn'];
+            $this->cardNumber = $response['data'][0]['cardNumber'];
             $this->transactionSetRefId();
             $this->transactionSucceed();
 
