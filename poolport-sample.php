@@ -320,4 +320,13 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Top gateway
+    //--------------------------------
+    'top'  => array(
+        'username'     => 'xxxx',
+        'password'     => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );

@@ -4,6 +4,7 @@ namespace PoolPort;
 
 use PoolPort\AP\AP;
 use PoolPort\Sib\Sib;
+use PoolPort\Top\Top;
 use PoolPort\Tara\Tara;
 use PoolPort\Apsan\Apsan;
 use PoolPort\Azki\Azki;
@@ -102,6 +103,8 @@ class PoolPort
 
     const P_MELLAT_STAFF = 32;
 
+    const P_TOP = 32;
+
     /**
      * @var Config
      */
@@ -159,7 +162,8 @@ class PoolPort
                      self::P_PAY, self::P_JIBIT, self::P_AP, self::P_BITPAY, self::P_IDPAY,
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
-                     self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF);
+                     self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
+                     self::P_TOP);
     }
 
     /**
@@ -432,6 +436,10 @@ class PoolPort
 
             case self::P_MELLAT_STAFF:
                 $this->portClass = new MellatStaff($this->config, $this->db, self::P_MELLAT_STAFF);
+                break;
+
+            case self::P_TOP:
+                $this->portClass = new Top($this->config, $this->db, self::P_TOP);
                 break;
 
             default:
