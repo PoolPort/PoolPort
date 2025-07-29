@@ -83,24 +83,23 @@ class Top extends PortAbstract implements PortInterface
 
         try {
             $client = new Client();
+            $merchantOrderId = mt_rand(1000000, 99999999999);
 
             $response = $client->request("POST", "{$this->gateUrl}/CreateOrder", [
+                'auth'    => $this->getAuth(),
                 "json"    => [
-                    'MerchantOrderId'   => $this->transactionId(),
+                    'MerchantOrderId'   => $merchantOrderId,
                     'MerchantOrderDate' => now(),
-                    'AdditionalData'    => !empty($this->items) ? json_encode($this->items) : "",
+                    'AdditionalData'    => !empty($this->items['AdditionalData']) ? json_encode($this->items['AdditionalData']) : "",
                     'Amount'            => (int)$this->amount,
-                    'CallBackUrl'       => $this->buildRedirectUrl($this->config->get('sib.callback-url')),
+                    'CallBackUrl'       => $this->buildRedirectUrl($this->config->get('top.callback-url')),
                     'ReceptShowTime'    => !empty($this->items['ReceptShowTime']) ? $this->items['ReceptShowTime'] : 2,
-                    'OrderDetails'      => '',
-                    'OrderItems'        => '',
-                    'walletCode'        => !empty($this->items['walletCode']) ? $this->items['walletCode'] : "",
+                    'walletCode'        => $this->config->get('top.username'),
                     'MobileNumber'      => $this->config->get('top.user-mobile'),
                 ],
                 'headers' => [
-                    'Authorization' => $this->basicAuth(),
-                    'Content-Type'  => 'application/json',
-                ]
+                    'Content-Type' => 'application/json',
+                ],
             ]);
 
             $response = json_decode($response->getBody()->getContents(), true);
@@ -115,7 +114,7 @@ class Top extends PortAbstract implements PortInterface
 
             $this->setMeta([
                 'token'           => $response['data']['token'],
-                'MerchantOrderId' => $this->transactionId()
+                'MerchantOrderId' => $merchantOrderId
             ]);
 
         } catch (\Exception $e) {
@@ -134,35 +133,17 @@ class Top extends PortAbstract implements PortInterface
      */
     protected function verifyPayment()
     {
-        // transaction is successfull
-        if (isset($_POST['transaction'])) {
-            $this->refId = $_POST['transaction'];
-            $this->trackingCode = $_POST['rnn'];
-            $this->cardNumber = $_POST['cardNumber'];
-            $this->transactionSetRefId();
-            $this->transactionSucceed();
-
-            $this->setMeta([
-                'transaction_callback' => $_POST
-            ]);
-
-            return true;
-        } else { // failed to get transaction data
-            return $this->tracePayment();
-        }
-    }
-
-    public function tracePayment()
-    {
         try {
+            $meta = $this->getMeta();
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/webservice/check", [
+            $response = $client->request("POST", "{$this->gateUrl}/ConfirmPurchase", [
+                'auth'    => $this->getAuth(),
                 "json"    => [
-                    'token'        => $this->config->get('sib.token'),
-                    'merchantCode' => $this->config->get('sib.merchantCode'),
-                    'productId'    => $this->getMeta('productId'),
-                    'paymentToken' => $this->getMeta('paymentToken')
+                    'token'               => $meta['token'],
+                    'MerchantOrderId'     => $meta['MerchantOrderId'],
+                    'transactionDateTime' => now()->format('Y-m-d'),
+                    'additionalData'      => !empty($this->items['additionalData']) ? $this->items['additionalData'] : "",
                 ],
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -171,19 +152,14 @@ class Top extends PortAbstract implements PortInterface
 
             $response = json_decode($response->getBody()->getContents(), true);
 
-            if ($response['result'] == false) {
+            if ($response['status'] != 0) {
                 $this->transactionFailed();
-                $this->newLog($response['errorCode'], json_encode($response));
-                throw new TopException(json_encode($response), $response['errorCode']);
+                $this->newLog($response['status'], json_encode($response));
+                throw new TopException(json_encode($response), $response['status']);
             }
 
-            $this->setMeta([
-                'transaction_callback' => $response['data'][0]
-            ]);
-
-            $this->refId = $response['data'][0]['transaction'];
-            $this->trackingCode = $response['data'][0]['rnn'];
-            $this->cardNumber = $response['data'][0]['cardNumber'];
+            $this->refId = $response['data']['returnId'];
+            $this->trackingCode = $response['data']['returnId'];
             $this->transactionSetRefId();
             $this->transactionSucceed();
 
@@ -196,108 +172,18 @@ class Top extends PortAbstract implements PortInterface
         }
     }
 
-    /**
-     * Refund user payment
-     *
-     * @return bool
-     *
-     * @throws TopException
-     */
-    public function refundPayment($transaction, $params = [])
+    public function addItem($data)
     {
-        try {
-            $meta = json_decode($transaction->meta, true);
-            $client = new Client();
-
-            $response = $client->request("POST", "{$this->gateUrl}/webservice/returnTransaction", [
-                "json"    => [
-                    'token'        => $this->config->get('sib.token'),
-                    'merchantCode' => $this->config->get('sib.merchantCode'),
-                    'productId'    => $meta['productId'],
-                    'paymentToken' => $meta['paymentToken']
-                ],
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ]
-            ]);
-
-            $response = json_decode($response->getBody()->getContents(), true);
-
-            if ($response['result'] == false) {
-                $this->newLog($response['errorCode'], json_encode($response));
-                throw new TopException(json_encode($response), $response['errorCode']);
-            }
-
-            $this->newLog('Refunded', json_encode($response));
-
-            return true;
-
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Partial refund user payment
-     *
-     * @return bool
-     *
-     * @throws TopException
-     */
-    public function partialRefundPayment($transaction, $amount, $params = [])
-    {
-        try {
-            $meta = json_decode($transaction->meta, true);
-            $client = new Client();
-
-            $response = $client->request("POST", "{$this->gateUrl}/webservice/returnTransaction", [
-                "json"    => [
-                    'token'        => $this->config->get('sib.token'),
-                    'merchantCode' => $this->config->get('sib.merchantCode'),
-                    'productId'    => $meta['productId'],
-                    'paymentToken' => $meta['paymentToken'],
-                    'amount'       => $amount,
-                ],
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ]
-            ]);
-
-            $response = json_decode($response->getBody()->getContents(), true);
-
-            if ($response['result'] == false) {
-                $this->newLog($response['errorCode'], json_encode($response));
-                throw new TopException(json_encode($response), $response['errorCode']);
-            }
-
-            $this->newLog('Refunded', json_encode($response));
-
-            return true;
-
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    public function addItem($productId = null, $inCount = 0, $prepaid = 0, $extraParams = "")
-    {
-        $this->items = [
-            'productId'   => (string)$productId,
-            'inCount'     => (int)$inCount,
-            'prepaid'     => (int)$prepaid,
-            'extraParams' => (string)$extraParams
-        ];
+        $this->items = $data;
 
         return $this;
     }
 
-    public function basicAuth()
+    public function getAuth()
     {
         $username = $this->config->get('top.username');
         $password = $this->config->get('top.password');
 
-        return base64_encode("$username:$password");
+        return [$username, $password];
     }
 }
