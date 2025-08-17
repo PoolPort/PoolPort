@@ -101,7 +101,7 @@ class AldyPay extends PortAbstract implements PortInterface
                 'refunded_amount' => 0,
                 'created_at'      => now()->format('Y-m-d H:i:s'),
                 'is_transaction_created' => false,
-                'is_invoice_attached'    => false,
+                'is_invoice_attached'    => false
             ]);
 
         } catch (\Exception $e) {
@@ -146,7 +146,7 @@ class AldyPay extends PortAbstract implements PortInterface
                 ],
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json',
+                    'Content-Type'  => 'application/json'
                 ]
             ]);
 
@@ -248,11 +248,11 @@ class AldyPay extends PortAbstract implements PortInterface
             $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/poolticket/invoice", [
                 "json"    => [
                     "transaction_number" => "{$refId}",
-                    "invoice_number" => "{$invoiceNumber}",
+                    "invoice_number" => "{$invoiceNumber}"
                 ],
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json',
+                    'Content-Type'  => 'application/json'
                 ]
             ]);
 
@@ -279,10 +279,10 @@ class AldyPay extends PortAbstract implements PortInterface
             $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/auth/login", [
                 "json" => [
                     'username' => $this->config->get('aldypay.auth-username'),
-                    'password' => $this->config->get('aldypay.auth-password'),
+                    'password' => $this->config->get('aldypay.auth-password')
                 ],
                 "headers" => [
-                    'Content-Type' => 'application/json',
+                    'Content-Type' => 'application/json'
                 ],
             ]);
 
@@ -332,11 +332,11 @@ class AldyPay extends PortAbstract implements PortInterface
                     "amount"      => (int) $amount,
                     "store_code"  => $this->config->get('aldypay.store-code'),
                     "description" => $params['description'] ?? '',
-                    "invoice_number" => "{$invoiceNumber}",
+                    "invoice_number" => "{$invoiceNumber}"
                 ],
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json',
+                    'Content-Type'  => 'application/json'
                 ]
             ]);
 
@@ -389,11 +389,11 @@ class AldyPay extends PortAbstract implements PortInterface
                     "amount" => (int) $amount,
                     "store_code" => $this->config->get('aldypay.store-code'),
                     "description" => $params['description'] ?? '',
-                    "invoice_number" => "{$invoiceNumber}",
+                    "invoice_number" => "{$invoiceNumber}"
                 ],
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json',
+                    'Content-Type'  => 'application/json'
                 ]
             ]);
 
@@ -441,7 +441,7 @@ class AldyPay extends PortAbstract implements PortInterface
     /**
      * Get transactions of an user
      */
-    public function fetchTransaction($code = null)
+    public function fetchTransaction($code)
     {
         $this->authLogin();
 
@@ -456,7 +456,7 @@ class AldyPay extends PortAbstract implements PortInterface
                 'query' => [
                     'per_page' => 5,
                     'page'     => 1,
-                    'code' => $code ?? $this->config->get('aldypay.code'),
+                    'code' => $code
                 ],
             ]);
 
@@ -486,7 +486,7 @@ class AldyPay extends PortAbstract implements PortInterface
                 ],
                 'query' => [
                     'per_page' => 10,
-                    'page'     => 1,
+                    'page'     => 1
                 ],
             ]);
 
@@ -502,7 +502,7 @@ class AldyPay extends PortAbstract implements PortInterface
     /**
      * Get wallet assets of an user
      */
-    public function getWalletAssets($code = null, $password = null)
+    public function getWalletAssets($code, $password)
     {
         $this->authLogin();
 
@@ -515,8 +515,8 @@ class AldyPay extends PortAbstract implements PortInterface
                     'Accept'        => 'application/json',
                 ],
                 'query' => [
-                    'code' => $code ?? $this->config->get('aldypay.code'),
-                    'password' => $password ?? $this->config->get('aldypay.password'),
+                    'code' => $code,
+                    'password' => $password
                 ],
             ]);
 
