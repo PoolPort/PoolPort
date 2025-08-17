@@ -131,6 +131,18 @@ abstract class PortAbstract
     }
 
     /**
+     * Set transaction id
+     *
+     * @return $this
+     */
+    public function setTransactionId($transactionId)
+    {
+        $this->transactionId = $transactionId;
+
+        return $this;
+    }
+
+    /**
      * Get transaction id
      *
      * @return int|null
