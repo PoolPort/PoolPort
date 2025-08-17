@@ -464,7 +464,7 @@ class AldyPay extends PortAbstract implements PortInterface
 
             return $response;
 
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
+        } catch (\Exception $e) {
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
     }
@@ -494,7 +494,7 @@ class AldyPay extends PortAbstract implements PortInterface
 
             return $response;
 
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
+        } catch (\Exception $e) {
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
     }
@@ -524,7 +524,7 @@ class AldyPay extends PortAbstract implements PortInterface
 
             return $response;
 
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
+        } catch (\Exception $e) {
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
     }
