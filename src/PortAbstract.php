@@ -296,14 +296,35 @@ abstract class PortAbstract
     {
         $dbh = $this->db->getDBH();
 
-        $stmt = $dbh->prepare("UPDATE poolport_transactions
-                               SET ref_id = :ref_id
-                               WHERE id = :id");
+        try {
+            $dbh->beginTransaction();
 
-        $stmt->execute([
-            ':ref_id' => $this->refId,
-            ':id'     => $this->transactionId
-        ]);
+            $stmt = $dbh->prepare("
+                UPDATE poolport_transactions
+                SET ref_id = :ref_id
+                WHERE id = :id
+            ");
+
+            $stmt->execute([
+                ':ref_id' => $this->refId,
+                ':id'     => $this->transactionId
+            ]);
+
+            $dbh->commit();
+
+        } catch (PDOException $e) {
+            $dbh->rollBack();
+
+            if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062) {
+                throw new \RuntimeException("Duplicate ref_id detected!", 1062, $e);
+            }
+
+            throw $e;
+
+        } catch (Exception $e) {
+            $dbh->rollBack();
+            throw $e;
+        }
     }
 
     /**

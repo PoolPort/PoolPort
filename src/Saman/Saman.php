@@ -146,7 +146,7 @@ class Saman extends PortAbstract implements PortInterface
         $this->trackingCode = @$_POST['TraceNo'];
         $this->cardNumber = @$_POST['SecurePan'];
 
-        if ($stateCode == 2 && $this->refIdIsUnique()) {
+        if ($stateCode == 2 && !empty($this->refId) && $this->refIdIsUnique()) {
             $this->transactionSetRefId();
             return true;
         }
