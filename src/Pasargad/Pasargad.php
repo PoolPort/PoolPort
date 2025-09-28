@@ -173,8 +173,17 @@ class Pasargad extends PortAbstract implements PortInterface
                 throw new PasargadException(json_encode($response), $statusCode);
             }
 
-            $this->trackingCode = $response->data->trackId;
             $this->refId = $response->data->referenceNumber;
+
+            if (empty($this->refId)) {
+                $errorCode = -1;
+                $errorMessage = 'Empty RefId';
+                $this->transactionFailed();
+                $this->newLog($errorCode, $errorMessage);
+                throw new PasargadException($errorMessage, $errorCode);
+            }
+
+            $this->trackingCode = $response->data->trackId;
             $this->cardNumber = $response->data->maskedCardNumber;
             $this->transactionSetRefId();
             $this->transactionSucceed();
