@@ -15,6 +15,12 @@ class DigiPay extends PortAbstract implements PortInterface
     const DIGIPAY_VERSION     = '02-02-2022';
     const AGENT_WEB           = 'WEB';
 
+    const TYPE_IPG = 0;
+    const TYPE_CREDIT = 5;
+    const TYPE_WALLET = 11;
+    const TYPE_BNPL = 13;
+    const TYPE_CREDIT_CARD = 24;
+
     /**
      * Address of gate for redirect
      *
@@ -82,7 +88,9 @@ class DigiPay extends PortAbstract implements PortInterface
 
         $this->verifyPayment();
 
-        $this->deliverPayment();
+        if ($this->isDeliverAllowed()) {
+            $this->deliverPayment();
+        }
 
         return $this;
     }
@@ -398,5 +406,10 @@ class DigiPay extends PortAbstract implements PortInterface
         $this->items = $items;
 
         return $this;
+    }
+
+    private function isDeliverAllowed()
+    {
+        return $_POST['type'] != self::TYPE_WALLET;
     }
 }
