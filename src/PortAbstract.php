@@ -405,6 +405,7 @@ abstract class PortAbstract
         $this->config->set('soshiant.callback-url', $url);
         $this->config->set('mellatStaff.callback-url', $url);
         $this->config->set('top.callback-url', $url);
+        $this->config->set('resalatWallet.callback-url', $url);
 
         return $this;
     }
@@ -447,6 +448,7 @@ abstract class PortAbstract
         $this->config->set('soshiant.user-mobile', $mobile);
         $this->config->set('mellatStaff.user-mobile', $mobile);
         $this->config->set('top.user-mobile', $mobile);
+        $this->config->set('resalatWallet.user-mobile', $mobile);
 
         return $this;
     }
