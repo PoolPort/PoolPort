@@ -329,4 +329,11 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Pinket gateway
+    //--------------------------------
+    'pinket'  => array(
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
