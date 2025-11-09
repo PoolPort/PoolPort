@@ -12,11 +12,11 @@ use PoolPort\Exceptions\PoolPortException;
 class Pinket extends PortAbstract implements PortInterface
 {
 
-    protected $apiUrl = 'https://test.pinket.com';
+    protected $apiUrl = 'https://pinket.com/api/thirdparty/v1';
 
-    protected $paymentUrl = 'https://pex-net.net/Ipg_SW/Index';
+    protected $paymentUrl = '';
 
-    private $items;
+    private $items = [];
 
     /**
      * {@inheritdoc}
@@ -81,25 +81,30 @@ class Pinket extends PortAbstract implements PortInterface
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->apiUrl}/Check_Ipg_Tok", [
-                "query"   => [
-
+            $response = $client->request("POST", "{$this->apiUrl}/order", [
+                "json"    => [
+                    'callbackUrl' => $this->buildRedirectUrl($this->config->get('pinket.callback-url')),
+                    'sessionUid'  => $this->config->get('pinket.user-mobile'),
+                    'amount'      => (int)$this->amount,
+                    'totalAmount' => (int)$this->amount,
+                    'items'       => $this->items
                 ],
                 "headers" => [
+                    'api-key'      => $this->config->get('pinket.token'),
                     'Content-Type' => 'application/json',
                 ],
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if (!$response->Stat) {
-                $errorMessage = json_encode($response);
-                $this->newLog($response->StatCode, $errorMessage);
-                throw new PinketException($errorMessage, $response->StatCode);
+            if ($statusCode != 200) {
+                $this->newLog($statusCode, $response->error);
+                throw new PinketException($response->error, $statusCode);
             }
 
-            $this->paymentUrl = "{$this->paymentUrl}/{$response->Result}";
-            $this->refId = $response->Result;
+            $this->paymentUrl = $response->data->redirectUrl;
+            $this->refId = $response->data->orderId;
             $this->transactionSetRefId();
 
         } catch (\Exception $e) {
@@ -121,24 +126,22 @@ class Pinket extends PortAbstract implements PortInterface
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->apiUrl}/Check_target_Result", [
-                "query"   => [
-
-                ],
+            $response = $client->request("POST", "{$this->apiUrl}/order/{$this->refId}/confirm", [
                 "headers" => [
+                    'api-key'      => $this->config->get('pinket.token'),
                     'Content-Type' => 'application/json',
                 ],
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if (!$response->Stat) {
-                $errorMessage = json_encode($response);
-                $this->newLog($response->StatCode, $errorMessage);
-                throw new PinketException($errorMessage, $response->StatCode);
+            if ($statusCode != 200) {
+                $this->newLog($statusCode, $response->error);
+                throw new PinketException($response->error, $statusCode);
             }
 
-            $this->trackingCode = $_POST['order_id'];
+            $this->trackingCode = $this->refId;
             $this->transactionSucceed();
 
             return $response;

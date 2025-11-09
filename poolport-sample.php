@@ -333,6 +333,7 @@ return array(
     // Pinket gateway
     //--------------------------------
     'pinket'  => array(
+        'api-key'      => 'xxxxxxxxxx',
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
