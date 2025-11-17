@@ -330,6 +330,32 @@ return array(
         'callback-url' => 'http://www.example.org/result',
     ),
 
+    // AldyPay gateway
+    //--------------------------------
+    'aldypay'  => array(
+        'auth-username' => 'xxxx',
+        'auth-password' => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+        'code'         => 'xxxx',
+        'password'     => 'xxxx',
+        'store-code'   => 'xxxx',
+    ),
+
+    // Resalat Wallet gateway
+    //--------------------------------
+    'resalatWallet'  => array(
+        'hostkey'      => 'xxxx',
+        'mobileno'     => '09xxxxxxxx',
+        'nationalcode' => 'xxxx',
+        'terminalno'   => 'xxxx',
+        'callback-url' => 'http://www.example.org/result',
+        'user-mobile'  => '09xxxxxxxx',
+        'api_key'      => 'xxxx',
+        'private_key_file_path'  => 'xxxx',
+        'private_key_pathphrase' => 'xxxx'
+    ),
+
     // Pinket gateway
     //--------------------------------
     'pinket'  => array(

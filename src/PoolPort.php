@@ -457,6 +457,7 @@ class PoolPort
 
             case self::P_RESALAT_WALLET:
                 $this->portClass = new ResalatWallet($this->config, $this->db, self::P_RESALAT_WALLET);
+                break;
 
             case self::P_PINKET:
                 $this->portClass = new Pinket($this->config, $this->db, self::P_PINKET);
