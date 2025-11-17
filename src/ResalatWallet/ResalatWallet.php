@@ -19,7 +19,7 @@ class ResalatWallet extends PortAbstract implements PortInterface
     /**
      * {@inheritdoc}
      */
-    public function __construct(Config $config, DatabaseManager $db, $portId)
+    public function __construct(Config $config, DataBaseManager $db, $portId)
     {
         parent::__construct($config, $db, $portId);
     }
@@ -39,7 +39,6 @@ class ResalatWallet extends PortAbstract implements PortInterface
      */
     public function ready()
     {
-        $this->authenticate();
         $this->sendPayRequest();
 
         return $this;
@@ -73,39 +72,34 @@ class ResalatWallet extends PortAbstract implements PortInterface
      *
      * @return void
      *
-     * @throws DaraException
+     * @throws ResalatWalletException
      */
     protected function sendPayRequest()
     {
         $this->newTransaction();
 
         try {
+            $this->authenticate();
+            $this->setMeta(['accessToken' => $this->accessToken]);
+
             $client = new Client();
 
             $body = [
-                'hostID'                 => $this->config->get('resalatWallet.hostkey'),
+                'hostId'                 => (int) $this->config->get('resalatWallet.hostkey'),
                 'nationalCodeCommercial' => $this->config->get('resalatWallet.nationalcode'),
                 'mobileNoCommercial'     => $this->config->get('resalatWallet.mobileno'),
-                'terminalNo'             => $this->config->get('resalatWallet.terminalno'),
-                'amount'                 => 12, // $this->amount,
+                'terminalNo'             => (int) $this->config->get('resalatWallet.terminalno'),
+                'amount'                 => (int) $this->amount,
                 'mobileNoPersonal'       => $this->config->get('resalatWallet.user-mobile'),
-                'callBackURL'            => $this->buildRedirectUrl($this->config->get('resalatWallet.callback-url'))
+                'callBackUrl'            => $this->buildRedirectUrl($this->config->get('resalatWallet.callback-url'))
             ];
 
-            $hostKey = $this->config->get('resalatWallet.hostkey');
             $apiKey = $this->config->get('resalatWallet.api_key');
             $signatureString = "POST#/megawallet/api/wallet/requesttoken#{$apiKey}#".json_encode($body);
+            $headers = $this->buildHeaders($signatureString, $this->accessToken);
 
             $response = $client->request("POST", "{$this->apiUrl}/wallet/requesttoken", [
-                "headers" => [
-                    'Content-Type'   => 'application/json',
-                    'APIKey'         => $apiKey,
-                    'Signature'      => $this->generateSignature($signatureString),
-                    'HostKey'        => $hostKey,
-                    'HostSignature'  => $this->generateSignature($hostKey),
-                    'Authorization'  => "Bearer {$this->accessToken}",
-                    'Accept-Version' => '2',
-                ],
+                "headers" => $headers,
                 "json" => $body
             ]);
 
@@ -117,11 +111,12 @@ class ResalatWallet extends PortAbstract implements PortInterface
 
             // Handle error response
             if ($this->isErrorResponse($response)) {
-                $result = $response['message']['result'];
+                $errorCode = @$response['message']['result']['errorCode'] ?? 0;
+                $errorDesc = @$response['message']['result']['errorDesc'] ?? $rawResponse;
 
                 $this->transactionFailed();
-                $this->newLog($result['errorCode'], $result['errorDesc']);
-                throw new ResalatWalletException($result['errorDesc'], (int) $result['errorCode']);
+                $this->newLog($errorCode, $errorDesc);
+                throw new ResalatWalletException($errorDesc, $errorCode);
 
             } elseif (isset($response['status']) && $response['status'] == 401) {
                 $this->transactionFailed();
@@ -130,7 +125,7 @@ class ResalatWallet extends PortAbstract implements PortInterface
             }
 
             // Handle success response
-            $this->refId = trim('"', $rawResponse);
+            $this->refId = trim($rawResponse, '"\'');
             $this->transactionSetRefId();
 
         } catch (\Exception $e) {
@@ -150,19 +145,19 @@ class ResalatWallet extends PortAbstract implements PortInterface
 	protected function userPayment()
 	{
 		$this->trackingCode = @$_GET['requestNo'];
-		$payRequestResCode = @$_GET['status'];
+		$status = @$_GET['status'];
 
-		if ($payRequestResCode == 1) {
+		if ($status == 1) {
 			return true;
 		}
 
 		$this->transactionFailed();
-		$this->newLog($payRequestResCode, $payRequestResCode);
-		throw new ResalatWalletException($payRequestResCode);
+		$this->newLog($status, $status);
+		throw new ResalatWalletException($status);
 	}
 
     /**
-     * Verify user payment from dara server
+     * Verify user payment from ResalatWallet server
      *
      * @return bool
      *
@@ -171,36 +166,34 @@ class ResalatWallet extends PortAbstract implements PortInterface
     protected function verifyPayment()
     {
         try {
-            $this->authenticate();
+            $accessToken = $this->getMeta('accessToken');
 
             $client = new Client();
 
-            $hostKey = $this->config->get('resalatWallet.hostkey');
             $apiKey = $this->config->get('resalatWallet.api_key');
             $requestNo = $_GET['requestNo'];
-            $body = ['requestNo' => $requestNo];
-            $signatureString = "GET#/megawallet/api/purchase/requestverifywpg#{$apiKey}#".json_encode($body);
+            $body = ['requestNo' => (int) $requestNo];
+            $signatureString = "POST#/megawallet/api/purchase/requestverifywpg#{$apiKey}#".json_encode($body);
+            $headers = $this->buildHeaders($signatureString, $accessToken);
 
-            $response = $client->request("GET", "{$this->apiUrl}/purchase/requestverifywpg", [
-                "headers" => [
-                    'Content-Type'   => 'application/json',
-                    'APIKey'         => $apiKey,
-                    'Signature'      => $this->generateSignature($signatureString),
-                    'HostKey'        => $hostKey,
-                    'HostSignature'  => $this->generateSignature($hostKey),
-                    'Authorization'  => "Bearer {$this->accessToken}",
-                    'Accept-Version' => '2',
-                ]
+            $response = $client->request("POST", "{$this->apiUrl}/purchase/requestverifywpg", [
+                "headers" => $headers,
+                "json" => $body
             ]);
 
-            $response = json_decode($response->getBody()->getContents(), true);
+            // Get response body as string
+            $rawResponse = $response->getBody()->getContents();
+
+            // Try to decode JSON response to Array
+            $response = json_decode($rawResponse, true);
 
             // Handle error response
             if ($this->isErrorResponse($response)) {
-                $result = $response['message']['result'];
+                $errorCode = @$response['message']['result']['errorCode'] ?? 0;
+                $errorDesc = @$response['message']['result']['errorDesc'] ?? $rawResponse;
 
-                $this->newLog($result['errorCode'], $result['errorDesc']);
-                throw new ResalatWalletException($result['errorDesc'], (int) $result['errorCode']);
+                $this->newLog($errorCode, $errorDesc);
+                throw new ResalatWalletException($errorDesc, $errorCode);
 
             } elseif (isset($response['status']) && $response['status'] == 401) {
                 $this->newLog(401, "Unauthorized (on verify payment)");
@@ -223,73 +216,11 @@ class ResalatWallet extends PortAbstract implements PortInterface
         }
     }
 
-    /**
-     * Refund user payment
-     *
-     * @return bool
-     *
-     * @throws ResalatWalletException
-     */
-    public function refundPayment($transaction, $params = [])
-    {
-       try {
-            $this->authenticate();
-
-            $this->setTransactionId($transaction->id);
-
-            $meta = json_decode($transaction->meta, true);
-            $invoiceNumber = $meta['invoice_number'];
-
-            $hostKey = $this->config->get('resalatWallet.hostkey');
-            $apiKey = $this->config->get('resalatWallet.api_key');
-            $body = ["requestNo" => "{$invoiceNumber}"];
-            $signatureString = "POST#/megawallet/api/b2b/purchasereverse#{$apiKey}#".json_encode($body);
-
-            $client = new Client();
-
-            $response = $client->request("POST", "{$this->apiUrl}/b2b/purchasereverse", [
-                "headers" => [
-                    'Content-Type'   => 'application/json',
-                    'APIKey'         => $apiKey,
-                    'Signature'      => $this->generateSignature($signatureString),
-                    'HostKey'        => $hostKey,
-                    'HostSignature'  => $this->generateSignature($hostKey),
-                    'Authorization'  => "Bearer {$this->accessToken}",
-                    'Accept-Version' => '2',
-                ],
-                "json" => $body,
-            ]);
-
-            $response = json_decode($response->getBody()->getContents(), true);
-
-            if ($this->isErrorResponse($response)) {
-                $result = $response['message']['result'];
-
-                $this->newLog($result['errorCode'], $result['errorDesc']);
-                throw new ResalatWalletException($result['errorDesc'], (int) $result['errorCode']);
-            }
-
-            if ($this->isSuccessResponse($response)) {
-                $this->newLog('Refunded', json_encode($response));
-                return true;
-            }
-
-            throw new ResalatWalletException("Unexpected API response(on refund): " . substr(json_encode($response), 0, 200));
-
-            return false;
-
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
     public function authenticate()
     {
         try {
             $client = new Client();
 
-            $hostKey = $this->config->get('resalatWallet.hostkey');
             $apiKey = $this->config->get('resalatWallet.api_key');
 
             $body = [
@@ -298,16 +229,10 @@ class ResalatWallet extends PortAbstract implements PortInterface
             ];
 
             $signatureString = "POST#/megawallet/api/jwt/authenticate/commercialtrust#{$apiKey}#".json_encode($body);
+            $headers = $this->buildHeaders($signatureString);
 
             $response = $client->request("POST", "{$this->apiUrl}/jwt/authenticate/commercialtrust", [
-                "headers" => [
-                    'Content-Type'   => 'application/json',
-                    'APIKey'         => $apiKey,
-                    'Signature'      => $this->generateSignature($signatureString),
-                    'HostKey'        => $hostKey,
-                    'HostSignature'  => $this->generateSignature($hostKey),
-                    'Accept-Version' => '2'
-                ],
+                "headers" => $headers,
                 "json" => $body
             ]);
 
@@ -318,18 +243,47 @@ class ResalatWallet extends PortAbstract implements PortInterface
             $response = json_decode($rawResponse, true);
 
             if ($this->isErrorResponse($response)) {
-                $result = $response['message']['result'];
+                $errorCode = @$response['message']['result']['errorCode'] ?? 0;
+                $errorDesc = @$response['message']['result']['errorDesc'] ?? $rawResponse;
 
-                $this->newLog($result['errorCode'], $result['errorDesc']);
-                throw new ResalatWalletException($result['errorDesc'], (int) $result['errorCode']);
+                $this->newLog($errorCode, $errorDesc);
+                throw new ResalatWalletException($errorDesc, $errorCode);
             }
 
-            $this->accessToken = trim('"', $rawResponse);
+            $this->accessToken = trim($rawResponse, '"\'');
 
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
+    }
+
+    /**
+     * Build request headers
+     *
+     * @param string $signatureString The signature string to sign
+     * @param string|null $accessToken The access token for Authorization header (optional)
+     * @return array
+     */
+    protected function buildHeaders($signatureString, $accessToken = null)
+    {
+        $hostKey = $this->config->get('resalatWallet.hostkey');
+        $apiKey = $this->config->get('resalatWallet.api_key');
+
+        $headers = [
+            'Content-Type'   => 'application/json',
+            'APIKey'         => $apiKey,
+            'Signature'      => $this->generateSignature($signatureString),
+            'HostKey'        => $hostKey,
+            'HostSignature'  => $this->generateSignature($hostKey),
+            'Accept-Version' => '2',
+        ];
+
+        if ($accessToken !== null) {
+            $headers['Authorization'] = "Bearer {$accessToken}";
+        }
+
+        return $headers;
     }
 
     /**
