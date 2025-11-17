@@ -18,6 +18,7 @@ use PoolPort\Keepa\Keepa;
 use PoolPort\Dara\Dara;
 use PoolPort\Pay\Pay;
 use PoolPort\PNA\PNA;
+use PoolPort\Pinket\Pinket;
 use PoolPort\Saman\Saman;
 use PoolPort\Sadad\Sadad;
 use PoolPort\JiBit\JiBit;
@@ -111,6 +112,8 @@ class PoolPort
 
     const P_RESALAT_WALLET = 35;
 
+    const P_PINKET = 36;
+
     /**
      * @var Config
      */
@@ -169,7 +172,7 @@ class PoolPort
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
                      self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
-                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET);
+                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET);
     }
 
     /**
@@ -454,6 +457,9 @@ class PoolPort
 
             case self::P_RESALAT_WALLET:
                 $this->portClass = new ResalatWallet($this->config, $this->db, self::P_RESALAT_WALLET);
+
+            case self::P_PINKET:
+                $this->portClass = new Pinket($this->config, $this->db, self::P_PINKET);
                 break;
 
             default:
