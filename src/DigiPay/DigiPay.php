@@ -15,10 +15,10 @@ class DigiPay extends PortAbstract implements PortInterface
     const DIGIPAY_VERSION     = '02-02-2022';
     const AGENT_WEB           = 'WEB';
 
-    const TYPE_IPG = 0;
-    const TYPE_CREDIT = 5;
-    const TYPE_WALLET = 11;
-    const TYPE_BNPL = 13;
+    const TYPE_IPG         = 0;
+    const TYPE_CREDIT      = 5;
+    const TYPE_WALLET      = 11;
+    const TYPE_BNPL        = 13;
     const TYPE_CREDIT_CARD = 24;
 
     /**
@@ -172,7 +172,12 @@ class DigiPay extends PortAbstract implements PortInterface
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/purchases/verify/{$_POST['trackingCode']}?type={$_POST['type']}", [
+            $response = $client->request("POST", "{$this->gateUrl}/purchases/verify?type={$_POST['type']}", [
+                "json" => [
+                    'trackingCode' => $_POST['trackingCode'],
+                    'providerId'   => $_POST['providerId'],
+                ],
+
                 "headers" => [
                     'Authorization' => "Bearer " . $this->getMeta('access_token'),
                     'Content-Type'  => 'application/json; charset=UTF-8',
