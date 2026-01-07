@@ -34,6 +34,7 @@ use PoolPort\Pasargad\Pasargad;
 use PoolPort\Zarinpal\Zarinpal;
 use PoolPort\JahanPay\JahanPay;
 use PoolPort\IranKish\IranKish;
+use PoolPort\MehraCart\MehraCart;
 use PoolPort\MellatStaff\MellatStaff;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
@@ -114,6 +115,8 @@ class PoolPort
 
     const P_PINKET = 36;
 
+    const P_MEHRACART = 37;
+
     /**
      * @var Config
      */
@@ -172,7 +175,7 @@ class PoolPort
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
                      self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
-                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET);
+                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART);
     }
 
     /**
@@ -461,6 +464,10 @@ class PoolPort
 
             case self::P_PINKET:
                 $this->portClass = new Pinket($this->config, $this->db, self::P_PINKET);
+                break;
+
+            case self::P_MEHRACART:
+                $this->portClass = new MehraCart($this->config, $this->db, self::P_MEHRACART);
                 break;
 
             default:
