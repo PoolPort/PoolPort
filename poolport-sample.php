@@ -363,4 +363,12 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // MehraCart gateway
+    //--------------------------------
+    'mehracart'   => array(
+        'MerchantId'   => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
