@@ -94,15 +94,14 @@ class MehraCart extends PortAbstract implements PortInterface
             $response = $client->request("POST", "{$this->gateUrl}/payment/request", [
                 "json" => [
                     'MerchantId'  => $this->config->get('mehracart.MerchantId'),
-                    //                    'Amount'      => $this->amount,
-                    'Amount'      => 1000,
-                    'Description' => $this->items['Description'] ?? '',
+                    'Amount'      => $this->amount,
+                    'Description' => !empty($this->items['Description']) ? $this->items['Description'] : '',
                     'CallbackUrl' => $this->buildRedirectUrl($this->config->get('mehracart.callback-url')),
-                    'OrderId'     => $this->items['OrderId'] ?? '',
+                    'OrderId'     => !empty($this->items['OrderId']) ? $this->items['OrderId'] : '',
 
                     'Metadata' => [
                         'mobile' => $this->config->get('mehracart.mobile', ''),
-                        'email'  => $this->items['Metadata']['email'] ?? ''
+                        'email'  => !empty($this->items['Metadata']['email']) ? $this->items['Metadata']['email'] : ''
                     ],
                 ],
 
