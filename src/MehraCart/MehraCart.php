@@ -58,6 +58,26 @@ class MehraCart extends PortAbstract implements PortInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function redirect()
+    {
+        header("Location: " . $this->paymentUri);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function verify($transaction)
+    {
+        parent::verify($transaction);
+
+        $this->verifyPayment();
+
+        return $this;
+    }
+
+    /**
      * Send pay request to server
      *
      * @return void
@@ -111,26 +131,6 @@ class MehraCart extends PortAbstract implements PortInterface
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function redirect()
-    {
-        header("Location: " . $this->paymentUri);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function verify($transaction)
-    {
-        parent::verify($transaction);
-
-        $this->verifyPayment();
-
-        return $this;
     }
 
     /**
