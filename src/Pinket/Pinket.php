@@ -84,7 +84,7 @@ class Pinket extends PortAbstract implements PortInterface
             $response = $client->request("POST", "{$this->apiUrl}/order", [
                 "json"    => [
                     'callbackUrl' => $this->buildRedirectUrl($this->config->get('pinket.callback-url')),
-                    'sessionUid'  => $this->config->get('pinket.user-mobile'),
+                    'sessionUid'  => !empty($_COOKIE['pinketSessionUid']) ? $_COOKIE['pinketSessionUid'] : $this->config->get('pinket.user-mobile'),
                     'amount'      => (int)$this->amount,
                     'totalAmount' => (int)$this->amount,
                     'items'       => $this->items
