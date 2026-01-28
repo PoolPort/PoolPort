@@ -162,7 +162,7 @@ class MehraCart extends PortAbstract implements PortInterface
             $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents(), true);
 
-            if (!isset($response['code']) || (isset($response['code']) && $response['code'] != 0)) {
+            if (!isset($response['code']) || $response['code'] != 200) {
                 $this->transactionFailed();
                 $this->newLog($statusCode, $response);
                 throw new MehraCartException($response, $statusCode);
