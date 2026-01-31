@@ -374,7 +374,7 @@ class SnappPay extends PortAbstract implements PortInterface
                     ],
                     'headers' => [
                         'Authorization' => "Bearer {$this->accessToken}",
-                        'Content-Type'  => 'application/json; charset=UTF-8',
+                        'Content-Type'  => 'application/json',
                     ],
                 ]
             );
@@ -447,7 +447,7 @@ class SnappPay extends PortAbstract implements PortInterface
         $cartList = [];
         $orderAmount = 0;
 
-        foreach ($params['cartList'] as $cart) {
+        foreach ($params as $index => $cart) {
             $cartItems = [];
             $cartItemsTotal = 0;
 
