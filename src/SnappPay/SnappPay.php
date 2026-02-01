@@ -166,8 +166,6 @@ class SnappPay extends PortAbstract implements PortInterface
 
     public function getPayRequestPayload()
     {
-        $transactionId = $this->transactionId();
-
         $cartList = [];
 
         foreach ($this->items as $index => $cart) {
@@ -194,6 +192,7 @@ class SnappPay extends PortAbstract implements PortInterface
             $externalSourceAmount = !empty($cart['externalSourceAmount']) ? $cart['externalSourceAmount'] : 0;
             $discountAmount = !empty($cart['discountAmount']) ? $cart['discountAmount'] : 0;
             $taxAmount = !empty($cart['taxAmount']) ? $cart['taxAmount'] : 0;
+            $transactionId = !empty($cart['transactionId']) ? $cart['transactionId'] : uniqid($this->transactionId());
 
             $totalAmount = $cartItemsTotal + $shippingAmount + $taxAmount;
 
