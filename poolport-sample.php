@@ -371,4 +371,15 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // SnappPay gateway
+    //--------------------------------
+    'snappPay'    => array(
+        'client_id'     => 'xxxx',
+        'client_secret' => 'xxxx',
+        'username'      => 'xxxx',
+        'password'      => 'xxxx',
+        'user-mobile'   => '09xxxxxxxx',
+        'callback-url'  => 'http://www.example.org/result',
+    ),
 );
