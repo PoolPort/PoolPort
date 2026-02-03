@@ -58,26 +58,6 @@ class MehraCart extends PortAbstract implements PortInterface
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function redirect()
-    {
-        header("Location: " . $this->paymentUri);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function verify($transaction)
-    {
-        parent::verify($transaction);
-
-        $this->verifyPayment();
-
-        return $this;
-    }
-
-    /**
      * Send pay request to server
      *
      * @return void
@@ -89,6 +69,8 @@ class MehraCart extends PortAbstract implements PortInterface
         try {
             $this->newTransaction();
 
+            $orderId = !empty($this->items['OrderId']) ? $this->items['OrderId'] : '';
+
             $client = new Client();
 
             $response = $client->request("POST", "{$this->gateUrl}/payment/request", [
@@ -97,7 +79,7 @@ class MehraCart extends PortAbstract implements PortInterface
                     'Amount'      => $this->amount,
                     'Description' => !empty($this->items['Description']) ? $this->items['Description'] : '',
                     'CallbackUrl' => $this->buildRedirectUrl($this->config->get('mehracart.callback-url')),
-                    'OrderId'     => !empty($this->items['OrderId']) ? $this->items['OrderId'] : '',
+                    'OrderId'     => $orderId,
 
                     'Metadata' => [
                         'mobile' => $this->config->get('mehracart.mobile', ''),
@@ -123,7 +105,8 @@ class MehraCart extends PortAbstract implements PortInterface
             $this->paymentUri = "{$this->paymentUri}?authority={$autority}";
 
             $this->setMeta([
-                'Authority' => $autority
+                'Authority' => $autority,
+                'OrderId'   => $orderId
             ]);
 
         } catch (\Exception $e) {
@@ -131,6 +114,26 @@ class MehraCart extends PortAbstract implements PortInterface
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function redirect()
+    {
+        header("Location: " . $this->paymentUri);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function verify($transaction)
+    {
+        parent::verify($transaction);
+
+        $this->verifyPayment();
+
+        return $this;
     }
 
     /**
@@ -144,8 +147,6 @@ class MehraCart extends PortAbstract implements PortInterface
     {
         try {
             $client = new Client();
-
-            $metas = $this->getMeta();
 
             $response = $client->request("POST", "{$this->gateUrl}/verify/request", [
                 "json" => [
@@ -168,10 +169,60 @@ class MehraCart extends PortAbstract implements PortInterface
                 throw new MehraCartException($response, $statusCode);
             }
 
+            $this->refId = $_GET['RefId'];
+            $this->transactionSetRefId();
+
+            $this->trackingCode = $_GET['RefId'];
+            $this->transactionSucceed();
+
+            $this->setMeta([
+                'RefId' => $_GET['RefId']
+            ]);
+
             return $response;
 
         } catch (\Exception $e) {
             $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Refund user payment
+     *
+     * @return bool
+     *
+     * @throws MehraCartException
+     */
+    public function refundPayment($transaction, $params = [])
+    {
+        try {
+            $meta = json_decode($transaction->meta, true);
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->gateUrl}/Reverse/request", [
+                "json"    => [
+                    'RefId' => (int)$meta['RefId'],
+                ],
+                "headers" => [
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents(), true);
+
+            if (!isset($response['code']) || $response['code'] != 200) {
+                $this->newLog($statusCode, json_encode($response));
+                throw new MehraCartException(json_encode($response), $statusCode);
+            }
+
+            $this->newLog('Refunded', json_encode($response));
+
+            return $response;
+
+        } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
