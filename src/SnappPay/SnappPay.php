@@ -168,11 +168,23 @@ class SnappPay extends PortAbstract implements PortInterface
     {
         $cartList = [];
 
-        foreach ($this->items as $index => $cart) {
+        $discountAmount = isset($this->items['discountAmount'])
+            ? $this->items['discountAmount']
+            : 0;
+
+        $externalSourceAmount = isset($this->items['externalSourceAmount'])
+            ? $this->items['externalSourceAmount']
+            : 0;
+
+        $transactionId = isset($this->items['transactionId'])
+            ? $this->items['transactionId']
+            : uniqid($this->transactionId());
+
+        foreach ($this->items['cartList'] as $cart) {
             $cartItems = [];
             $cartItemsTotal = 0;
 
-            foreach ($cart['items'] as $item) {
+            foreach ($cart['cartItems'] as $item) {
                 $itemTotal = $item['amount'] * $item['count'];
                 $cartItemsTotal += $itemTotal;
 
@@ -182,41 +194,39 @@ class SnappPay extends PortAbstract implements PortInterface
                     'category'       => $item['category'],
                     'count'          => $item['count'],
                     'name'           => $item['name'],
-                    'commissionType' => !empty($item['commissionType']) ? $item['commissionType'] : self::COMMISSION_TYPE,
+                    'commissionType' => isset($item['commissionType']) ? $item['commissionType'] : self::COMMISSION_TYPE,
                 ];
             }
 
-            $isShipmentIncluded = !empty($cart['isShipmentIncluded']) ? $cart['isShipmentIncluded'] : false;
-            $isTaxIncluded = !empty($cart['isTaxIncluded']) ? $cart['isTaxIncluded'] : 0;
-            $shippingAmount = !empty($cart['shippingAmount']) ? $cart['shippingAmount'] : 0;
-            $externalSourceAmount = !empty($cart['externalSourceAmount']) ? $cart['externalSourceAmount'] : 0;
-            $discountAmount = !empty($cart['discountAmount']) ? $cart['discountAmount'] : 0;
-            $taxAmount = !empty($cart['taxAmount']) ? $cart['taxAmount'] : 0;
-            $transactionId = !empty($cart['transactionId']) ? $cart['transactionId'] : uniqid($this->transactionId());
+            $shippingAmount = isset($cart['shippingAmount'])
+                ? $cart['shippingAmount']
+                : 0;
+
+            $taxAmount = isset($cart['taxAmount'])
+                ? $cart['taxAmount']
+                : 0;
 
             $totalAmount = $cartItemsTotal + $shippingAmount + $taxAmount;
 
             $cartList[] = [
                 'cartId'             => $cart['cartId'],
                 'cartItems'          => $cartItems,
-                'isShipmentIncluded' => $isShipmentIncluded,
-                'isTaxIncluded'      => $isTaxIncluded,
+                'isShipmentIncluded' => !empty($cart['isShipmentIncluded']),
+                'isTaxIncluded'      => !empty($cart['isTaxIncluded']),
                 'shippingAmount'     => $shippingAmount,
                 'taxAmount'          => $taxAmount,
                 'totalAmount'        => $totalAmount,
             ];
         }
 
-        $mobile = $this->config->get('snappPay.user-mobile');
-
         $payload = [
-            'amount'               => $this->amount,
+            'amount'               => (int)$this->amount,
+            'cartList'             => $cartList,
             'discountAmount'       => $discountAmount,
             'externalSourceAmount' => $externalSourceAmount,
             'mobile'               => $this->getUserMobile(),
             'returnURL'            => $this->buildRedirectUrl($this->config->get('snappPay.callback-url')),
             'transactionId'        => (string)$transactionId,
-            'cartList'             => $cartList,
         ];
 
         if (!empty($this->items['forcedPaymentMethodTypes'])) {
@@ -366,8 +376,7 @@ class SnappPay extends PortAbstract implements PortInterface
             $meta = json_decode($transaction->meta, true);
             $client = new Client();
 
-            $response = $client->request('POST', "{$this->gateUrl}/payment/v1/cancel",
-                [
+            $response = $client->request('POST', "{$this->gateUrl}/payment/v1/cancel", [
                     'json'    => [
                         'paymentToken' => $meta['paymentToken'],
                     ],
@@ -446,11 +455,19 @@ class SnappPay extends PortAbstract implements PortInterface
         $cartList = [];
         $orderAmount = 0;
 
-        foreach ($params as $index => $cart) {
+        $discountAmount = isset($params['discountAmount'])
+            ? $params['discountAmount']
+            : 0;
+
+        $externalSourceAmount = isset($params['externalSourceAmount'])
+            ? $params['externalSourceAmount']
+            : 0;
+
+        foreach ($params['cartList'] as $cart) {
             $cartItems = [];
             $cartItemsTotal = 0;
 
-            foreach ($cart['items'] as $item) {
+            foreach ($cart['cartItems'] as $item) {
                 $itemTotal = $item['amount'] * $item['count'];
                 $cartItemsTotal += $itemTotal;
 
@@ -460,25 +477,25 @@ class SnappPay extends PortAbstract implements PortInterface
                     'category'       => $item['category'],
                     'count'          => $item['count'],
                     'name'           => $item['name'],
-                    'commissionType' => !empty($item['commissionType']) ? $item['commissionType'] : self::COMMISSION_TYPE,
+                    'commissionType' => isset($item['commissionType']) ? $item['commissionType'] : self::COMMISSION_TYPE,
                 ];
             }
 
-            $shippingAmount = !empty($cart['shippingAmount']) ? $cart['shippingAmount'] : 0;
-            $isShipmentIncluded = !empty($cart['isShipmentIncluded']) ? $cart['isShipmentIncluded'] : false;
-            $isTaxIncluded = !empty($cart['isTaxIncluded']) ? $cart['isTaxIncluded'] : 0;
-            $taxAmount = !empty($cart['taxAmount']) ? $cart['taxAmount'] : 0;
-            $externalSourceAmount = !empty($cart['externalSourceAmount']) ? $cart['externalSourceAmount'] : 0;
-            $discountAmount = !empty($cart['discountAmount']) ? $cart['discountAmount'] : 0;
+            $shippingAmount = isset($cart['shippingAmount'])
+                ? $cart['shippingAmount']
+                : 0;
+
+            $taxAmount = isset($cart['taxAmount'])
+                ? $cart['taxAmount']
+                : 0;
 
             $totalAmount = $cartItemsTotal + $shippingAmount + $taxAmount;
-            $orderAmount += $totalAmount;
 
             $cartList[] = [
                 'cartId'             => $cart['cartId'],
                 'cartItems'          => $cartItems,
-                'isShipmentIncluded' => $isShipmentIncluded,
-                'isTaxIncluded'      => $isTaxIncluded,
+                'isShipmentIncluded' => !empty($cart['isShipmentIncluded']),
+                'isTaxIncluded'      => !empty($cart['isTaxIncluded']),
                 'shippingAmount'     => $shippingAmount,
                 'taxAmount'          => $taxAmount,
                 'totalAmount'        => $totalAmount,
@@ -491,10 +508,10 @@ class SnappPay extends PortAbstract implements PortInterface
 
         return [
             'paymentToken'         => $meta['paymentToken'],
-            'amount'               => $amount,
+            'amount'               => (int)$amount,
+            'cartList'             => $cartList,
             'discountAmount'       => $discountAmount,
             'externalSourceAmount' => $externalSourceAmount,
-            'cartList'             => $cartList,
         ];
     }
 
