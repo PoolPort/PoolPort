@@ -409,6 +409,7 @@ abstract class PortAbstract
         $this->config->set('pinket.callback-url', $url);
         $this->config->set('mehracart.callback-url', $url);
         $this->config->set('snappPay.callback-url', $url);
+        $this->config->set('melli.callback-url', $url);
 
         return $this;
     }
@@ -455,6 +456,7 @@ abstract class PortAbstract
         $this->config->set('pinket.user-mobile', $mobile);
         $this->config->set('mehracart.user-mobile', $mobile);
         $this->config->set('snappPay.user-mobile', $mobile);
+        $this->config->set('melli.user-mobile', $mobile);
 
         return $this;
     }
