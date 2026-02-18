@@ -382,4 +382,14 @@ return array(
         'user-mobile'   => '09xxxxxxxx',
         'callback-url'  => 'http://www.example.org/result',
     ),
+
+    // Melli gateway
+    //--------------------------------
+    'melli'       => array(
+        'merchant-id'  => 'xxxx',
+        'terminal-id'  => 'xxxx',
+        'key'          => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
