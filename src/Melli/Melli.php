@@ -3,7 +3,6 @@
 namespace PoolPort\Melli;
 
 use PoolPort\Config;
-use GuzzleHttp\Client;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -11,31 +10,24 @@ use PoolPort\Exceptions\PoolPortException;
 
 class Melli extends PortAbstract implements PortInterface
 {
-    const GRANT_TYPE_PASSWORD = 'password';
-    const SCOPE               = 'online-merchant';
-    const COMMISSION_TYPE     = 100;
+    /**
+     * Url of melli gateway web service
+     *
+     * @var string
+     */
+    protected $gateUrl = 'https://sadad.shaparak.ir/vpg/api/v0';
+
     /**
      * Address of gate for redirect
      *
      * @var string
      */
-    protected $gateUrl = 'https://fms-gateway-staging.apps.public.okd4.teh-1.snappcloud.io/api/online';
-
-    /**
-     * Address of payment gateway
-     *
-     * @var string
-     */
-    private $paymentUri;
-
-    private $accessToken;
-
-    private $items;
+    protected $paymentUrl = 'https://sadad.shaparak.ir/VPG/Purchase?Token=';
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(Config $config, DatabaseManager $db, $portId)
+    public function __construct(Config $config, DataBaseManager $db, $portId)
     {
         parent::__construct($config, $db, $portId);
     }
@@ -45,7 +37,7 @@ class Melli extends PortAbstract implements PortInterface
      */
     public function set($amount)
     {
-        $this->amount = $amount;
+        $this->amount = intval($amount);
 
         return $this;
     }
@@ -55,68 +47,9 @@ class Melli extends PortAbstract implements PortInterface
      */
     public function ready()
     {
-        $this->newTransaction();
-        $this->authenticate();
         $this->sendPayRequest();
 
         return $this;
-    }
-
-    /**
-     * Authenticate and obtain an access token.
-     *
-     * @return void
-     *
-     * @throws PoolPortException
-     */
-    protected function authenticate()
-    {
-        try {
-            $client = new Client();
-
-            $response = $client->request("POST", "{$this->gateUrl}/v1/oauth/token", [
-                "form_params" => [
-                    'username'   => $this->config->get('snappPay.username'),
-                    'password'   => $this->config->get('snappPay.password'),
-                    'grant_type' => self::GRANT_TYPE_PASSWORD,
-                    'scope'      => self::SCOPE,
-                ],
-                'headers'     => [
-                    'Authorization' => $this->generateSignature(),
-                    'Content-Type'  => 'application/x-www-form-urlencoded'
-                ]
-            ]);
-
-            $statusCode = $response->getStatusCode();
-            $response = json_decode($response->getBody()->getContents(), true);
-
-            if ($statusCode != 200) {
-                $this->newLog($statusCode, json_encode($response));
-                throw new SnappPayException(json_encode($response), $statusCode);
-            }
-
-            $this->accessToken = $response['access_token'];
-
-            $this->setMeta(['access_token' => $this->accessToken]);
-
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * generate a signature for authorization
-     *
-     * @return string
-     */
-    private function generateSignature()
-    {
-        $clientId = $this->config->get('snappPay.client_id');
-        $clientSecret = $this->config->get('snappPay.client_secret');
-        $key = base64_encode("{$clientId}:{$clientSecret}");
-
-        return "Basic {$key}";
     }
 
     /**
@@ -124,38 +57,44 @@ class Melli extends PortAbstract implements PortInterface
      *
      * @return void
      *
-     * @throws SnappPayException
+     * @throws PoolPortException
+     * @throws MelliException
      */
     protected function sendPayRequest()
     {
+        $this->newTransaction();
+
         try {
-            $client = new Client();
+            $key = $this->config->get('melli.key');
+            $MerchantId = $this->config->get('melli.merchant-id');
+            $TerminalId = $this->config->get('melli.terminal-id');
+            $Amount = $this->amount;
+            $OrderId = $this->transactionId();
+            $LocalDateTime = date("m/d/Y g:i:s a");
+            $ReturnUrl = $this->buildRedirectUrl($this->config->get('melli.callback-url'));
+            $SignData = $this->createSignature("$TerminalId;$OrderId;$Amount", "$key");
 
-            $response = $client->request('POST', "{$this->gateUrl}/payment/v1/token", [
-                'json'    => $this->getPayRequestPayload(),
-                'headers' => [
-                    'Authorization' => "Bearer {$this->accessToken}",
-                    'Content-Type'  => 'application/json',
-                ],
-            ]);
+            $data = array(
+                'TerminalId'    => $TerminalId,
+                'MerchantId'    => $MerchantId,
+                'Amount'        => $Amount,
+                'SignData'      => $SignData,
+                'ReturnUrl'     => $ReturnUrl,
+                'LocalDateTime' => $LocalDateTime,
+                'OrderId'       => $OrderId
+            );
 
-            $statusCode = $response->getStatusCode();
-            $response = json_decode($response->getBody()->getContents(), true);
+            $result = $this->CallAPI("{$this->gateUrl}/Request/PaymentRequest", $data);
 
-            if ($statusCode !== 200 || empty($response['successful'])) {
-                $this->transactionFailed();
-                $this->newLog($statusCode, json_encode($response));
-                throw new SnappPayException(json_encode($response), $statusCode);
+            if (!$result || !isset($result->ResCode) || intval($result->ResCode) !== 0) {
+                $resCode = is_object($result) && isset($result->ResCode) ? $result->ResCode : 'Error';
+                $description = is_object($result) && isset($result->Description) ? $result->Description : 'Melli payment request failed';
+
+                throw new MelliException($description, intval($resCode));
             }
 
-            $this->paymentUri = $response['response']['paymentPageUrl'];
-            $this->refId = $response['response']['paymentToken'];
+            $this->refId = $result->Token;
             $this->transactionSetRefId();
-
-            $this->setMeta([
-                'paymentToken' => $this->refId,
-                'amount'       => $this->amount
-            ]);
 
         } catch (\Exception $e) {
             $this->transactionFailed();
@@ -164,95 +103,38 @@ class Melli extends PortAbstract implements PortInterface
         }
     }
 
-    public function getPayRequestPayload()
+    private function createSignature($str, $key)
     {
-        $cartList = [];
+        $key = base64_decode($key);
+        $ciphertext = OpenSSL_encrypt($str, "DES-EDE3", $key, OPENSSL_RAW_DATA);
 
-        $discountAmount = isset($this->items['discountAmount'])
-            ? $this->items['discountAmount']
-            : 0;
+        return base64_encode($ciphertext);
+    }
 
-        $externalSourceAmount = isset($this->items['externalSourceAmount'])
-            ? $this->items['externalSourceAmount']
-            : 0;
+    private function CallAPI($url, $data = false)
+    {
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json; charset=utf-8'));
+            curl_setopt($ch, CURLOPT_POST, 1);
 
-        $transactionId = isset($this->items['transactionId'])
-            ? $this->items['transactionId']
-            : uniqid($this->transactionId());
-
-        foreach ($this->items['cartList'] as $cart) {
-            $cartItems = [];
-            $cartItemsTotal = 0;
-
-            foreach ($cart['cartItems'] as $item) {
-                $itemTotal = $item['amount'] * $item['count'];
-                $cartItemsTotal += $itemTotal;
-
-                $cartItems[] = [
-                    'id'             => $item['id'],
-                    'amount'         => $item['amount'],
-                    'category'       => $item['category'],
-                    'count'          => $item['count'],
-                    'name'           => $item['name'],
-                    'commissionType' => isset($item['commissionType']) ? $item['commissionType'] : self::COMMISSION_TYPE,
-                ];
+            if ($data) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
             }
 
-            $shippingAmount = isset($cart['shippingAmount'])
-                ? $cart['shippingAmount']
-                : 0;
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+            $result = curl_exec($ch);
+            curl_close($ch);
 
-            $taxAmount = isset($cart['taxAmount'])
-                ? $cart['taxAmount']
-                : 0;
+            return !empty($result)
+                ? json_decode($result)
+                : false;
 
-            $totalAmount = $cartItemsTotal + $shippingAmount + $taxAmount;
-
-            $cartList[] = [
-                'cartId'             => $cart['cartId'],
-                'cartItems'          => $cartItems,
-                'isShipmentIncluded' => !empty($cart['isShipmentIncluded']),
-                'isTaxIncluded'      => !empty($cart['isTaxIncluded']),
-                'shippingAmount'     => $shippingAmount,
-                'taxAmount'          => $taxAmount,
-                'totalAmount'        => $totalAmount,
-            ];
+        } catch (\Exception $ex) {
+            return false;
         }
-
-        $payload = [
-            'amount'               => (int)$this->amount,
-            'cartList'             => $cartList,
-            'discountAmount'       => $discountAmount,
-            'externalSourceAmount' => $externalSourceAmount,
-            'mobile'               => $this->getUserMobile(),
-            'returnURL'            => $this->buildRedirectUrl($this->config->get('snappPay.callback-url')),
-            'transactionId'        => (string)$transactionId,
-        ];
-
-        if (!empty($this->items['forcedPaymentMethodTypes'])) {
-            $payload['forcedPaymentMethodTypes'] = $this->items['forcedPaymentMethodTypes'];
-        }
-
-        return $payload;
-    }
-
-    private function getUserMobile()
-    {
-        $mobile = $this->config->get('snappPay.user-mobile');
-
-        if (strpos($mobile, '0') === 0) {
-            $mobile = '+98' . substr($mobile, 1);
-        }
-
-        return $mobile;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function redirect()
-    {
-        header("Location: " . $this->paymentUri);
     }
 
     /**
@@ -262,97 +144,49 @@ class Melli extends PortAbstract implements PortInterface
     {
         parent::verify($transaction);
 
-        $this->setMeta($_POST);
-
         $this->verifyPayment();
-        $this->settlePayment();
 
         return $this;
     }
 
     /**
-     * Verify user payment from snappPay server
+     * Verify user payment from bank server
      *
-     * @return bool
-     *
-     * @throws SnappPayException
+     * @throws PoolPortException
+     * @throws MelliException
      */
     protected function verifyPayment()
     {
         try {
-            $client = new Client();
+            $key = $this->config->get('melli.key');
+            $Token = isset($_POST["token"]) ? $_POST["token"] : null;
+            $ResCode = isset($_POST["ResCode"]) ? $_POST["ResCode"] : null;
 
-            if (empty($_POST['state']) || $_POST['state'] !== 'OK' || empty($_POST['transactionId'])) {
-                $this->transactionFailed();
-                throw new SnappPayException('Payment failed or invalid callback data', 400);
+            if (intval($ResCode) !== 0) {
+                throw new MelliException('User payment failed', intval($ResCode));
             }
 
-            $response = $client->request('POST', "{$this->gateUrl}/payment/v1/verify", [
-                    'json'    => [
-                        'paymentToken' => $this->refId,
-                    ],
-                    'headers' => [
-                        'Authorization' => "Bearer " . $this->getMeta('access_token'),
-                        'Content-Type'  => 'application/json',
-                    ],
-                ]
+            $verifyData = array(
+                'Token'    => $Token,
+                'SignData' => $this->createSignature($Token, $key)
             );
 
-            $statusCode = $response->getStatusCode();
-            $response = json_decode($response->getBody()->getContents(), true);
+            $result = $this->CallAPI("{$this->gateUrl}/Advice/Verify", $verifyData);
 
-            if ($statusCode !== 200 || empty($response['successful'])) {
-                $this->transactionFailed();
-                $this->newLog($statusCode, json_encode($response));
-                throw new SnappPayException(json_encode($response), $statusCode);
+            if (!$result || !isset($result->ResCode) || intval($result->ResCode) == -1 || intval($result->ResCode) !== 0) {
+                $resCode = is_object($result) && isset($result->ResCode) ? $result->ResCode : 'Error';
+                $description = is_object($result) && isset($result->Description) ? $result->Description : 'Melli verify failed';
+
+                throw new MelliException($description, intval($resCode));
             }
 
-            return $response;
+            $this->refId = $result->RetrivalRefNo;
+            $this->transactionSetRefId();
 
-        } catch (\Exception $e) {
-            $this->transactionFailed();
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Settle the payment after verify
-     *
-     * @return bool
-     *
-     * @throws SnappPayException
-     */
-    protected function settlePayment()
-    {
-        try {
-            $client = new Client();
-
-            $response = $client->request('POST', "{$this->gateUrl}/payment/v1/settle", [
-                    'json'    => [
-                        'paymentToken' => $this->refId,
-                    ],
-                    'headers' => [
-                        'Authorization' => "Bearer " . $this->getMeta('access_token'),
-                        'Content-Type'  => 'application/json',
-                    ],
-                ]
-            );
-
-
-            $statusCode = $response->getStatusCode();
-            $response = json_decode($response->getBody()->getContents(), true);
-
-            if ($statusCode !== 200 || empty($response['successful'])) {
-                $this->transactionFailed();
-                $this->newLog($statusCode, json_encode($response));
-                throw new SnappPayException(json_encode($response), $statusCode);
-            }
-
-            $this->trackingCode = $response['response']['transactionId'];
+            $this->trackingCode = $result->SystemTraceNo;
             $this->transactionSucceed();
 
-            return $response;
+            return true;
 
         } catch (\Exception $e) {
             $this->transactionFailed();
@@ -362,168 +196,10 @@ class Melli extends PortAbstract implements PortInterface
     }
 
     /**
-     * Refund user payment
-     *
-     * @return bool
-     *
-     * @throws SnappPayException
+     * {@inheritdoc}
      */
-    public function refundPayment($transaction, $params = [])
+    public function redirect()
     {
-        try {
-            $this->authenticate();
-
-            $meta = json_decode($transaction->meta, true);
-            $client = new Client();
-
-            $response = $client->request('POST', "{$this->gateUrl}/payment/v1/cancel", [
-                    'json'    => [
-                        'paymentToken' => $meta['paymentToken'],
-                    ],
-                    'headers' => [
-                        'Authorization' => "Bearer {$this->accessToken}",
-                        'Content-Type'  => 'application/json',
-                    ],
-                ]
-            );
-
-            $statusCode = $response->getStatusCode();
-            $response = json_decode($response->getBody()->getContents(), true);
-
-            if ($statusCode !== 200 || empty($response['successful'])) {
-                $this->newLog($statusCode, json_encode($response));
-                throw new SnappPayException(json_encode($response), $statusCode);
-            }
-
-            $this->newLog('Canceled', json_encode($response));
-
-            return $response;
-
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Partial refund user payment
-     *
-     * @return bool
-     *
-     * @throws SnappPayException
-     */
-    public function partialRefundPayment($transaction, $amount, $params = [])
-    {
-        try {
-            $this->authenticate();
-
-            $client = new Client();
-
-            $payload = $this->getPartialRefundPayload($params, $transaction, $amount);
-
-            $response = $client->request('POST', "{$this->gateUrl}/payment/v1/update", [
-                    'json'    => $payload,
-                    'headers' => [
-                        'Authorization' => "Bearer {$this->accessToken}",
-                        'Content-Type'  => 'application/json',
-                    ],
-                ]
-            );
-
-            $statusCode = $response->getStatusCode();
-            $response = json_decode($response->getBody()->getContents());
-
-            if ($statusCode !== 200 || empty($response->successful)) {
-                $this->newLog($statusCode, json_encode($response));
-                throw new SnappPayException(json_encode($response), $statusCode);
-            }
-
-            $this->newLog('PartialRefunded', json_encode($response));
-
-            return $response;
-
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    protected function getPartialRefundPayload($params, $transaction, $amount)
-    {
-        $meta = json_decode($transaction->meta, true);
-
-        $cartList = [];
-        $orderAmount = 0;
-
-        $discountAmount = isset($params['discountAmount'])
-            ? $params['discountAmount']
-            : 0;
-
-        $externalSourceAmount = isset($params['externalSourceAmount'])
-            ? $params['externalSourceAmount']
-            : 0;
-
-        foreach ($params['cartList'] as $cart) {
-            $cartItems = [];
-            $cartItemsTotal = 0;
-
-            foreach ($cart['cartItems'] as $item) {
-                $itemTotal = $item['amount'] * $item['count'];
-                $cartItemsTotal += $itemTotal;
-
-                $cartItems[] = [
-                    'id'             => $item['id'],
-                    'amount'         => $item['amount'],
-                    'category'       => $item['category'],
-                    'count'          => $item['count'],
-                    'name'           => $item['name'],
-                    'commissionType' => isset($item['commissionType']) ? $item['commissionType'] : self::COMMISSION_TYPE,
-                ];
-            }
-
-            $shippingAmount = isset($cart['shippingAmount'])
-                ? $cart['shippingAmount']
-                : 0;
-
-            $taxAmount = isset($cart['taxAmount'])
-                ? $cart['taxAmount']
-                : 0;
-
-            $totalAmount = $cartItemsTotal + $shippingAmount + $taxAmount;
-
-            $cartList[] = [
-                'cartId'             => $cart['cartId'],
-                'cartItems'          => $cartItems,
-                'isShipmentIncluded' => !empty($cart['isShipmentIncluded']),
-                'isTaxIncluded'      => !empty($cart['isTaxIncluded']),
-                'shippingAmount'     => $shippingAmount,
-                'taxAmount'          => $taxAmount,
-                'totalAmount'        => $totalAmount,
-            ];
-        }
-
-        if ($amount >= $meta['amount']) {
-            throw new SnappPayException('Update amount must be less than original order amount', 400);
-        }
-
-        return [
-            'paymentToken'         => $meta['paymentToken'],
-            'amount'               => (int)$amount,
-            'cartList'             => $cartList,
-            'discountAmount'       => $discountAmount,
-            'externalSourceAmount' => $externalSourceAmount,
-        ];
-    }
-
-    /**
-     * add items to invoice
-     *
-     * @return $this
-     */
-    public function addItem($items)
-    {
-        $this->items = $items;
-
-        return $this;
+        header("Location:" . $this->paymentUrl . $this->refId());
     }
 }
