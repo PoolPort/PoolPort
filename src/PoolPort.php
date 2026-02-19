@@ -293,6 +293,8 @@ class PoolPort
 
         $this->buildPort($transaction->port_id);
 
+        $this->portClass->setTransactionId($transaction->id);
+
         return $this->portClass->refundPayment($transaction, $params);
     }
 
@@ -315,6 +317,8 @@ class PoolPort
         }
 
         $this->buildPort($transaction->port_id);
+
+        $this->portClass->setTransactionId($transaction->id);
 
         return $this->portClass->partialRefundPayment($transaction, $amount, $params);
     }
