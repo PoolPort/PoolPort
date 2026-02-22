@@ -340,6 +340,8 @@ abstract class PortAbstract
         $date = new \DateTime;
         $date = $date->getTimestamp();
 
+        $statusMessage = substr($statusMessage, 0, 255);
+
         $stmt = $dbh->prepare("INSERT INTO poolport_status_log (transaction_id, result_code, result_message, log_date)
                                VALUES (:transaction_id, :result_code, :result_message, :log_date)");
         $stmt->bindParam(':transaction_id', $this->transactionId);
