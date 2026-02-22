@@ -121,7 +121,7 @@ class PoolPort
 
     const P_SNAPP_PAY = 38;
 
-    const P_Melli = 39;
+    const P_MELLI = 39;
 
     /**
      * @var Config
@@ -182,7 +182,7 @@ class PoolPort
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
                      self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
                      self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART,
-                     self::P_SNAPP_PAY, self::P_Melli);
+                     self::P_SNAPP_PAY, self::P_MELLI);
     }
 
     /**
@@ -481,8 +481,8 @@ class PoolPort
                 $this->portClass = new SnappPay($this->config, $this->db, self::P_SNAPP_PAY);
                 break;
 
-            case self::P_Melli:
-                $this->portClass = new Melli($this->config, $this->db, self::P_Melli);
+            case self::P_MELLI:
+                $this->portClass = new Melli($this->config, $this->db, self::P_MELLI);
                 break;
 
             default:
