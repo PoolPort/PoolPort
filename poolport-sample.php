@@ -245,7 +245,9 @@ return array(
     // Keepa gateway
     //--------------------------------
     'keepa'         => array(
-        'token'        => 'xxxxx',
+        'client-id'    => 'xxxx',
+        'client-secret'=> 'xxxx',
+        'terminal-id'  => 'xxxx',
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
