@@ -74,7 +74,7 @@ class Keepa extends PortAbstract implements PortInterface
 
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->getGateUrl()}/creditcore/thirdpartygateway/cpg-payments/v2/get-token", [
+            $response = $client->request("POST", "{$this->gateUrl}/cpg-payments/v2/get-token", [
                 "json"        => [
                     'terminalId'    => (int)$this->config->get('keepa.terminal-id'),
                     'invoiceNumber' => (string)$this->transactionId(),
@@ -126,7 +126,7 @@ class Keepa extends PortAbstract implements PortInterface
         try {
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->getGateUrl()}/creditcore/thirdpartygateway/clients/authorize", [
+            $response = $client->request("POST", "{$this->gateUrl}/clients/authorize", [
                 'json'        => [
                     'clientId'     => $this->config->get('keepa.client-id'),
                     'clientSecret' => $this->config->get('keepa.client-secret'),
@@ -151,11 +151,6 @@ class Keepa extends PortAbstract implements PortInterface
         } catch (\Exception $e) {
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
-    }
-
-    protected function getGateUrl()
-    {
-        return rtrim($this->config->get('keepa.base-url', $this->gateUrl), '/');
     }
 
     protected function extractErrorMessage($response, $fallbackMessage = 'خطای نامشخص')
@@ -242,7 +237,7 @@ class Keepa extends PortAbstract implements PortInterface
 
             $client = new Client();
 
-            $response = $client->request("GET", "{$this->getGateUrl()}/creditcore/thirdpartygateway/cpg-payments/v2/inquiry/{$this->recieptNumber}", [
+            $response = $client->request("GET", "{$this->gateUrl}/cpg-payments/v2/inquiry/{$this->recieptNumber}", [
                 'headers'     => [
                     'Authorization' => $this->getToken(),
                     'Content-Type'  => 'application/json',
@@ -297,7 +292,7 @@ class Keepa extends PortAbstract implements PortInterface
 
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->getGateUrl()}/creditcore/thirdpartygateway/cpg-payments/v2/verify", [
+            $response = $client->request("POST", "{$this->gateUrl}/cpg-payments/v2/verify", [
                 "json"        => [
                     'token'  => $this->recieptNumber,
                     'amount' => $this->amount,
