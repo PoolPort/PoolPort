@@ -30,7 +30,7 @@ class SnappPay extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl = 'https://api.snapppay.ir';
+    protected $gateUrl = 'https://api.snapppay.ir/api/online';
 
     /**
      * Address of payment gateway
