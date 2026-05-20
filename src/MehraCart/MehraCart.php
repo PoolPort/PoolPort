@@ -146,13 +146,34 @@ class MehraCart extends PortAbstract implements PortInterface
     protected function verifyPayment()
     {
         try {
+            $callbackData = $this->getCallbackData();
+
+            $authority = isset($callbackData['Authority'])
+                ? $callbackData['Authority']
+                : null;
+
+            $refId = isset($callbackData['RefId'])
+                ? $callbackData['RefId']
+                : null;
+
+            if (empty($authority) || empty($refId)) {
+                $this->transactionFailed();
+
+                $this->newLog('Callback Error', [
+                    'message'  => 'Authority or RefId is missing.',
+                    'callback' => $callbackData,
+                ]);
+
+                throw new MehraCartException('Invalid callback data.');
+            }
+
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/verify/request", [
+            $response = $client->request("POST", "{$this->gateUrl}/Verify/request", [
                 "json" => [
                     'MerchantId' => $this->config->get('mehracart.MerchantId'),
-                    'Authority'  => $_GET['Authority'],
-                    'RefId'      => $_GET['RefId'],
+                    'Authority'  => $authority,
+                    'RefId'      => $refId,
                 ],
 
                 "headers" => [
@@ -163,20 +184,22 @@ class MehraCart extends PortAbstract implements PortInterface
             $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents(), true);
 
-            if (!isset($response['code']) || $response['code'] != 200) {
+            if (!isset($response['code']) || (int)$response['code'] != 0) {
                 $this->transactionFailed();
                 $this->newLog($statusCode, $response);
                 throw new MehraCartException($response, $statusCode);
             }
 
-            $this->refId = $_GET['RefId'];
+            $this->refId = $refId;
             $this->transactionSetRefId();
 
-            $this->trackingCode = $_GET['RefId'];
+            $this->trackingCode = $refId;
             $this->transactionSucceed();
 
             $this->setMeta([
-                'RefId' => $_GET['RefId']
+                'Authority' => $authority,
+                'RefId'     => $refId,
+                'Callback'  => $callbackData,
             ]);
 
             return $response;
@@ -186,6 +209,35 @@ class MehraCart extends PortAbstract implements PortInterface
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
+    }
+
+    protected function getCallbackData()
+    {
+        if (isset($_POST['payload'])) {
+            $payload = json_decode($_POST['payload'], true);
+
+            return isset($payload['Data'])
+                ? $payload['Data']
+                : [];
+        }
+
+        return [
+            'MerchantId' => isset($_GET['MerchantId'])
+                ? $_GET['MerchantId']
+                : null,
+
+            'Authority' => isset($_GET['Authority'])
+                ? $_GET['Authority']
+                : null,
+
+            'OrderId' => isset($_GET['OrderId'])
+                ? $_GET['OrderId']
+                : null,
+
+            'RefId' => isset($_GET['RefId'])
+                ? $_GET['RefId']
+                : null,
+        ];
     }
 
     /**
