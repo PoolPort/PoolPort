@@ -80,6 +80,8 @@ class Tara extends PortAbstract implements PortInterface
 
     protected function authenticate()
     {
+        $this->newTransaction();
+
         try {
             $client = new Client();
 
@@ -117,8 +119,6 @@ class Tara extends PortAbstract implements PortInterface
      */
     protected function sendPayRequest()
     {
-        $this->newTransaction();
-
         $this->setMeta([
             'accessToken' => $this->accessToken,
         ]);
