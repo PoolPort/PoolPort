@@ -274,11 +274,14 @@ class Tara extends PortAbstract implements PortInterface
             $referenceNumber = $meta['rrn'];
             $client = new Client();
 
+            $payload['amount'] = $amount;
+
+            if (!empty($params['items'])) {
+                $payload['items'] = $params['items'];
+            }
+
             $response = $client->request("POST", "{$this->refundGateUrl}/api/v1/user/purchase/limited/refund/partial/$referenceNumber", [
-                "json"    => [
-                    'amount' => $amount,
-                    'items'  => !empty($params['items']) ? $params['items'] : '',
-                ],
+                "json"    => $payload,
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->refundToken,
                     'Content-Type'  => 'application/json',
