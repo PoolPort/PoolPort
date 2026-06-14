@@ -191,6 +191,7 @@ class Sadad extends PortAbstract implements PortInterface
 
                 $this->refId = $response['RetrivalRefNo'];
                 $this->trackingCode = $response['SystemTraceNo'];
+                $this->cardNumber = $_POST['PrimaryAccNo'];
                 $this->transactionSetRefId();
                 $this->transactionSucceed();
                 $this->newLog($response['ResCode'], self::TRANSACTION_SUCCEED_TEXT);
