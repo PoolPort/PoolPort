@@ -99,7 +99,7 @@ class Saman extends PortAbstract implements PortInterface
             'Action' => 'token',
             'Amount' => $this->amount,
             'TerminalId' => $this->config->get('saman.terminal-id'),
-            'ResNum' => $this->transactionId(),
+            'ResNum' => (int) ($this->transactionId() . '0' . mt_rand(1000, 9999)),
             'RedirectURL' => $this->buildRedirectUrl($this->config->get('saman.callback-url')),
             'CellNumber' => $this->config->get('saman.user-mobile'),
         );
