@@ -14,7 +14,7 @@ class AldyPay extends PortAbstract implements PortInterface
     /**
      * API Endpoint
      *  - prod: https://bo.aldypay.com
-     *  - dev:  https://devbo.aldypay.com
+     *  - dev:  https://gateway.uat.ziapp360.ir
      *
      * @var string
      */
@@ -58,26 +58,6 @@ class AldyPay extends PortAbstract implements PortInterface
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function redirect()
-    {
-
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function verify($transaction)
-    {
-        parent::verify($transaction);
-
-        $this->verifyPayment();
-
-        return $this;
-    }
-
-    /**
      * Send pay request to server
      *
      * @return void
@@ -95,11 +75,11 @@ class AldyPay extends PortAbstract implements PortInterface
             $this->transactionSetRefId();
 
             $this->setMeta([
-                'invoice_number'  => $this->transactionId(),
-                'order_items'     => $this->items,
-                'amount'          => $this->amount,
-                'refunded_amount' => 0,
-                'created_at'      => now()->format('Y-m-d H:i:s'),
+                'invoice_number'         => $this->transactionId(),
+                'order_items'            => $this->items,
+                'amount'                 => $this->amount,
+                'refunded_amount'        => 0,
+                'created_at'             => now()->format('Y-m-d H:i:s'),
                 'is_transaction_created' => false,
                 'is_invoice_attached'    => false
             ]);
@@ -112,59 +92,23 @@ class AldyPay extends PortAbstract implements PortInterface
     }
 
     /**
-     * add item to invoice
-     *
-     * @return $this
+     * {@inheritdoc}
      */
-    public function addItem($item)
+    public function redirect()
     {
-        $this->items = $item;
 
-        return $this;
     }
 
     /**
-     * Send OTP code to user by code-meli
-     *
-     * @param string $codeMeli
-     * @param int $transactionId
-     *
-     * @return bool|PoolPortException
+     * {@inheritdoc}
      */
-    public function sendOTP($codeMeli, $transactionId)
+    public function verify($transaction)
     {
-        try {
-            $this->authLogin();
+        parent::verify($transaction);
 
-            $this->setTransactionId($transactionId);
+        $this->verifyPayment();
 
-            $client = new Client();
-
-            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/auth/otp", [
-                "json"    => [
-                    'code' => $codeMeli,
-                ],
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json'
-                ]
-            ]);
-
-            $statusCode = $response->getStatusCode();
-            $response = json_decode($response->getBody()->getContents());
-
-            if ($this->isSuccessResponse($response)) {
-                // Save code-meli in meta for verify payment
-                $this->setMeta(['code_meli' => $codeMeli]);
-                return true;
-            }
-
-            throw new AldyPayException(json_encode($response), $statusCode);
-
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
+        return $this;
     }
 
     /**
@@ -188,84 +132,40 @@ class AldyPay extends PortAbstract implements PortInterface
 
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/poolticket/transactions", [
+            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/aldypay/transactions", [
                 'http_errors' => false, // prevent throwing exceptions on 4xx/5xx
-                "headers" => [
+                "headers"     => [
                     'Authorization' => "Bearer {$this->authToken}",
                 ],
-                "json" => [
-                    'code'          => $meta['code_meli'],
-                    'password'      => $_POST['otp_code'],
-                    'amount'        => $meta['amount'],
-                    'store_code'    => $this->config->get('aldypay.store-code'),
-                    'order_items'   => $meta['order_items']
+                "json"        => [
+                    'code'        => $meta['code_meli'],
+                    'password'    => $_POST['otp_code'],
+                    'amount'      => $meta['amount'],
+                    'store_code'  => $this->config->get('aldypay.store-code'),
+                    'order_items' => $meta['order_items']
                 ],
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isErrorResponse($response)) {
-                throw new AldyPayException(json_encode($response), $response->code);
+            if (!isset($response->data->ledgerTransactionIds)) {
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
             $this->setMeta(['is_transaction_created' => true]);
 
-            $this->refId = $response->data->transaction_number;
+            $ledgerTransactionIds = $response->data->ledgerTransactionIds;
+            $this->refId = isset($ledgerTransactionIds[0]) ? $ledgerTransactionIds[0] : null;
             $this->transactionSetRefId();
 
-            $this->attachInvoiceToTransaction($meta['invoice_number'], $meta);
+            $this->attachInvoiceToTransaction($meta['invoice_number'], $meta, $ledgerTransactionIds);
 
-            $this->trackingCode = $response->data->transaction_number;
+            $this->trackingCode = $this->refId;
             $this->transactionSucceed();
 
         } catch (\Exception $e) {
             $this->transactionFailed();
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Attach invoice to transaction is required for refund and partial refund
-     * - This attach have to run immediately after transaction is created
-     * - invoice_number is PoolPort transaction id that will be attach to transaction_number in aldyPay system
-     *
-     * @param int $invoiceNumber
-     * @param array $meta
-     * @return bool
-     * @throws AldyPayException
-     */
-    public function attachInvoiceToTransaction($invoiceNumber, $meta)
-    {
-        try {
-            if ($meta['is_invoice_attached'] === true) {
-                return;
-            }
-
-            $refId = $this->refId();
-            $client = new Client();
-
-            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/poolticket/invoice", [
-                "json"    => [
-                    "transaction_number" => "{$refId}",
-                    "invoice_number" => "{$invoiceNumber}"
-                ],
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json'
-                ]
-            ]);
-
-            $response = json_decode($response->getBody()->getContents());
-
-            if ($this->isSuccessResponse($response)) {
-                $this->setMeta(['is_invoice_attached' => true]);
-                return true;
-            }
-
-            throw new AldyPayException(json_encode($response), $response->code);
-
-        } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
@@ -280,19 +180,122 @@ class AldyPay extends PortAbstract implements PortInterface
                 "json" => [
                     'username' => $this->config->get('aldypay.auth-username'),
                     'password' => $this->config->get('aldypay.auth-password')
-                ],
-                "headers" => [
-                    'Content-Type' => 'application/json'
-                ],
+                ]
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isErrorResponse($response)) {
-                throw new AldyPayException(json_encode($response), $response->code);
+            if (!isset($response->access_token)) {
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
-            $this->authToken = $response->data->access_token;
+            $this->authToken = $response->access_token;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Attach invoice to transaction is required for refund and partial refund
+     * - This attach have to run immediately after transaction is created
+     * - invoice_number is PoolPort transaction id that will be attach to transaction_number in aldyPay system
+     *
+     * @param int   $invoiceNumber
+     * @param array $meta
+     *
+     * @return bool
+     * @throws AldyPayException
+     */
+    public function attachInvoiceToTransaction($invoiceNumber, $meta, $ledgerTransactionIds = [])
+    {
+        try {
+            if ($meta['is_invoice_attached'] === true) {
+                return;
+            }
+
+            $client = new Client();
+            $transactionIds = !empty($ledgerTransactionIds) ? $ledgerTransactionIds : [$this->refId()];
+
+            foreach ($transactionIds as $transactionId) {
+                $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/invoice", [
+                    "json"    => [
+                        "transaction_number" => $transactionId,
+                        "invoice_number"     => "{$invoiceNumber}"
+                    ],
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->authToken
+                    ]
+                ]);
+
+                $statusCode = $response->getStatusCode();
+                $response = json_decode($response->getBody()->getContents());
+
+                if (!isset($response->data->message) || $statusCode !== 200) {
+                    throw new AldyPayException(json_encode($response), $statusCode);
+                }
+            }
+
+            $this->setMeta(['is_invoice_attached' => true]);
+            return true;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * add item to invoice
+     *
+     * @return $this
+     */
+    public function addItem($item)
+    {
+        $this->items = $item;
+
+        return $this;
+    }
+
+    /**
+     * Send OTP code to user by code-meli
+     *
+     * @param string $codeMeli
+     * @param int    $transactionId
+     *
+     * @return bool|PoolPortException
+     */
+    public function sendOTP($codeMeli, $transactionId)
+    {
+        try {
+            $this->authLogin();
+
+            $this->setTransactionId($transactionId);
+
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/auth/otp", [
+                'http_errors' => false,
+                "json"        => [
+                    'code' => $codeMeli
+                ],
+                'headers'     => [
+                    'Authorization' => 'Bearer ' . $this->authToken
+                ]
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
+
+            if (isset($response->data->status) && $response->data->status === true) {
+                $this->setMeta(['code_meli' => $codeMeli]);
+                return true;
+            }
+
+            $errorCode = isset($response->code) ? $response->code : $statusCode;
+            throw new AldyPayException(json_encode($response), $errorCode);
 
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
@@ -326,27 +329,28 @@ class AldyPay extends PortAbstract implements PortInterface
 
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/poolticket/refund", [
-                'http_errors' => false, // prevent throwing exceptions on 4xx/5xx
-                "json"    => [
-                    "amount"      => (int) $amount,
-                    "store_code"  => $this->config->get('aldypay.store-code'),
-                    "description" => $params['description'] ?? '',
+            $description = isset($params['description']) ? $params['description'] : '';
+
+            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/aldypay/refund", [
+                'http_errors' => false,
+                "json"        => [
+                    "amount"         => (int)$amount,
+                    "store_code"     => $this->config->get('aldypay.store-code'),
+                    "description"    => $description,
                     "invoice_number" => "{$invoiceNumber}"
                 ],
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json'
+                'headers'     => [
+                    'Authorization' => 'Bearer ' . $this->authToken
                 ]
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isErrorResponse($response)) {
-                throw new AldyPayException(json_encode($response), $response->code);
+            if (!isset($response->data->refundLedgerTransactionIds)) {
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
-            // Update refunded_amount in meta
             $this->setMeta(['refunded_amount' => $amount + $refundedAmount]);
 
             $this->newLog('Refunded', json_encode($response));
@@ -384,26 +388,27 @@ class AldyPay extends PortAbstract implements PortInterface
 
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/poolticket/refund", [
+            $description = isset($params['description']) ? $params['description'] : '';
+
+            $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/aldypay/refund", [
                 "json"    => [
-                    "amount" => (int) $amount,
-                    "store_code" => $this->config->get('aldypay.store-code'),
-                    "description" => $params['description'] ?? '',
+                    "amount"         => (int)$amount,
+                    "store_code"     => $this->config->get('aldypay.store-code'),
+                    "description"    => $description,
                     "invoice_number" => "{$invoiceNumber}"
                 ],
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $this->authToken,
-                    'Content-Type'  => 'application/json'
+                    'Authorization' => 'Bearer ' . $this->authToken
                 ]
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isErrorResponse($response)) {
-                throw new AldyPayException(json_encode($response), $response->code);
+            if (!isset($response->data->refundLedgerTransactionIds)) {
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
-            // Update refunded_amount in meta
             $this->setMeta(['refunded_amount' => $totalRefundedAmount]);
 
             $this->newLog('Refunded', json_encode($response));
@@ -412,89 +417,6 @@ class AldyPay extends PortAbstract implements PortInterface
 
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Check if response is success
-     *
-     * @param object $response
-     * @return bool
-     */
-    protected function isSuccessResponse($response)
-    {
-        return isset($response->status) && $response->status === true;
-    }
-
-    /**
-     * Check if response is error
-     *
-     * @param object $response
-     * @return bool
-     */
-    protected function isErrorResponse($response)
-    {
-        return !isset($response->status) || $response->status !== true;
-    }
-
-    /**
-     * Get transactions of an user
-     */
-    public function fetchTransaction($code)
-    {
-        $this->authLogin();
-
-        $client = new Client();
-
-        try {
-            $response = $client->request('GET', "{$this->apiUrl}/api/v1/vendors/poolticket/transactions", [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->authToken,
-                    'Accept'        => 'application/json',
-                ],
-                'query' => [
-                    'per_page' => 5,
-                    'page'     => 1,
-                    'code' => $code
-                ],
-            ]);
-
-            $response = json_decode($response->getBody(), true);
-
-            return $response;
-
-        } catch (\Exception $e) {
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Get all transactions
-     */
-    public function exportTransactions()
-    {
-        $this->authLogin();
-
-        $client = new Client();
-
-        try {
-            $response = $client->request('GET', "{$this->apiUrl}/api/v1/vendors/poolticket/transactions", [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->authToken,
-                    'Accept'        => 'application/json',
-                ],
-                'query' => [
-                    'per_page' => 10,
-                    'page'     => 1
-                ],
-            ]);
-
-            $response = json_decode($response->getBody(), true);
-
-            return $response;
-
-        } catch (\Exception $e) {
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
     }
@@ -509,15 +431,14 @@ class AldyPay extends PortAbstract implements PortInterface
         $client = new Client();
 
         try {
-            $response = $client->request('GET', "{$this->apiUrl}/api/v1/vendors/poolticket/assets", [
+            $response = $client->request('POST', "{$this->apiUrl}/api/v1/vendors/aldypay/assets", [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $this->authToken,
-                    'Accept'        => 'application/json',
+                    'Authorization' => 'Bearer ' . $this->authToken
                 ],
-                'query' => [
-                    'code' => $code,
+                'json'    => [
+                    'code'     => $code,
                     'password' => $password
-                ],
+                ]
             ]);
 
             $response = json_decode($response->getBody(), true);
