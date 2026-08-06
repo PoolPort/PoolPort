@@ -146,10 +146,11 @@ class AldyPay extends PortAbstract implements PortInterface
                 ],
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isErrorResponse($response)) {
-                throw new AldyPayException(json_encode($response), $response->code);
+            if (!isset($response->data->ledgerTransactionIds)) {
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
             $this->setMeta(['is_transaction_created' => true]);
@@ -182,11 +183,11 @@ class AldyPay extends PortAbstract implements PortInterface
                 ]
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
             if (!isset($response->access_token)) {
-                $errorCode = isset($response->code) ? $response->code : 400;
-                throw new AldyPayException(json_encode($response), $errorCode);
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
             $this->authToken = $response->access_token;
@@ -195,18 +196,6 @@ class AldyPay extends PortAbstract implements PortInterface
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
-    }
-
-    /**
-     * Check if response is error
-     *
-     * @param object $response
-     *
-     * @return bool
-     */
-    protected function isErrorResponse($response)
-    {
-        return !isset($response->data->status) || $response->data->status === false;
     }
 
     /**
@@ -241,11 +230,11 @@ class AldyPay extends PortAbstract implements PortInterface
                     ]
                 ]);
 
+                $statusCode = $response->getStatusCode();
                 $response = json_decode($response->getBody()->getContents());
 
-                if (!$this->isSuccessResponse($response)) {
-                    $code = isset($response->code) ? $response->code : 400;
-                    throw new AldyPayException(json_encode($response), $code);
+                if (!isset($response->data->message) || $statusCode !== 200) {
+                    throw new AldyPayException(json_encode($response), $statusCode);
                 }
             }
 
@@ -256,18 +245,6 @@ class AldyPay extends PortAbstract implements PortInterface
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
-    }
-
-    /**
-     * Check if response is success
-     *
-     * @param object $response
-     *
-     * @return bool
-     */
-    protected function isSuccessResponse($response)
-    {
-        return isset($response->data->status) && $response->data->status === true;
     }
 
     /**
@@ -301,10 +278,10 @@ class AldyPay extends PortAbstract implements PortInterface
 
             $response = $client->request("POST", "{$this->apiUrl}/api/v1/vendors/auth/otp", [
                 'http_errors' => false,
-                "json" => [
+                "json"        => [
                     'code' => $codeMeli
                 ],
-                'headers' => [
+                'headers'     => [
                     'Authorization' => 'Bearer ' . $this->authToken
                 ]
             ]);
@@ -312,7 +289,7 @@ class AldyPay extends PortAbstract implements PortInterface
             $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isSuccessResponse($response)) {
+            if (isset($response->data->status) && $response->data->status === true) {
                 $this->setMeta(['code_meli' => $codeMeli]);
                 return true;
             }
@@ -367,11 +344,11 @@ class AldyPay extends PortAbstract implements PortInterface
                 ]
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isErrorResponse($response)) {
-                $errorCode = isset($response->code) ? $response->code : 400;
-                throw new AldyPayException(json_encode($response), $errorCode);
+            if (!isset($response->data->refundLedgerTransactionIds)) {
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
             $this->setMeta(['refunded_amount' => $amount + $refundedAmount]);
@@ -425,11 +402,11 @@ class AldyPay extends PortAbstract implements PortInterface
                 ]
             ]);
 
+            $statusCode = $response->getStatusCode();
             $response = json_decode($response->getBody()->getContents());
 
-            if ($this->isErrorResponse($response)) {
-                $errorCode = isset($response->code) ? $response->code : 400;
-                throw new AldyPayException(json_encode($response), $errorCode);
+            if (!isset($response->data->refundLedgerTransactionIds)) {
+                throw new AldyPayException(json_encode($response), $statusCode);
             }
 
             $this->setMeta(['refunded_amount' => $totalRefundedAmount]);
