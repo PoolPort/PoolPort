@@ -251,12 +251,13 @@ class Sib extends PortAbstract implements PortInterface
             $meta = json_decode($transaction->meta, true);
             $client = new Client();
 
-            $response = $client->request("POST", "{$this->gateUrl}/webservice/returnTransaction", [
+            $response = $client->request("POST", "{$this->gateUrl}/webservice/change", [
                 "json"    => [
                     'token'        => $this->config->get('sib.token'),
                     'merchantCode' => $this->config->get('sib.merchantCode'),
                     'productId'    => $meta['productId'],
                     'paymentToken' => $meta['paymentToken'],
+                    'transactionId' => $transaction->ref_id,
                     'amount'       => $amount,
                 ],
                 'headers' => [
