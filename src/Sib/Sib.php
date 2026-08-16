@@ -16,7 +16,7 @@ class Sib extends PortAbstract implements PortInterface
      *
      * @var string
      */
-    protected $gateUrl = 'https://api.sibpay.ir';
+    protected $gateUrl = 'https://api.irond.ir';
 
     private $paymentUrl;
 
