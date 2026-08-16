@@ -384,4 +384,15 @@ return array(
         'user-mobile'   => '09xxxxxxxx',
         'callback-url'  => 'http://www.example.org/result',
     ),
+
+    // SmartisPay gateway
+    //--------------------------------
+    'smartispay'    => array(
+        'username'     => 'xxxx',
+        'password'     => 'xxxx',
+        'terminal-id'  => 'xxxx',
+        'secret-key'   => 'xxxx',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
