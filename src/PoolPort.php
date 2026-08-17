@@ -37,6 +37,7 @@ use PoolPort\JahanPay\JahanPay;
 use PoolPort\IranKish\IranKish;
 use PoolPort\MehraCart\MehraCart;
 use PoolPort\MellatStaff\MellatStaff;
+use PoolPort\SmartisPay\SmartisPay;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\ResalatWallet\ResalatWallet;
@@ -120,6 +121,8 @@ class PoolPort
 
     const P_SNAPP_PAY = 38;
 
+    const P_SMARTISPAY = 39;
+
     /**
      * @var Config
      */
@@ -178,7 +181,7 @@ class PoolPort
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
                      self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
-                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART, self::P_SNAPP_PAY);
+                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART, self::P_SNAPP_PAY, self::P_SMARTISPAY);
     }
 
     /**
@@ -479,6 +482,10 @@ class PoolPort
 
             case self::P_SNAPP_PAY:
                 $this->portClass = new SnappPay($this->config, $this->db, self::P_SNAPP_PAY);
+                break;
+
+            case self::P_SMARTISPAY:
+                $this->portClass = new SmartisPay($this->config, $this->db, self::P_SMARTISPAY);
                 break;
 
             default:
