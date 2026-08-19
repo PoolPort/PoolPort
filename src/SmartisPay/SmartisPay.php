@@ -44,6 +44,7 @@ class SmartisPay extends PortAbstract implements PortInterface
 
     public function ready()
     {
+        $this->newTransaction();
         $this->authenticate();
         $this->sendPayRequest();
 
@@ -52,8 +53,6 @@ class SmartisPay extends PortAbstract implements PortInterface
 
     protected function authenticate()
     {
-        $this->newTransaction();
-
         try {
             $response = $this->client->request('POST', "{$this->baseUrl}/auth-service/v1.0/get-token-ipg", [
                 'json'        => [
@@ -76,6 +75,7 @@ class SmartisPay extends PortAbstract implements PortInterface
             }
 
             $this->accessToken = $response->target->accessToken;
+
             $this->setMeta([
                 'accessToken' => $this->accessToken,
             ]);
@@ -90,28 +90,33 @@ class SmartisPay extends PortAbstract implements PortInterface
     protected function sendPayRequest()
     {
         try {
+            $username = $this->config->get('smartispay.user-mobile');
+            $callbackUrl = $this->buildRedirectUrl($this->config->get('smartispay.callback-url'));
+            $useIpg = 'true';
+            $terminalId = strval($this->config->get('smartispay.terminal-id'));
+            $amount = strval($this->amount);
+            $referenceId = strval($this->transactionId());
+
             $message = $this->buildHmacMessage([
-                $this->config->get('smartispay.username'),
-                $this->buildRedirectUrl($this->config->get('smartispay.callback-url')),
-                false,
-                $this->config->get('smartispay.terminal-id'),
-                $this->amount,
-                strval($this->transactionId()),
+                $username,
+                $callbackUrl,
+                $useIpg,
+                $terminalId,
+                $amount,
+                $referenceId,
             ]);
 
             $xHash = $this->generateHmac($message, $this->config->get('smartispay.secret-key'));
 
-            $payload = [
-                'username'    => $this->config->get('smartispay.username'),
-                'callback'    => $this->buildRedirectUrl($this->config->get('smartispay.callback-url')),
-                'useIpg'      => false,
-                'terminalId'  => intval($this->config->get('smartispay.terminal-id')),
-                'amount'      => intval($this->amount),
-                'referenceId' => strval($this->transactionId()),
-            ];
-
             $response = $this->client->request('POST', "{$this->baseUrl}/wallet-service/v1.0/legal-ipg/get-payment-url-foreign", [
-                'json'        => $payload,
+                'json'        => [
+                    'username'    => $username,
+                    'callback'    => $callbackUrl,
+                    'useIpg'      => true,
+                    'terminalId'  => intval($terminalId),
+                    'amount'      => intval($amount),
+                    'referenceId' => $referenceId,
+                ],
                 'headers'     => [
                     'Authorization' => 'Bearer ' . $this->accessToken,
                     'x-hash'        => $xHash,
@@ -169,13 +174,18 @@ class SmartisPay extends PortAbstract implements PortInterface
     protected function verifyPayment()
     {
         try {
-            $response = $this->client->request('GET', "{$this->baseUrl}/wallet-service/v1.0/status-personal-payment", [
+            $accessToken = $this->getMeta('accessToken');
+
+            if (!$accessToken) {
+                throw new SmrtisPayException('Access token not found', -1);
+            }
+
+            $response = $this->client->request('GET', "{$this->baseUrl}/wallet-service/v1.0/verify-payment", [
                 'query'       => [
                     'uuid' => $this->refId(),
                 ],
                 'headers'     => [
-                    'Authorization' => 'Bearer ' . $this->getMeta('accessToken'),
-                    'Accept'        => '*/*',
+                    'Authorization' => 'Bearer ' . $accessToken,
                 ],
                 'http_errors' => false,
             ]);
@@ -183,21 +193,19 @@ class SmartisPay extends PortAbstract implements PortInterface
             $body = $response->getBody()->getContents();
             $response = json_decode($body);
 
-            if (!$response || $response->statusCode != 0 || $response->target->status !== 'TRUE') {
-                $this->transactionFailed();
-                $this->newLog($response ? $response->statusCode : 'UNKNOWN', json_encode($response));
-                throw new SmrtisPayException(json_encode($response), $response ? $response->statusCode : -1);
+            if (!$response) {
+                throw new SmrtisPayException('Invalid response from server', -1);
             }
 
-            $this->trackingCode = $response->target->traceId;
-            $this->setMeta([
-                'traceId'    => $response->target->traceId,
-                'name'       => $response->target->name,
-                'family'     => $response->target->family,
-                'nationalId' => $response->target->nationalId,
-                'authLevel'  => $response->target->authLevel,
-            ]);
+            if ($response->statusCode != 0) {
+                throw new SmrtisPayException(isset($response->message) ? $response->message : 'Verify failed', $response->statusCode);
+            }
 
+            if ($response->target !== true) {
+                throw new SmrtisPayException('Payment verification failed', -1);
+            }
+
+            $this->trackingCode = $this->refId();
             $this->transactionSucceed();
 
             return $response;
@@ -219,15 +227,23 @@ class SmartisPay extends PortAbstract implements PortInterface
             $traceId = !empty($meta['traceId']) ? $meta['traceId'] : null;
 
             if (!$traceId) {
+                $traceId = $this->getTraceIdFromApi($uuid);
+            }
+
+            if (!$traceId) {
                 throw new SmrtisPayException('TraceId not found in transaction meta', 1001);
             }
 
+            $amount = intval($transaction->price);
+            $description = !empty($params['description']) ? $params['description'] : 'استرداد وجه';
+            $referenceId = strval($transaction->id);
+
             $message = $this->buildHmacMessage([
-                $uuid,
-                $traceId,
-                $transaction->price,
-                !empty($params['description']) ? $params['description'] : '',
-                $transaction->id,
+                strval($uuid),
+                strval($traceId),
+                strval($amount),
+                $description,
+                $referenceId,
             ]);
 
             $xHash = $this->generateHmac($message, $this->config->get('smartispay.secret-key'));
@@ -235,10 +251,10 @@ class SmartisPay extends PortAbstract implements PortInterface
             $response = $this->client->request('POST', "{$this->baseUrl}/wallet-service/v1.0/refund", [
                 'json'        => [
                     'uuid'        => $uuid,
-                    'traceId'     => $traceId,
-                    'amount'      => intval($transaction->price),
-                    'desc'        => !empty($params['description']) ? $params['description'] : '',
-                    'referenceId' => strval($transaction->id),
+                    'traceId'     => strval($traceId),
+                    'amount'      => $amount,
+                    'desc'        => $description,
+                    'referenceId' => $referenceId,
                 ],
                 'headers'     => [
                     'Authorization' => 'Bearer ' . $this->accessToken,
@@ -253,8 +269,8 @@ class SmartisPay extends PortAbstract implements PortInterface
             $response = json_decode($body);
 
             if (!$response || $response->statusCode != 0) {
-                $this->newLog($response ? $response->statusCode : 'UNKNOWN', json_encode($response));
-                throw new SmrtisPayException(json_encode($response), $response ? $response->statusCode : -1);
+                $this->newLog($response ? $response->statusCode : 'UNKNOWN', $response ? json_encode($response) : 'Empty response');
+                throw new SmrtisPayException($response ? $response->message : 'Refund failed', $response ? $response->statusCode : -1);
             }
 
             $this->newLog('Refunded', json_encode($response));
@@ -276,6 +292,34 @@ class SmartisPay extends PortAbstract implements PortInterface
         $this->authenticate();
     }
 
+    private function getTraceIdFromApi($uuid)
+    {
+        try {
+            $response = $this->client->request('GET', "{$this->baseUrl}/wallet-service/v1.0/status-personal-payment", [
+                'query'       => [
+                    'uuid' => $uuid,
+                ],
+                'headers'     => [
+                    'Authorization' => 'Bearer ' . $this->getMeta('accessToken'),
+                    'Accept'        => '*/*',
+                ],
+                'http_errors' => false,
+            ]);
+
+            $body = $response->getBody()->getContents();
+            $response = json_decode($body);
+
+            if ($response && $response->statusCode == 0 && !empty($response->target->traceId)) {
+                return $response->target->traceId;
+            }
+
+            return null;
+
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     public function partialRefundPayment($transaction, $amount, $params = [])
     {
         try {
@@ -286,15 +330,23 @@ class SmartisPay extends PortAbstract implements PortInterface
             $traceId = !empty($meta['traceId']) ? $meta['traceId'] : null;
 
             if (!$traceId) {
+                $traceId = $this->getTraceIdFromApi($uuid);
+            }
+
+            if (!$traceId) {
                 throw new SmrtisPayException('TraceId not found in transaction meta', 1001);
             }
 
+            $amount = intval($amount);
+            $description = !empty($params['description']) ? $params['description'] : 'استرداد وجه';
+            $referenceId = strval($transaction->id);
+
             $message = $this->buildHmacMessage([
-                $uuid,
-                $traceId,
-                $amount,
-                !empty($params['description']) ? $params['description'] : '',
-                $transaction->id,
+                strval($uuid),
+                strval($traceId),
+                strval($amount),
+                $description,
+                $referenceId,
             ]);
 
             $xHash = $this->generateHmac($message, $this->config->get('smartispay.secret-key'));
@@ -302,10 +354,10 @@ class SmartisPay extends PortAbstract implements PortInterface
             $response = $this->client->request('POST', "{$this->baseUrl}/wallet-service/v1.0/refund", [
                 'json'        => [
                     'uuid'        => $uuid,
-                    'traceId'     => $traceId,
-                    'amount'      => intval($amount),
-                    'desc'        => !empty($params['description']) ? $params['description'] : '',
-                    'referenceId' => strval($transaction->id),
+                    'traceId'     => strval($traceId),
+                    'amount'      => $amount,
+                    'desc'        => $description,
+                    'referenceId' => $referenceId,
                 ],
                 'headers'     => [
                     'Authorization' => 'Bearer ' . $this->accessToken,
@@ -320,8 +372,8 @@ class SmartisPay extends PortAbstract implements PortInterface
             $response = json_decode($body);
 
             if (!$response || $response->statusCode != 0) {
-                $this->newLog($response ? $response->statusCode : 'UNKNOWN', json_encode($response));
-                throw new SmrtisPayException(json_encode($response), $response ? $response->statusCode : -1);
+                $this->newLog($response ? $response->statusCode : 'UNKNOWN', $response ? json_encode($response) : 'Empty response');
+                throw new SmrtisPayException($response ? $response->message : 'Refund failed', $response ? $response->statusCode : -1);
             }
 
             $this->newLog('Refunded', json_encode($response));
