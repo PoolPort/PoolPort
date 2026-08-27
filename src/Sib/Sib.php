@@ -85,18 +85,28 @@ class Sib extends PortAbstract implements PortInterface
             $productId = !empty($this->items['productId']) ? $this->items['productId'] : $this->transactionId();
             $client = new Client();
 
+            $payload = [
+                'amount'       => (int)$this->amount,
+                'productId'    => (string)$productId,
+                'token'        => $this->config->get('sib.token'),
+                'merchantCode' => $this->config->get('sib.merchantCode'),
+                'callbackUrl'  => $this->buildRedirectUrl($this->config->get('sib.callback-url')),
+            ];
+
+            if (!empty($this->items['inCount'])) {
+                $payload['inCount'] = (int)$this->items['inCount'];
+            }
+
+            if (!empty($this->items['prepaid'])) {
+                $payload['prepaid'] = (int)$this->items['prepaid'];
+            }
+
+            if (!empty($this->items['extraParams'])) {
+                $payload['extraParams'] = (string)$this->items['extraParams'];
+            }
+
             $response = $client->request("POST", "{$this->gateUrl}/webservice/request", [
-                "json"    => [
-                    'amount'       => (int)$this->amount,
-                    'productId'    => $productId,
-                    'inCount'      => !empty($this->items['inCount']) ? $this->items['inCount'] : 0,
-                    'prepaid'      => !empty($this->items['prepaid']) ? $this->items['prepaid'] : 0,
-                    'extraParams'  => !empty($this->items['extraParams']) ? $this->items['extraParams'] : '',
-                    'token'        => $this->config->get('sib.token'),
-                    'merchantCode' => $this->config->get('sib.merchantCode'),
-                    'callbackUrl'  => $this->buildRedirectUrl($this->config->get('sib.callback-url')),
-                    'mobile'       => $this->config->get('sib.user-mobile'),
-                ],
+                "json"    => $payload,
                 'headers' => [
                     'Content-Type' => 'application/json',
                 ]
