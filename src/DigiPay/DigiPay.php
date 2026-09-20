@@ -92,6 +92,9 @@ class DigiPay extends PortAbstract implements PortInterface
             $this->deliverPayment();
         }
 
+        $this->trackingCode = $this->getMeta('trackingCode');
+        $this->transactionSucceed();
+
         return $this;
     }
 
@@ -239,9 +242,6 @@ class DigiPay extends PortAbstract implements PortInterface
                 $this->newLog($statusCode, $response);
                 throw new DigiPayException($response, $statusCode);
             }
-
-            $this->trackingCode = $trackingCode;
-            $this->transactionSucceed();
 
             return $response;
 
