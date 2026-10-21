@@ -15,6 +15,7 @@ use PoolPort\Lendroll\Lendroll;
 use PoolPort\Soshiant\Soshiant;
 use PoolPort\SnappPay\SnappPay;
 use PoolPort\BazaarPay\BazaarPay;
+use PoolPort\Fadax\Fadax;
 use PoolPort\Keepa\Keepa;
 use PoolPort\Dara\Dara;
 use PoolPort\Pay\Pay;
@@ -123,6 +124,8 @@ class PoolPort
 
     const P_SMARTISPAY = 39;
 
+    const P_FADAX = 40;
+
     /**
      * @var Config
      */
@@ -181,7 +184,8 @@ class PoolPort
                      self::P_PAYPING, self::P_VANDAR, self::P_PNA, self::P_AZKI, self::P_APSAN,
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
                      self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
-                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART, self::P_SNAPP_PAY, self::P_SMARTISPAY);
+                     self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART, self::P_SNAPP_PAY, self::P_SMARTISPAY,
+                     self::P_FADAX);
     }
 
     /**
@@ -486,6 +490,10 @@ class PoolPort
 
             case self::P_SMARTISPAY:
                 $this->portClass = new SmartisPay($this->config, $this->db, self::P_SMARTISPAY);
+                break;
+
+            case self::P_FADAX:
+                $this->portClass = new Fadax($this->config, $this->db, self::P_FADAX);
                 break;
 
             default:
