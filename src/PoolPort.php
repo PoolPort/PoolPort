@@ -39,6 +39,7 @@ use PoolPort\IranKish\IranKish;
 use PoolPort\MehraCart\MehraCart;
 use PoolPort\MellatStaff\MellatStaff;
 use PoolPort\SmartisPay\SmartisPay;
+use PoolPort\Vibe\Vibe;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\ResalatWallet\ResalatWallet;
@@ -126,6 +127,8 @@ class PoolPort
 
     const P_FADAX = 40;
 
+    const P_VIBE = 41;
+
     /**
      * @var Config
      */
@@ -185,7 +188,7 @@ class PoolPort
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
                      self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
                      self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART, self::P_SNAPP_PAY, self::P_SMARTISPAY,
-                     self::P_FADAX);
+                     self::P_FADAX, self::P_VIBE);
     }
 
     /**
@@ -494,6 +497,10 @@ class PoolPort
 
             case self::P_FADAX:
                 $this->portClass = new Fadax($this->config, $this->db, self::P_FADAX);
+                break;
+
+            case self::P_VIBE:
+                $this->portClass = new Vibe($this->config, $this->db, self::P_VIBE);
                 break;
 
             default:
