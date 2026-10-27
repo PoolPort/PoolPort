@@ -4,6 +4,7 @@ namespace PoolPort\Vibe;
 
 use PoolPort\Config;
 use GuzzleHttp\Client;
+use Ramsey\Uuid\Uuid;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -40,6 +41,13 @@ class Vibe extends PortAbstract implements PortInterface
      * @var int|null
      */
     private $installments = null;
+
+    /**
+     * Order id sent to Vibe, stored in transaction meta as `order_id`
+     *
+     * @var string|null
+     */
+    private $orderId = null;
 
     /**
      * {@inheritdoc}
@@ -129,7 +137,7 @@ class Vibe extends PortAbstract implements PortInterface
     public function getPayRequestPayload()
     {
         $payload = [
-            'order_id'     => (int)$this->transactionId(),
+            'order_id'     => $this->orderId,
             'cart_amount'  => (int)$this->amount,
             'callback_url' => $this->buildRedirectUrl($this->config->get('vibe.callback-url')),
             'data'         => $this->cart,
@@ -185,7 +193,11 @@ class Vibe extends PortAbstract implements PortInterface
         $this->newTransaction();
 
         try {
-            $response = $this->request('/api/v1/orders/', $this->getPayRequestPayload());
+            $this->orderId = Uuid::uuid4()->toString();
+            $this->setMeta(['order_id' => $this->orderId]);
+
+            $payload = $this->getPayRequestPayload();
+            $response = $this->request('/api/v1/orders/', $payload);
 
             if ($response['statusCode'] !== 200 || empty($response['body']['payment_url'])) {
                 $this->newLog($response['statusCode'], json_encode($response['body'], JSON_UNESCAPED_UNICODE));
@@ -224,7 +236,7 @@ class Vibe extends PortAbstract implements PortInterface
         $vibeRefId = $this->resolveCallbackRefId();
 
         try {
-            $response = $this->request('/api/v1/orders/verify', ['ref_id' => $vibeRefId]);
+            $response = $this->request('/merchants/api/v1/orders/verify', ['ref_id' => $vibeRefId]);
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
@@ -261,7 +273,7 @@ class Vibe extends PortAbstract implements PortInterface
      */
     protected function resolveCallbackRefId()
     {
-        if (isset($_GET['order_id']) && (string)$_GET['order_id'] !== (string)$this->transactionId()) {
+        if (isset($_GET['order_id']) && (string)$_GET['order_id'] !== (string)$this->getMeta('order_id')) {
             $this->failCallback('Callback order_id does not match transaction');
         }
 
