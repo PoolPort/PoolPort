@@ -395,4 +395,13 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Vibe gateway
+    //--------------------------------
+    'vibe'    => array(
+        'base-url'     => 'https://xxxx',
+        'api-key'      => 'xxxx',
+        'store-code'   => '',                              // Only for merchants with multiple stores
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
