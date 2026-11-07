@@ -245,7 +245,11 @@ class Vibe extends PortAbstract implements PortInterface
 
         try {
             $this->orderId = Uuid::uuid4()->toString();
-            $this->setMeta(['order_id' => $this->orderId]);
+            $this->setMeta([
+                'order_id'        => $this->orderId,
+                'amount'          => $this->amount,
+                'refunded_amount' => 0,
+            ]);
 
             $payload = $this->getPayRequestPayload();
             $response = $this->request('POST', '/api/v1/orders/', $payload);
@@ -261,6 +265,7 @@ class Vibe extends PortAbstract implements PortInterface
             $this->setMeta([
                 'payment_url'   => $this->paymentUrl,
                 'payment_token' => $paymentToken,
+                'created_at'    => now()->format('Y-m-d H:i:s'),
             ]);
 
             $this->refId = $paymentToken !== null ? $paymentToken : (string)$this->transactionId();
