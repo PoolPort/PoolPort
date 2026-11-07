@@ -111,6 +111,33 @@ class Vibe extends PortAbstract implements PortInterface
     }
 
     /**
+     * Check whether a customer exists in Vibe
+     *
+     * @param string $nationalCode
+     *
+     * @return bool
+     *
+     * @throws PoolPortException
+     */
+    public function getCustomer($nationalCode)
+    {
+        try {
+            $response = $this->request('GET', self::SERVICES_PATH . '/customer', [
+                'national_code' => $nationalCode,
+            ]);
+
+            if ($response['statusCode'] !== 200) {
+                throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
+            }
+
+            return !empty($response['body']['status']);
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
      * Refund remaining amount of user payment
      *
      * @return bool
@@ -245,7 +272,11 @@ class Vibe extends PortAbstract implements PortInterface
 
         try {
             $this->orderId = Uuid::uuid4()->toString();
-            $this->setMeta(['order_id' => $this->orderId]);
+            $this->setMeta([
+                'order_id'        => $this->orderId,
+                'amount'          => $this->amount,
+                'refunded_amount' => 0,
+            ]);
 
             $payload = $this->getPayRequestPayload();
             $response = $this->request('POST', '/api/v1/orders/', $payload);
@@ -261,6 +292,7 @@ class Vibe extends PortAbstract implements PortInterface
             $this->setMeta([
                 'payment_url'   => $this->paymentUrl,
                 'payment_token' => $paymentToken,
+                'created_at'    => now()->format('Y-m-d H:i:s'),
             ]);
 
             $this->refId = $paymentToken !== null ? $paymentToken : (string)$this->transactionId();
@@ -342,7 +374,10 @@ class Vibe extends PortAbstract implements PortInterface
                 throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
             }
 
-            $status = $this->getRefundStatus($requestId);
+            $this->newLog('RefundAccepted', json_encode($response['body'], JSON_UNESCAPED_UNICODE));
+
+            $refundStatus = $this->getRefundStatus($requestId);
+            $status = $refundStatus['status'] ?? null;
 
             if (in_array($status, self::$failedRefundStatuses, true)) {
                 throw new VibeException("Refund {$requestId} failed with status {$status}", 400);
@@ -353,6 +388,8 @@ class Vibe extends PortAbstract implements PortInterface
                 'request_id' => $requestId,
                 'amount'     => $amount,
                 'status'     => $status,
+                'accepted'   => $response['body'],
+                'data'       => $refundStatus['body'] ?? $refundStatus['data'] ?? null,
             ];
 
             $this->setMeta([
@@ -362,7 +399,7 @@ class Vibe extends PortAbstract implements PortInterface
 
             $this->newLog(
                 $status === self::REFUND_STATUS_DONE ? $logCode : 'RefundPending',
-                json_encode(['request_id' => $requestId, 'amount' => $amount, 'status' => $status])
+                json_encode($refundStatus['body'] ?? $refundStatus['data'] ?? null, JSON_UNESCAPED_UNICODE)
             );
 
             return true;
@@ -378,7 +415,7 @@ class Vibe extends PortAbstract implements PortInterface
      *
      * @param string $requestId
      *
-     * @return string|null null when status could not be inquired
+     * @return array{status: string|null, data: array|null, body: array|null}
      */
     protected function getRefundStatus($requestId)
     {
@@ -386,15 +423,19 @@ class Vibe extends PortAbstract implements PortInterface
             $response = $this->request('GET', self::SERVICES_PATH . '/refund/status/request_id/' . rawurlencode($requestId));
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
-            return null;
+            return ['status' => null, 'data' => null, 'body' => null];
         }
 
         if ($response['statusCode'] !== 200 || empty($response['body']['data']['status'])) {
             $this->newLog($response['statusCode'], json_encode($response['body'], JSON_UNESCAPED_UNICODE));
-            return null;
+            return ['status' => null, 'data' => null, 'body' => $response['body'] ?? null];
         }
 
-        return (string)$response['body']['data']['status'];
+        return [
+            'status' => (string)$response['body']['data']['status'],
+            'data'   => $response['body']['data'],
+            'body'   => $response['body'],
+        ];
     }
 
     /**
@@ -482,7 +523,11 @@ class Vibe extends PortAbstract implements PortInterface
             'http_errors' => false,
         ];
 
-        if ($method !== 'GET') {
+        if ($method === 'GET') {
+            if (!empty($data)) {
+                $options['query'] = $data;
+            }
+        } else {
             $options['json'] = $data;
         }
 
