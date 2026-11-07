@@ -15,6 +15,14 @@ class Keepa extends PortAbstract implements PortInterface
 
     const PAYMENT_STATUS_WAITING_TO_VERIFY = 8;
 
+    const REFUND_REASON_DUPLICATE_PURCHASE = 1;
+
+    const REFUND_REASON_CUSTOMER_REQUEST = 2;
+
+    const REFUND_REASON_SUSPECTED_FRAUD = 3;
+
+    const REFUND_REASON_OTHER = 4;
+
     /**
      * Address of gate for redirect
      *
@@ -321,6 +329,127 @@ class Keepa extends PortAbstract implements PortInterface
 
         } catch (\Exception $e) {
             $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Refund the full verified payment.
+     *
+     * @param object $transaction
+     * @param array $params reason (1-4) and optional description
+     *
+     * @return object
+     *
+     * @throws KeepaException
+     */
+    public function refundPayment($transaction, $params = [])
+    {
+        return $this->sendRefundRequest($transaction, (int)$transaction->price, $params, 'Refunded');
+    }
+
+    /**
+     * Refund part of a verified payment.
+     *
+     * @param object $transaction
+     * @param int $amount refund amount in Rial
+     * @param array $params reason (1-4) and optional description
+     *
+     * @return object
+     *
+     * @throws KeepaException
+     */
+    public function partialRefundPayment($transaction, $amount, $params = [])
+    {
+        return $this->sendRefundRequest($transaction, (int)$amount, $params, 'PartialRefunded');
+    }
+
+    /**
+     * Send refund request to Keepa.
+     *
+     * Full and partial refunds use the same endpoint. Only verified payments can be refunded.
+     *
+     * @param object $transaction
+     * @param int $amount
+     * @param array $params
+     * @param string $logStatus
+     *
+     * @return object
+     *
+     * @throws PoolPortException
+     */
+    protected function sendRefundRequest($transaction, $amount, $params, $logStatus)
+    {
+        try {
+            $this->setTransactionId($transaction->id);
+            $this->authenticate();
+
+            $meta = json_decode($transaction->meta, true);
+            $token = !empty($meta['token']) ? $meta['token'] : $transaction->ref_id;
+
+            if (empty($token)) {
+                throw new KeepaException('توکن پرداخت برای عودت وجه یافت نشد', 114);
+            }
+
+            if ($amount <= 0 || $amount > (int)$transaction->price) {
+                throw new KeepaException('مبلغ عودت وجه نامعتبر است', 174);
+            }
+
+            $reason = isset($params['reason']) ? (int)$params['reason'] : self::REFUND_REASON_CUSTOMER_REQUEST;
+
+            $allowedReasons = [
+                self::REFUND_REASON_DUPLICATE_PURCHASE,
+                self::REFUND_REASON_CUSTOMER_REQUEST,
+                self::REFUND_REASON_SUSPECTED_FRAUD,
+                self::REFUND_REASON_OTHER,
+            ];
+
+            if (!in_array($reason, $allowedReasons, true)) {
+                throw new KeepaException('علت عودت وجه نامعتبر است', 175);
+            }
+
+            $payload = [
+                'token'        => $token,
+                'refundAmount' => $amount,
+                'reason'       => $reason,
+            ];
+
+            if (!empty($params['description'])) {
+                $description = (string)$params['description'];
+
+                if (mb_strlen($description) > 500) {
+                    throw new KeepaException('توضیح عودت وجه نامعتبر است', 176);
+                }
+
+                $payload['description'] = $description;
+            }
+
+            $client = new Client();
+
+            $response = $client->request("POST", "{$this->gateUrl}/cpg-payments/v2/refund", [
+                "json"        => $payload,
+                'headers'     => [
+                    'Authorization' => $this->getToken(),
+                    'Content-Type'  => 'application/json',
+                ],
+                'http_errors' => false,
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $response = json_decode($response->getBody()->getContents());
+
+            if ($statusCode < 200 || $statusCode >= 300) {
+                $message = $this->extractErrorMessage($response, 'خطا در عودت وجه');
+                $this->newLog($statusCode, $message);
+                throw new KeepaException($message, $statusCode);
+            }
+
+            $this->newLog($logStatus, json_encode($response));
+
+            return $response;
+
+        } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
         }
