@@ -111,6 +111,33 @@ class Vibe extends PortAbstract implements PortInterface
     }
 
     /**
+     * Check whether a customer exists in Vibe
+     *
+     * @param string $nationalCode
+     *
+     * @return bool
+     *
+     * @throws PoolPortException
+     */
+    public function getCustomer($nationalCode)
+    {
+        try {
+            $response = $this->request('GET', self::SERVICES_PATH . '/customer', [
+                'national_code' => $nationalCode,
+            ]);
+
+            if ($response['statusCode'] !== 200) {
+                throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
+            }
+
+            return !empty($response['body']['status']);
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
      * Refund remaining amount of user payment
      *
      * @return bool
@@ -487,7 +514,11 @@ class Vibe extends PortAbstract implements PortInterface
             'http_errors' => false,
         ];
 
-        if ($method !== 'GET') {
+        if ($method === 'GET') {
+            if (!empty($data)) {
+                $options['query'] = $data;
+            }
+        } else {
             $options['json'] = $data;
         }
 
