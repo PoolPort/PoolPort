@@ -14,7 +14,7 @@ class Vibe extends PortAbstract implements PortInterface
 {
     const TIMEOUT = 30;
 
-    const SERVICES_PATH = '/api/v1/cpg-added/services';
+    const SERVICES_PATH = '/cpg-added/api/v1/services';
 
     const REFUND_STATUS_DONE = 'DONE';
 
@@ -127,7 +127,7 @@ class Vibe extends PortAbstract implements PortInterface
             throw new PoolPortException('Refund amount is not valid', 400);
         }
 
-        return $this->sendRefundRequest($amount, $refundedAmount);
+        return $this->sendRefundRequest($amount, $refundedAmount, 'Refund');
     }
 
     /**
@@ -147,7 +147,7 @@ class Vibe extends PortAbstract implements PortInterface
             throw new PoolPortException('Partial refund amount is not valid', 400);
         }
 
-        return $this->sendRefundRequest($amount, $refundedAmount);
+        return $this->sendRefundRequest($amount, $refundedAmount, 'Partial Refund');
     }
 
     /**
@@ -321,12 +321,13 @@ class Vibe extends PortAbstract implements PortInterface
      *
      * @param int $amount
      * @param int $refundedAmount
+     * @param string $logCode
      *
      * @return bool
      *
      * @throws PoolPortException
      */
-    protected function sendRefundRequest($amount, $refundedAmount)
+    protected function sendRefundRequest($amount, $refundedAmount, $logCode)
     {
         try {
             $requestId = Uuid::uuid4()->toString();
@@ -359,8 +360,10 @@ class Vibe extends PortAbstract implements PortInterface
                 'refunds'         => $refunds,
             ]);
 
-            $logCode = $status === self::REFUND_STATUS_DONE ? 'Refunded' : 'RefundPending';
-            $this->newLog($logCode, json_encode(['request_id' => $requestId, 'amount' => $amount, 'status' => $status]));
+            $this->newLog(
+                $status === self::REFUND_STATUS_DONE ? $logCode : 'RefundPending',
+                json_encode(['request_id' => $requestId, 'amount' => $amount, 'status' => $status])
+            );
 
             return true;
 
