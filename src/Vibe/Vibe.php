@@ -14,6 +14,17 @@ class Vibe extends PortAbstract implements PortInterface
 {
     const TIMEOUT = 30;
 
+    const SERVICES_PATH = '/cpg-added/api/v1/services';
+
+    const REFUND_STATUS_DONE = 'DONE';
+
+    /**
+     * Refund statuses that mean Vibe rejected the refund request
+     *
+     * @var array
+     */
+    private static $failedRefundStatuses = ['FAILED', 'AMOUNT_NOT_ENOUGH', 'SALE_NOT_REFUNDABLE'];
+
     /**
      * Address of payment page returned by create order
      *
@@ -97,6 +108,46 @@ class Vibe extends PortAbstract implements PortInterface
         $this->verifyPayment();
 
         return $this;
+    }
+
+    /**
+     * Refund remaining amount of user payment
+     *
+     * @return bool
+     *
+     * @throws PoolPortException
+     */
+    public function refundPayment($transaction, $params = [])
+    {
+        $refundedAmount = (int)$this->getMeta('refunded_amount');
+        $amount = (int)$transaction->price - $refundedAmount;
+
+        if ($amount <= 0) {
+            $this->newLog('Error', 'Refund amount is not valid');
+            throw new PoolPortException('Refund amount is not valid', 400);
+        }
+
+        return $this->sendRefundRequest($amount, $refundedAmount, 'Refund');
+    }
+
+    /**
+     * Partial refund user payment
+     *
+     * @return bool
+     *
+     * @throws PoolPortException
+     */
+    public function partialRefundPayment($transaction, $amount, $params = [])
+    {
+        $refundedAmount = (int)$this->getMeta('refunded_amount');
+        $amount = (int)$amount;
+
+        if ($amount <= 0 || $refundedAmount + $amount > (int)$transaction->price) {
+            $this->newLog('Error', 'Partial refund amount is not valid');
+            throw new PoolPortException('Partial refund amount is not valid', 400);
+        }
+
+        return $this->sendRefundRequest($amount, $refundedAmount, 'Partial Refund');
     }
 
     /**
@@ -197,7 +248,7 @@ class Vibe extends PortAbstract implements PortInterface
             $this->setMeta(['order_id' => $this->orderId]);
 
             $payload = $this->getPayRequestPayload();
-            $response = $this->request('/api/v1/orders/', $payload);
+            $response = $this->request('POST', '/api/v1/orders/', $payload);
 
             if ($response['statusCode'] !== 200 || empty($response['body']['payment_url'])) {
                 $this->newLog($response['statusCode'], json_encode($response['body'], JSON_UNESCAPED_UNICODE));
@@ -236,7 +287,7 @@ class Vibe extends PortAbstract implements PortInterface
         $vibeRefId = $this->resolveCallbackRefId();
 
         try {
-            $response = $this->request('/merchants/api/v1/orders/verify', ['ref_id' => $vibeRefId]);
+            $response = $this->request('POST', '/merchants/api/v1/orders/verify', ['ref_id' => $vibeRefId]);
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
             throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
@@ -261,6 +312,89 @@ class Vibe extends PortAbstract implements PortInterface
         $this->trackingCode = $vibeRefId;
         $this->transactionSucceed();
         $this->newLog(PortAbstract::TRANSACTION_SUCCEED, PortAbstract::TRANSACTION_SUCCEED_TEXT);
+    }
+
+    /**
+     * Send refund request to server and confirm it by refund status
+     * A 200 response only means the request is accepted, pending statuses are kept in meta for re-inquiry
+     * refunded_amount includes pending refunds, because Vibe counts them against the remaining amount
+     *
+     * @param int $amount
+     * @param int $refundedAmount
+     * @param string $logCode
+     *
+     * @return bool
+     *
+     * @throws PoolPortException
+     */
+    protected function sendRefundRequest($amount, $refundedAmount, $logCode)
+    {
+        try {
+            $requestId = Uuid::uuid4()->toString();
+
+            $response = $this->request('POST', self::SERVICES_PATH . '/refund', [
+                'request_id'        => $requestId,
+                'refunded_order_id' => (string)$this->getMeta('order_id'),
+                'refunded_amount'   => $amount,
+            ]);
+
+            if ($response['statusCode'] !== 200) {
+                throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
+            }
+
+            $status = $this->getRefundStatus($requestId);
+
+            if (in_array($status, self::$failedRefundStatuses, true)) {
+                throw new VibeException("Refund {$requestId} failed with status {$status}", 400);
+            }
+
+            $refunds = (array)$this->getMeta('refunds');
+            $refunds[] = [
+                'request_id' => $requestId,
+                'amount'     => $amount,
+                'status'     => $status,
+            ];
+
+            $this->setMeta([
+                'refunded_amount' => $refundedAmount + $amount,
+                'refunds'         => $refunds,
+            ]);
+
+            $this->newLog(
+                $status === self::REFUND_STATUS_DONE ? $logCode : 'RefundPending',
+                json_encode(['request_id' => $requestId, 'amount' => $amount, 'status' => $status])
+            );
+
+            return true;
+
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Inquire refund status by request id
+     *
+     * @param string $requestId
+     *
+     * @return string|null null when status could not be inquired
+     */
+    protected function getRefundStatus($requestId)
+    {
+        try {
+            $response = $this->request('GET', self::SERVICES_PATH . '/refund/status/request_id/' . rawurlencode($requestId));
+        } catch (\Exception $e) {
+            $this->newLog('Error', $e->getMessage());
+            return null;
+        }
+
+        if ($response['statusCode'] !== 200 || empty($response['body']['data']['status'])) {
+            $this->newLog($response['statusCode'], json_encode($response['body'], JSON_UNESCAPED_UNICODE));
+            return null;
+        }
+
+        return (string)$response['body']['data']['status'];
     }
 
     /**
@@ -326,19 +460,19 @@ class Vibe extends PortAbstract implements PortInterface
     }
 
     /**
-     * Send a POST request to Vibe
+     * Send a request to Vibe
      *
+     * @param string $method
      * @param string $endpoint
-     * @param array $data
+     * @param array $data JSON body, ignored for GET requests
      *
      * @return array ['statusCode' => int, 'body' => array|null]
      */
-    private function request($endpoint, array $data)
+    private function request($method, $endpoint, array $data = [])
     {
         $client = new Client();
 
-        $response = $client->request('POST', rtrim($this->config->get('vibe.base-url'), '/') . $endpoint, [
-            'json'        => $data,
+        $options = [
             'headers'     => [
                 'X-API-Key'    => $this->config->get('vibe.api-key'),
                 'Content-Type' => 'application/json',
@@ -346,7 +480,13 @@ class Vibe extends PortAbstract implements PortInterface
             ],
             'timeout'     => self::TIMEOUT,
             'http_errors' => false,
-        ]);
+        ];
+
+        if ($method !== 'GET') {
+            $options['json'] = $data;
+        }
+
+        $response = $client->request($method, rtrim($this->config->get('vibe.base-url'), '/') . $endpoint, $options);
 
         return [
             'statusCode' => $response->getStatusCode(),
