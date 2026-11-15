@@ -4,6 +4,7 @@ namespace PoolPort\TenClub;
 
 use PoolPort\Config;
 use GuzzleHttp\Client;
+use Ramsey\Uuid\Uuid;
 use PoolPort\PortAbstract;
 use PoolPort\PortInterface;
 use PoolPort\DataBaseManager;
@@ -14,7 +15,9 @@ class TenClub extends PortAbstract implements PortInterface
 
     const PRODUCTION_ORIGIN = 'https://pay.tenclub.ir';
 
-    const SANDBOX_ORIGIN = 'https://sandbox.pay.tenclub.ir';
+    const DESCRIPTION_MAX_LENGTH = 255;
+
+    const MOBILE_PATTERN = '/^09\d{9}$/';
 
     /**
      * Absolute API path signed and called for create payment
@@ -72,6 +75,13 @@ class TenClub extends PortAbstract implements PortInterface
      * @var int|null
      */
     private $expiresIn;
+
+    /**
+     * Idempotency-Key of this create attempt
+     *
+     * @var string|null
+     */
+    private $idempotencyKey;
 
     /**
      * {@inheritdoc}
@@ -168,7 +178,6 @@ class TenClub extends PortAbstract implements PortInterface
     public function redirect()
     {
         header('Location: '.$this->paymentUrl, true, 302);
-        exit;
     }
 
     /**
@@ -192,7 +201,77 @@ class TenClub extends PortAbstract implements PortInterface
      */
     protected function sendPayRequest()
     {
-        throw new TenClubException('TenClub create payment is not implemented.');
+        try {
+            if ($this->orderId === null || $this->orderId === '') {
+                $this->orderId = (string) $this->transactionId();
+            }
+
+            $response = $this->request('POST', $this->paymentPath(), $this->createPaymentBody(), [
+                'Idempotency-Key' => $this->idempotencyKey(),
+            ]);
+
+            $payload = $response['body'];
+            $paymentId = isset($payload['paymentId']) ? $payload['paymentId'] : '';
+            $paymentUrl = isset($payload['paymentUrl']) ? $payload['paymentUrl'] : '';
+            $status = isset($payload['status']) ? $payload['status'] : null;
+
+            if ($response['statusCode'] !== 201 || $paymentId === '' || $paymentUrl === '' || $this->isTerminalStatus($status)) {
+                $this->newLog($response['statusCode'], $response['raw']);
+                throw new TenClubException($this->errorMessage($payload, $response['raw']), $response['statusCode']);
+            }
+
+            $this->paymentUrl = $paymentUrl;
+            $this->refId = $paymentId;
+            $this->transactionSetRefId();
+
+            $meta = [
+                'payment_id' => $paymentId,
+                'idempotency_key' => $this->idempotencyKey(),
+                'status' => $status,
+            ];
+
+            if (!empty($payload['expiresAt'])) {
+                $meta['expires_at'] = $payload['expiresAt'];
+            }
+
+            $this->setMeta($meta);
+        } catch (TenClubException $e) {
+            $this->transactionFailed();
+            throw $e;
+        } catch (\Exception $e) {
+            $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
+            throw new TenClubException($e->getMessage(), (int) $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * @param string|null $status
+     *
+     * @return bool
+     */
+    protected function isTerminalStatus($status)
+    {
+        return in_array($status, [self::STATUS_FAILED, self::STATUS_CANCELLED, self::STATUS_EXPIRED], true);
+    }
+
+    /**
+     * @param array $payload
+     * @param string $raw
+     *
+     * @return string
+     */
+    protected function errorMessage(array $payload, $raw)
+    {
+        if (!empty($payload['error']['message'])) {
+            return $payload['error']['message'];
+        }
+
+        if (!empty($payload['error']['code'])) {
+            return $payload['error']['code'];
+        }
+
+        return $raw !== '' ? $raw : 'TenClub create payment failed.';
     }
 
     /**
@@ -257,11 +336,9 @@ class TenClub extends PortAbstract implements PortInterface
                 'body' => is_array($decoded) ? $decoded : [],
                 'raw' => $contents,
             ];
-        } catch (TenClubException $e) {
-            throw $e;
         } catch (\Exception $e) {
             $this->newLog('Error', $e->getMessage());
-            throw new TenClubException($e->getMessage(), $e->getCode(), $e);
+            throw new TenClubException($e->getMessage(), (int) $e->getCode(), $e);
         }
     }
 
@@ -278,15 +355,15 @@ class TenClub extends PortAbstract implements PortInterface
         ];
 
         if ($this->description !== null && $this->description !== '') {
-            $body['description'] = $this->description;
+            $body['description'] = mb_substr($this->description, 0, self::DESCRIPTION_MAX_LENGTH);
         }
 
         if ($this->orderId !== null && $this->orderId !== '') {
             $body['orderId'] = $this->orderId;
         }
 
-        $mobile = $this->config->get('tenclub.user-mobile');
-        if (!empty($mobile)) {
+        $mobile = (string) $this->config->get('tenclub.user-mobile', '');
+        if (preg_match(self::MOBILE_PATTERN, $mobile)) {
             $body['mobile'] = $mobile;
         }
 
@@ -306,13 +383,17 @@ class TenClub extends PortAbstract implements PortInterface
     }
 
     /**
-     * Idempotency-Key for POST /payments. Stable for this transaction.
+     * Idempotency-Key for POST /payments. Unique across installs sharing one api-key, stable for this attempt.
      *
      * @return string
      */
     protected function idempotencyKey()
     {
-        return 'poolport-'.$this->transactionId();
+        if ($this->idempotencyKey === null) {
+            $this->idempotencyKey = Uuid::uuid4()->toString();
+        }
+
+        return $this->idempotencyKey;
     }
 
     /**
