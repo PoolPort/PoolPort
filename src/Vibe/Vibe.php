@@ -19,6 +19,11 @@ class Vibe extends PortAbstract implements PortInterface
     const REFUND_STATUS_DONE = 'DONE';
 
     /**
+     * Number of latest error entries kept in transaction meta `error_logs`
+     */
+    const ERROR_LOGS_LIMIT = 20;
+
+    /**
      * Refund statuses that mean Vibe rejected the refund request
      *
      * @var array
@@ -111,33 +116,6 @@ class Vibe extends PortAbstract implements PortInterface
     }
 
     /**
-     * Check whether a customer exists in Vibe
-     *
-     * @param string $nationalCode
-     *
-     * @return bool
-     *
-     * @throws PoolPortException
-     */
-    public function getCustomer($nationalCode)
-    {
-        try {
-            $response = $this->request('GET', self::SERVICES_PATH . '/customer', [
-                'national_code' => $nationalCode,
-            ]);
-
-            if ($response['statusCode'] !== 200) {
-                throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
-            }
-
-            return !empty($response['body']['status']);
-        } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    /**
      * Refund remaining amount of user payment
      *
      * @return bool
@@ -150,7 +128,11 @@ class Vibe extends PortAbstract implements PortInterface
         $amount = (int)$transaction->price - $refundedAmount;
 
         if ($amount <= 0) {
-            $this->newLog('Error', 'Refund amount is not valid');
+            $this->logError('Refund', 'Refund amount is not valid', ['context' => [
+                'price'           => (int)$transaction->price,
+                'refunded_amount' => $refundedAmount,
+                'amount'          => $amount,
+            ]]);
             throw new PoolPortException('Refund amount is not valid', 400);
         }
 
@@ -170,7 +152,11 @@ class Vibe extends PortAbstract implements PortInterface
         $amount = (int)$amount;
 
         if ($amount <= 0 || $refundedAmount + $amount > (int)$transaction->price) {
-            $this->newLog('Error', 'Partial refund amount is not valid');
+            $this->logError('Partial Refund', 'Partial refund amount is not valid', ['context' => [
+                'price'           => (int)$transaction->price,
+                'refunded_amount' => $refundedAmount,
+                'amount'          => $amount,
+            ]]);
             throw new PoolPortException('Partial refund amount is not valid', 400);
         }
 
@@ -247,16 +233,33 @@ class Vibe extends PortAbstract implements PortInterface
     protected function validateCart()
     {
         if (!isset($this->cart['goods_amount'], $this->cart['tax'])) {
-            throw new VibeException('goods_amount and tax are required', 400);
+            $this->failCartValidation('goods_amount and tax are required');
         }
 
         if (empty($this->cart['items']) || !is_array($this->cart['items'])) {
-            throw new VibeException('At least one item is required', 400);
+            $this->failCartValidation('At least one item is required');
         }
 
         if ((int)$this->amount !== (int)$this->cart['goods_amount'] + (int)$this->cart['tax']) {
-            throw new VibeException('cart_amount must equal goods_amount + tax', 400);
+            $this->failCartValidation('cart_amount must equal goods_amount + tax');
         }
+    }
+
+    /**
+     * @param string $message
+     *
+     * @return void
+     *
+     * @throws VibeException
+     */
+    private function failCartValidation($message)
+    {
+        $this->logError('ValidateCart', $message, ['context' => [
+            'cart_amount' => (int)$this->amount,
+            'cart'        => $this->cart,
+        ]]);
+
+        throw new VibeException($message, 400);
     }
 
     /**
@@ -269,6 +272,7 @@ class Vibe extends PortAbstract implements PortInterface
     protected function sendPayRequest()
     {
         $this->newTransaction();
+        $payload = null;
 
         try {
             $this->orderId = Uuid::uuid4()->toString();
@@ -282,8 +286,11 @@ class Vibe extends PortAbstract implements PortInterface
             $response = $this->request('POST', '/api/v1/orders/', $payload);
 
             if ($response['statusCode'] !== 200 || empty($response['body']['payment_url'])) {
-                $this->newLog($response['statusCode'], json_encode($response['body'], JSON_UNESCAPED_UNICODE));
-                throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
+                $this->logError('CreateOrder', 'Create order failed', [
+                    'response' => $response,
+                    'context'  => ['request' => $payload],
+                ]);
+                throw new VibeException($this->responseMessage($response), $response['statusCode']);
             }
 
             $this->paymentUrl = $response['body']['payment_url'];
@@ -298,10 +305,16 @@ class Vibe extends PortAbstract implements PortInterface
             $this->refId = $paymentToken !== null ? $paymentToken : (string)$this->transactionId();
             $this->transactionSetRefId();
 
+        } catch (VibeException $e) {
+            $this->transactionFailed();
+            throw new PoolPortException($e->getMessage(), (int)$e->getCode(), $e);
         } catch (\Exception $e) {
             $this->transactionFailed();
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+            $this->logError('CreateOrder', 'Create order request failed', [
+                'exception' => $e,
+                'context'   => ['request' => $payload],
+            ]);
+            throw new PoolPortException($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -318,16 +331,24 @@ class Vibe extends PortAbstract implements PortInterface
     {
         $vibeRefId = $this->resolveCallbackRefId();
 
+        $verifyRequest = ['ref_id' => $vibeRefId];
+
         try {
-            $response = $this->request('POST', '/merchants/api/v1/orders/verify', ['ref_id' => $vibeRefId]);
+            $response = $this->request('POST', '/merchants/api/v1/orders/verify', $verifyRequest);
         } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+            $this->logError('Verify', 'Verify order request failed', [
+                'exception' => $e,
+                'context'   => ['request' => $verifyRequest],
+            ]);
+            throw new PoolPortException($e->getMessage(), (int)$e->getCode(), $e);
         }
 
         if ($response['statusCode'] !== 200) {
-            $this->newLog($response['statusCode'], json_encode($response['body'], JSON_UNESCAPED_UNICODE));
-            throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
+            $this->logError('Verify', 'Verify order failed', [
+                'response' => $response,
+                'context'  => ['request' => $verifyRequest],
+            ]);
+            throw new VibeException($this->responseMessage($response), $response['statusCode']);
         }
 
         if (empty($response['body']['status'])) {
@@ -335,7 +356,11 @@ class Vibe extends PortAbstract implements PortInterface
             $message = "Order is not finalized (callback result: {$callbackResult})";
 
             $this->transactionFailed();
-            $this->newLog('NOK', $message);
+            $this->logError('Verify', $message, [
+                'code'     => 'NOK',
+                'response' => $response,
+                'context'  => ['request' => $verifyRequest, 'callback' => $_GET],
+            ]);
             throw new VibeException($message, 400);
         }
 
@@ -361,17 +386,24 @@ class Vibe extends PortAbstract implements PortInterface
      */
     protected function sendRefundRequest($amount, $refundedAmount, $logCode)
     {
+        $refundRequest = null;
+
         try {
             $requestId = Uuid::uuid4()->toString();
-
-            $response = $this->request('POST', self::SERVICES_PATH . '/refund', [
+            $refundRequest = [
                 'request_id'        => $requestId,
                 'refunded_order_id' => (string)$this->getMeta('order_id'),
                 'refunded_amount'   => $amount,
-            ]);
+            ];
+
+            $response = $this->request('POST', self::SERVICES_PATH . '/refund', $refundRequest);
 
             if ($response['statusCode'] !== 200) {
-                throw new VibeException(json_encode($response['body'], JSON_UNESCAPED_UNICODE), $response['statusCode']);
+                $this->logError($logCode, 'Refund request rejected', [
+                    'response' => $response,
+                    'context'  => ['request' => $refundRequest],
+                ]);
+                throw new VibeException($this->responseMessage($response), $response['statusCode']);
             }
 
             $this->newLog('RefundAccepted', json_encode($response['body'], JSON_UNESCAPED_UNICODE));
@@ -380,7 +412,15 @@ class Vibe extends PortAbstract implements PortInterface
             $status = $refundStatus['status'] ?? null;
 
             if (in_array($status, self::$failedRefundStatuses, true)) {
-                throw new VibeException("Refund {$requestId} failed with status {$status}", 400);
+                $message = "Refund {$requestId} failed with status {$status}";
+                $this->logError($logCode, $message, [
+                    'context' => [
+                        'request'       => $refundRequest,
+                        'accepted'      => $response['body'],
+                        'refund_status' => $refundStatus['body'],
+                    ],
+                ]);
+                throw new VibeException($message, 400);
             }
 
             $refunds = (array)$this->getMeta('refunds');
@@ -404,9 +444,14 @@ class Vibe extends PortAbstract implements PortInterface
 
             return true;
 
+        } catch (VibeException $e) {
+            throw new PoolPortException($e->getMessage(), (int)$e->getCode(), $e);
         } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
-            throw new PoolPortException($e->getMessage(), $e->getCode(), $e);
+            $this->logError($logCode, 'Refund request failed', [
+                'exception' => $e,
+                'context'   => ['request' => $refundRequest],
+            ]);
+            throw new PoolPortException($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -422,12 +467,18 @@ class Vibe extends PortAbstract implements PortInterface
         try {
             $response = $this->request('GET', self::SERVICES_PATH . '/refund/status/request_id/' . rawurlencode($requestId));
         } catch (\Exception $e) {
-            $this->newLog('Error', $e->getMessage());
+            $this->logError('RefundStatus', 'Refund status request failed', [
+                'exception' => $e,
+                'context'   => ['request_id' => $requestId],
+            ]);
             return ['status' => null, 'data' => null, 'body' => null];
         }
 
         if ($response['statusCode'] !== 200 || empty($response['body']['data']['status'])) {
-            $this->newLog($response['statusCode'], json_encode($response['body'], JSON_UNESCAPED_UNICODE));
+            $this->logError('RefundStatus', 'Refund status inquiry failed', [
+                'response' => $response,
+                'context'  => ['request_id' => $requestId],
+            ]);
             return ['status' => null, 'data' => null, 'body' => $response['body'] ?? null];
         }
 
@@ -476,7 +527,11 @@ class Vibe extends PortAbstract implements PortInterface
     private function failCallback($message)
     {
         $this->transactionFailed();
-        $this->newLog('Error', $message);
+        $this->logError('Callback', $message, ['context' => [
+            'callback'      => $_GET,
+            'order_id'      => $this->getMeta('order_id'),
+            'payment_token' => $this->getMeta('payment_token'),
+        ]]);
         throw new VibeException($message, 400);
     }
 
@@ -507,7 +562,7 @@ class Vibe extends PortAbstract implements PortInterface
      * @param string $endpoint
      * @param array $data JSON body, ignored for GET requests
      *
-     * @return array ['statusCode' => int, 'body' => array|null]
+     * @return array ['statusCode' => int, 'body' => array|null, 'raw' => string]
      */
     private function request($method, $endpoint, array $data = [])
     {
@@ -532,10 +587,85 @@ class Vibe extends PortAbstract implements PortInterface
         }
 
         $response = $client->request($method, rtrim($this->config->get('vibe.base-url'), '/') . $endpoint, $options);
+        $raw = (string)$response->getBody();
 
         return [
             'statusCode' => $response->getStatusCode(),
-            'body'       => json_decode($response->getBody()->getContents(), true),
+            'body'       => json_decode($raw, true),
+            'raw'        => $raw,
         ];
+    }
+
+    /**
+     * Exception message of a failed Vibe response, raw body when it is not JSON
+     *
+     * @param array $response
+     *
+     * @return string
+     */
+    private function responseMessage(array $response)
+    {
+        if (is_array($response['body'])) {
+            return json_encode($response['body'], JSON_UNESCAPED_UNICODE);
+        }
+
+        return $response['raw'] !== '' ? $response['raw'] : 'Empty response with HTTP status ' . $response['statusCode'];
+    }
+
+    /**
+     * Log a short summary in poolport_status_log and keep full details in transaction meta `error_logs`
+     * Without a transaction, details go to PHP error_log. Logging failures never hide the original error.
+     *
+     * @param string $action
+     * @param string $message
+     * @param array $details ['code' => string|int, 'response' => array, 'exception' => \Exception, 'context' => array]
+     *
+     * @return void
+     */
+    private function logError($action, $message, array $details = [])
+    {
+        $entry = [
+            'action'    => $action,
+            'message'   => $message,
+            'logged_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $code = isset($details['code']) ? $details['code'] : 'Error';
+
+        if (isset($details['response'])) {
+            $response = $details['response'];
+            $code = isset($details['code']) ? $details['code'] : $response['statusCode'];
+            $entry['status_code'] = $response['statusCode'];
+            $entry['response'] = is_array($response['body']) ? $response['body'] : $response['raw'];
+        }
+
+        if (isset($details['exception'])) {
+            $exception = $details['exception'];
+            $entry['exception'] = [
+                'class'   => get_class($exception),
+                'message' => $exception->getMessage(),
+                'code'    => $exception->getCode(),
+            ];
+        }
+
+        if (!empty($details['context'])) {
+            $entry['context'] = $details['context'];
+        }
+
+        if ($this->transactionId() === null) {
+            error_log('PoolPort Vibe error: ' . json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            return;
+        }
+
+        try {
+            $this->newLog($code, "{$action}: {$message}");
+
+            $errorLogs = (array)$this->getMeta('error_logs');
+            $errorLogs[] = $entry;
+
+            $this->setMeta(['error_logs' => array_slice($errorLogs, -self::ERROR_LOGS_LIMIT)]);
+        } catch (\Exception $e) {
+            error_log('PoolPort Vibe error (log write failed: ' . $e->getMessage() . '): ' . json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        }
     }
 }
