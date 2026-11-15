@@ -404,4 +404,14 @@ return array(
         'store-code'   => '',                              // Only for merchants with multiple stores
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // TenClub gateway
+    //--------------------------------
+    'tenclub' => array(
+        'base-url'     => 'https://pay.tenclub.ir',        // Sandbox: https://sandbox.pay.tenclub.ir
+        'api-key'      => '',
+        'api-secret'   => '',
+        'user-mobile'  => '09xxxxxxxx',
+        'callback-url' => 'http://www.example.org/result',
+    ),
 );
