@@ -19,6 +19,10 @@ class TenClub extends PortAbstract implements PortInterface
 
     const MOBILE_PATTERN = '/^09\d{9}$/';
 
+    const VERIFY_ATTEMPTS = 3;
+
+    const VERIFY_RETRY_DELAY_SECONDS = 2;
+
     /**
      * Absolute API path signed and called for create payment
      */
@@ -217,7 +221,7 @@ class TenClub extends PortAbstract implements PortInterface
 
             if ($response['statusCode'] !== 201 || $paymentId === '' || $paymentUrl === '' || $this->isTerminalStatus($status)) {
                 $this->newLog($response['statusCode'], $response['raw']);
-                throw new TenClubException($this->errorMessage($payload, $response['raw']), $response['statusCode']);
+                throw new TenClubException($this->errorMessage($payload, $response['raw'], 'TenClub create payment failed.'), $response['statusCode']);
             }
 
             $this->paymentUrl = $paymentUrl;
@@ -258,10 +262,11 @@ class TenClub extends PortAbstract implements PortInterface
     /**
      * @param array $payload
      * @param string $raw
+     * @param string $fallback
      *
      * @return string
      */
-    protected function errorMessage(array $payload, $raw)
+    protected function errorMessage(array $payload, $raw, $fallback)
     {
         if (!empty($payload['error']['message'])) {
             return $payload['error']['message'];
@@ -271,11 +276,12 @@ class TenClub extends PortAbstract implements PortInterface
             return $payload['error']['code'];
         }
 
-        return $raw !== '' ? $raw : 'TenClub create payment failed.';
+        return $raw !== '' ? $raw : $fallback;
     }
 
     /**
-     * GET /api/v1/payments/{paymentId}. Succeeded is the only paid status.
+     * GET /api/v1/payments/{paymentId}. Succeeded with matching amount is the only paid result.
+     * Pending and transient 429/5xx responses are re-queried before the transaction is failed.
      *
      * @return void
      *
@@ -283,7 +289,99 @@ class TenClub extends PortAbstract implements PortInterface
      */
     protected function verifyPayment()
     {
-        throw new TenClubException('TenClub verify payment is not implemented.');
+        try {
+            $paymentId = $this->refId ?: $this->getMeta('payment_id');
+
+            if (empty($paymentId)) {
+                throw new TenClubException('TenClub paymentId is missing.');
+            }
+
+            $response = $this->queryPayment($paymentId);
+            $payload = $response['body'];
+            $status = isset($payload['status']) ? $payload['status'] : null;
+
+            $this->setMeta(['status' => $status]);
+
+            if ($response['statusCode'] !== 200) {
+                $this->newLog($response['statusCode'], $response['raw']);
+                throw new TenClubException($this->errorMessage($payload, $response['raw'], 'TenClub verify payment failed.'), $response['statusCode']);
+            }
+
+            if ($status !== self::STATUS_SUCCEEDED) {
+                $this->newLog($response['statusCode'], $response['raw']);
+                throw new TenClubException('TenClub payment status is '.($status ?: 'unknown').'.', $response['statusCode']);
+            }
+
+            $paidAmount = isset($payload['amount']) ? (int) $payload['amount'] : 0;
+
+            if ($paidAmount !== (int) $this->amount) {
+                $this->newLog('AmountMismatch', $response['raw']);
+                throw new TenClubException('TenClub paid amount does not match transaction amount.');
+            }
+
+            $bankTransactionId = isset($payload['transactionId']) ? $payload['transactionId'] : null;
+            $referenceNumber = isset($payload['referenceNumber']) ? $payload['referenceNumber'] : null;
+
+            $this->trackingCode = !empty($referenceNumber) ? $referenceNumber : $bankTransactionId;
+            $this->cardNumber = isset($payload['cardMask']) ? (string) $payload['cardMask'] : '';
+
+            $this->setMeta([
+                'transaction_id' => $bankTransactionId,
+                'reference_number' => $referenceNumber,
+                'paid_at' => isset($payload['paidAt']) ? $payload['paidAt'] : null,
+            ]);
+
+            $this->transactionSucceed();
+            $this->newLog(self::TRANSACTION_SUCCEED, self::TRANSACTION_SUCCEED_TEXT);
+        } catch (TenClubException $e) {
+            $this->transactionFailed();
+            throw $e;
+        } catch (\Exception $e) {
+            $this->transactionFailed();
+            $this->newLog('Error', $e->getMessage());
+            throw new TenClubException($e->getMessage(), (int) $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * @param string $paymentId
+     *
+     * @return array{statusCode: int, body: array, raw: string}
+     *
+     * @throws TenClubException
+     */
+    protected function queryPayment($paymentId)
+    {
+        $attempt = 1;
+
+        while (true) {
+            $response = $this->request('GET', $this->paymentPath($paymentId));
+
+            if ($attempt >= self::VERIFY_ATTEMPTS || !$this->shouldRequery($response)) {
+                return $response;
+            }
+
+            $attempt++;
+            sleep(self::VERIFY_RETRY_DELAY_SECONDS);
+        }
+    }
+
+    /**
+     * @param array $response
+     *
+     * @return bool
+     */
+    protected function shouldRequery(array $response)
+    {
+        $statusCode = $response['statusCode'];
+
+        if ($statusCode === 429 || $statusCode >= 500) {
+            return true;
+        }
+
+        return $statusCode === 200
+            && isset($response['body']['status'])
+            && $response['body']['status'] === self::STATUS_PENDING;
     }
 
     /**
