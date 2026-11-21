@@ -415,6 +415,7 @@ abstract class PortAbstract
         $this->config->set('fadax.callback-url', $url);
         $this->config->set('vibe.callback-url', $url);
         $this->config->set('tenclub.callback-url', $url);
+        $this->config->set('evano.callback-url', $url);
 
         return $this;
     }
@@ -464,6 +465,7 @@ abstract class PortAbstract
         $this->config->set('smartispay.user-mobile', $mobile);
         $this->config->set('fadax.user-mobile', $mobile);
         $this->config->set('tenclub.user-mobile', $mobile);
+        $this->config->set('evano.user-mobile', $mobile);
 
         return $this;
     }

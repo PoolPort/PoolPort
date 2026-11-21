@@ -41,6 +41,7 @@ use PoolPort\MellatStaff\MellatStaff;
 use PoolPort\SmartisPay\SmartisPay;
 use PoolPort\Vibe\Vibe;
 use PoolPort\TenClub\TenClub;
+use PoolPort\Evano\Evano;
 use PoolPort\Exceptions\RetryException;
 use PoolPort\PortSimulator\PortSimulator;
 use PoolPort\ResalatWallet\ResalatWallet;
@@ -132,6 +133,8 @@ class PoolPort
 
     const P_TENCLUB = 42;
 
+    const P_EVANO = 43;
+
     /**
      * @var Config
      */
@@ -191,7 +194,7 @@ class PoolPort
                      self::P_DARA, self::P_KEEPA, self::P_BAZAARPAY, self::P_TARA, self::P_SIB,
                      self::P_DIGIPAY, self::P_ZIBAL, self::P_LENDROLL, self::P_SOSHIANT, self::P_MELLAT_STAFF,
                      self::P_TOP, self::P_ALDYPAY, self::P_RESALAT_WALLET, self::P_PINKET, self::P_MEHRACART, self::P_SNAPP_PAY, self::P_SMARTISPAY,
-                     self::P_FADAX, self::P_VIBE, self::P_TENCLUB);
+                     self::P_FADAX, self::P_VIBE, self::P_TENCLUB, self::P_EVANO);
     }
 
     /**
@@ -508,6 +511,10 @@ class PoolPort
 
             case self::P_TENCLUB:
                 $this->portClass = new TenClub($this->config, $this->db, self::P_TENCLUB);
+                break;
+
+            case self::P_EVANO:
+                $this->portClass = new Evano($this->config, $this->db, self::P_EVANO);
                 break;
 
             default:
