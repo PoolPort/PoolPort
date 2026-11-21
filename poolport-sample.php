@@ -414,4 +414,16 @@ return array(
         'user-mobile'  => '09xxxxxxxx',
         'callback-url' => 'http://www.example.org/result',
     ),
+
+    // Evano gateway
+    //--------------------------------
+    'evano' => array(
+        'base-url'      => 'https://ebcom.mci.ir',                      // Stage: https://stage-ebcom.mci.ir
+        'gateway-url'   => 'https://static-ebcom.mci.ir/ecm/ewano/pg',  // Stage: https://sandbox-ebcom.mci.ir/ecm/ewano/pg
+        'client-id'     => 'xxxx',
+        'client-secret' => 'xxxx',
+        'scope'         => 'xxxx',                                      // Exactly as delivered by Evano
+        'user-mobile'   => '09xxxxxxxx',
+        'callback-url'  => 'http://www.example.org/result',             // Only path and query are sent, domain is registered at Evano
+    ),
 );
