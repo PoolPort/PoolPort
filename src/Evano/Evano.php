@@ -76,23 +76,11 @@ class Evano extends PortAbstract implements PortInterface
     private $paymentUrl;
 
     /**
-     * National code of user, 10 digits
+     * Order details
      *
-     * @var string|null
+     * @var array ['nationalCode' => string, 'code' => string|null, 'description' => string|null]
      */
-    private $nationalCode = null;
-
-    /**
-     * Order code in merchant system, transaction id when not set
-     *
-     * @var string|null
-     */
-    private $code = null;
-
-    /**
-     * @var string|null
-     */
-    private $description = null;
+    private $items = [];
 
     /**
      * {@inheritdoc}
@@ -113,37 +101,19 @@ class Evano extends PortAbstract implements PortInterface
     }
 
     /**
-     * @param string $nationalCode
+     * Set order details
+     *
+     * @param array $items [
+     *     'nationalCode' => string,       // National code of user, 10 digits
+     *     'code'         => string|null,  // Order code in merchant system, transaction id when not set
+     *     'description'  => string|null,
+     * ]
      *
      * @return $this
      */
-    public function setNationalCode($nationalCode)
+    public function addItem(array $items)
     {
-        $this->nationalCode = (string)$nationalCode;
-
-        return $this;
-    }
-
-    /**
-     * @param string $code
-     *
-     * @return $this
-     */
-    public function setCode($code)
-    {
-        $this->code = (string)$code;
-
-        return $this;
-    }
-
-    /**
-     * @param string $description
-     *
-     * @return $this
-     */
-    public function setDescription($description)
-    {
-        $this->description = $description;
+        $this->items = $items;
 
         return $this;
     }
@@ -245,17 +215,29 @@ class Evano extends PortAbstract implements PortInterface
         $payload = [
             'amount'       => (int)$this->amount,
             'msisdn'       => $this->msisdn(),
-            'nationalCode' => (string)$this->nationalCode,
+            'nationalCode' => $this->item('nationalCode'),
             'callbackUrl'  => $this->callbackPath($this->buildRedirectUrl($this->config->get('evano.callback-url'))),
             'code'         => (string)$this->getMeta('code'),
             'trackId'      => (string)$this->getMeta('track_id'),
         ];
 
-        if (!empty($this->description)) {
-            $payload['description'] = $this->description;
+        if ($this->item('description') !== '') {
+            $payload['description'] = $this->item('description');
         }
 
         return $payload;
+    }
+
+    /**
+     * Order detail set by addItem, empty string when not set
+     *
+     * @param string $key
+     *
+     * @return string
+     */
+    private function item($key)
+    {
+        return isset($this->items[$key]) ? (string)$this->items[$key] : '';
     }
 
     /**
@@ -271,7 +253,7 @@ class Evano extends PortAbstract implements PortInterface
             $this->failOrderValidation('user-mobile must be a valid mobile number');
         }
 
-        if (!preg_match(self::NATIONAL_CODE_PATTERN, (string)$this->nationalCode)) {
+        if (!preg_match(self::NATIONAL_CODE_PATTERN, $this->item('nationalCode'))) {
             $this->failOrderValidation('National code must be 10 digits');
         }
 
@@ -312,7 +294,7 @@ class Evano extends PortAbstract implements PortInterface
         try {
             $this->setMeta([
                 'track_id'        => Uuid::uuid4()->toString(),
-                'code'            => $this->code !== null && $this->code !== '' ? $this->code : (string)$this->transactionId(),
+                'code'            => $this->item('code') !== '' ? $this->item('code') : (string)$this->transactionId(),
                 'amount'          => $this->amount,
                 'refunded_amount' => 0,
             ]);
