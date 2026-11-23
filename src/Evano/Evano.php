@@ -152,7 +152,7 @@ class Evano extends PortAbstract implements PortInterface
 
     /**
      * Refund remaining amount of user payment
-     * Cancels the order when nothing is refunded yet, otherwise refunds the remaining amount
+     * Always cancels the order, even when part of it was refunded before
      *
      * @return bool
      *
@@ -174,9 +174,7 @@ class Evano extends PortAbstract implements PortInterface
             throw new PoolPortException('Refund amount is not valid', 400);
         }
 
-        $status = $refundedAmount === 0 ? self::ORDER_STATUS_CANCELLED : self::ORDER_STATUS_PARTIALLY_REFUNDED;
-
-        return $this->sendRefundRequest($status, $amount, $refundedAmount, 'Refund');
+        return $this->sendRefundRequest(self::ORDER_STATUS_CANCELLED, $amount, $refundedAmount, 'Refund');
     }
 
     /**
