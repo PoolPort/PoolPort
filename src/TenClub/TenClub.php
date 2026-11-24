@@ -166,6 +166,38 @@ class TenClub extends PortAbstract implements PortInterface
     }
 
     /**
+     * Set optional create-payment fields: description, orderId, email, metadata, expiresIn
+     *
+     * @param array $items
+     *
+     * @return $this
+     */
+    public function addItem(array $items)
+    {
+        if (array_key_exists('description', $items)) {
+            $this->setDescription($items['description']);
+        }
+
+        if (array_key_exists('orderId', $items)) {
+            $this->setOrderId($items['orderId']);
+        }
+
+        if (array_key_exists('email', $items)) {
+            $this->setEmail($items['email']);
+        }
+
+        if (array_key_exists('metadata', $items)) {
+            $this->setMetadata((array) $items['metadata']);
+        }
+
+        if (array_key_exists('expiresIn', $items)) {
+            $this->setExpiresIn($items['expiresIn']);
+        }
+
+        return $this;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function ready()
